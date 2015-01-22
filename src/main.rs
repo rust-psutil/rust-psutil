@@ -4,7 +4,7 @@ extern crate psutil;
 
 #[cfg(not(test))]
 fn main() {
-    let processes = psutil::Process::all();
+    let processes = psutil::process::all();
 
     println!("Hello world");
     println!("Read {n} pids", n=processes.len());
