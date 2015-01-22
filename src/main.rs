@@ -9,6 +9,9 @@ fn main() {
     println!("Read {n} pids", n=processes.len());
 
     for process in processes.iter() {
-        println!("{} $ {}", process.pid, process.cmdline_str().unwrap());
+        let cmdline = process.cmdline().unwrap();
+        if cmdline.len() > 0 {
+            println!("{} $ {}", process.pid, cmdline[0]);
+        }
     }
 }
