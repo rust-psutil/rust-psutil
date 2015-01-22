@@ -2,6 +2,7 @@
 
 extern crate psutil;
 
+#[cfg(not(test))]
 fn main() {
     let processes = psutil::Process::all();
 

@@ -6,7 +6,6 @@
 use std::io::fs;
 use std::io::IoResult;
 use std::io::fs::File;
-use std::io::fs::PathExtensions;
 use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
@@ -14,6 +13,7 @@ use std::vec::Vec;
 /// Int alias for process IDs
 pub type PID = isize;
 
+/// A process with a PID
 #[derive(PartialEq,Eq,Copy,Show)]
 pub struct Process {
     pub pid: PID
@@ -27,7 +27,7 @@ impl Process {
         for path in fs::readdir(&Path::new("/proc")).unwrap().iter() {
             match FromStr::from_str(path.filename_str().unwrap()) {
                 Some(pid) => { processes.push(Process { pid: pid }) },
-                None    => ()
+                None      => ()
             }
         }
 
