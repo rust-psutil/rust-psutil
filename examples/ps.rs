@@ -4,10 +4,9 @@ extern crate psutil;
 
 #[cfg(not(test))]
 fn main() {
-    for process in psutil::process::all().iter() {
-        let cmdline = process.cmdline().unwrap();
-        if cmdline.len() > 0 {
-            println!("{} $ {}", process.pid, cmdline[0]);
-        }
+    println!("{:>5} {}", "PID", "CMD");
+
+    for process in psutil::process::all().iter().filter(|p| p.alive()) {
+        println!("{:>5} {}", process.pid, process.cmdline_str().unwrap());
     }
 }
