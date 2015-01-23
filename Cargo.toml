@@ -1,6 +1,6 @@
 [package]
 name = "psutil"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Sam Clements <sam@borntyping.co.uk>"]
 description = "Process monitoring library"
 repository = "https://github.com/borntyping/rust-psutil"

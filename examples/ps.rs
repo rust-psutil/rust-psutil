@@ -6,7 +6,9 @@ extern crate psutil;
 fn main() {
     println!("{:>5} {}", "PID", "CMD");
 
-    for process in psutil::process::all().iter().filter(|p| p.alive()) {
-        println!("{:>5} {}", process.pid, process.cmdline_str().unwrap());
+    // Print all processes that are not zombies
+    for process in psutil::process::all().iter() {
+        // Limited to 100 chars becuase working out the term width is a butt
+        println!("{:>5} {:.100}", process.pid, process.extended_name());
     }
 }

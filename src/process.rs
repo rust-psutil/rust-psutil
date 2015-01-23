@@ -2,6 +2,8 @@
 
 use std::io::fs;
 use std::io::File;
+use std::io::IoError;
+use std::io::IoErrorKind;
 use std::io::IoResult;
 use std::str::FromStr;
 use std::str::StrExt;
@@ -33,10 +35,10 @@ impl Status {
             'R' => Status::Running,
             'S' => Status::Sleeping,
             'D' => Status::Waiting,
-            'z' => Status::Zombie,
+            'Z' => Status::Zombie,
             'T' => Status::Traced,
             'W' => Status::Paging,
-            _ => unreachable!("Invalid status character")
+            s => unreachable!("Invalid status character {}", s)
         }
     }
 }
@@ -59,9 +61,7 @@ impl Process {
         return Process::_read_proc(self.pid, name);
     }
 
-    /// Attempts to read process information from `/proc/[pid]/stat`
-    ///
-    /// Probably not very pleasant, but this can fail and return Err.
+    /// Attempts to read process information from `/proc/[pid]/stat`.
     pub fn new(pid: PID) -> IoResult<Process> {
         let contents = try!(Process::_read_proc(pid, "stat"));
         let stat: Vec<&str> = contents.split(' ').collect();
@@ -81,36 +81,58 @@ impl Process {
         });
     }
 
+    /// Return `true` if the process is/was alive (at the time it was read).
     #[experimental]
     pub fn alive(&self) -> bool {
         match self.status {
-            Status::Running  => true,
-            Status::Sleeping => true,
-            Status::Waiting  => true,
-            Status::Zombie   => false,
-            Status::Traced   => true,
-            Status::Paging   => true,
+            Status::Zombie => false,
+            _ => true
         }
     }
 
-    /// Return the cmdline for a given PID as a vector
-    ///
-    /// The cmdline string is split by null terminators, but this function
-    /// replaces them with spaces. This might not be the best approach - in the
-    /// future this should probably return a list.
+    fn cmdline_raw(&self) -> IoResult<String> {
+        let cmdline = try!(self.read_proc("cmdline"));
+
+        if cmdline == "" {
+            return Err(IoError {
+                kind: IoErrorKind::InvalidInput,
+                desc: "No cmdline present for process",
+                detail: None
+            });
+        }
+
+        return Ok(cmdline);
+    }
+
+    /// Return the arguments from `/proc/[pid]/cmdline` as a vector. If there
+    /// are no arguments present in the file, it will return an Err instead of
+    /// an empty vector.
     pub fn cmdline(&self) -> IoResult<Vec<String>> {
-        let cmdline = self.read_proc("cmdline").unwrap();
+        let cmdline = try!(self.cmdline_raw());
+
         // Split terminator skips empty trailing substrings
         let split = cmdline.split_terminator(
             |&: c: char| c == '\0' || c == ' ');
+
         // `split` returns a vector of slices viewing `cmdline`, so they
         // get mapped to actuall strings before being returned as a vector.
         return Ok(split.map(|x| x.to_string()).collect());
     }
 
-    /// Return the commandline for a given PID as a String
+    /// Return the arguments from `/proc/[pid]/cmdline` as a string.
     pub fn cmdline_str(&self) -> IoResult<String> {
-        return Ok(try!(self.read_proc("cmdline")).replace("\0", " "));
+        return Ok(try!(self.cmdline_raw()).replace("\0", " "));
+    }
+
+    /// Return a name for the process. If possible, it will use the command line
+    /// arguments for the process, falling back to using the name from
+    /// `/proc/[pid]/stat` if there are none. Like `ps`, names are surrounded by
+    /// square brackets if no command line arguments are available.
+    pub fn extended_name(&self) -> String {
+        return match self.cmdline_str() {
+            Ok(cmdline) => cmdline,
+            Err(_) => format!("[{}]", self.name.to_string())
+        }
     }
 }
 
