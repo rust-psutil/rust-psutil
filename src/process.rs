@@ -5,6 +5,7 @@ use std::old_io::File;
 use std::old_io::IoError;
 use std::old_io::IoErrorKind;
 use std::old_io::IoResult;
+use std::slice::SliceConcatExt;
 use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
@@ -89,7 +90,10 @@ impl Process {
         }
     }
 
-    fn cmdline_raw(&self) -> IoResult<String> {
+    /// Return the arguments from `/proc/[pid]/cmdline` as a vector.
+    ///
+    /// Returns `Err` if `/proc/[pid]/cmdline` is empty.
+    pub fn cmdline_vec(&self) -> IoResult<Vec<String>> {
         let cmdline = try!(self.read_proc("cmdline"));
 
         if cmdline == "" {
@@ -100,15 +104,6 @@ impl Process {
             });
         }
 
-        return Ok(cmdline);
-    }
-
-    /// Return the arguments from `/proc/[pid]/cmdline` as a vector. If there
-    /// are no arguments present in the file, it will return an Err instead of
-    /// an empty vector.
-    pub fn cmdline(&self) -> IoResult<Vec<String>> {
-        let cmdline = try!(self.cmdline_raw());
-
         // Split terminator skips empty trailing substrings
         let split = cmdline.split_terminator(
             |&: c: char| c == '\0' || c == ' ');
@@ -118,9 +113,9 @@ impl Process {
         return Ok(split.map(|x| x.to_string()).collect());
     }
 
-    /// Return the arguments from `/proc/[pid]/cmdline` as a string.
-    pub fn cmdline_str(&self) -> IoResult<String> {
-        return Ok(try!(self.cmdline_raw()).replace("\0", " "));
+    /// Return the result of `cmdline_vec` as a String
+    pub fn cmdline(&self) -> IoResult<String> {
+        return Ok(try!(self.cmdline_vec()).connect(" "));
     }
 
     /// Return a name for the process. If possible, it will use the command line
@@ -128,7 +123,7 @@ impl Process {
     /// `/proc/[pid]/stat` if there are none. Like `ps`, names are surrounded by
     /// square brackets if no command line arguments are available.
     pub fn extended_name(&self) -> String {
-        return match self.cmdline_str() {
+        return match self.cmdline() {
             Ok(cmdline) => cmdline,
             Err(_) => format!("[{}]", self.name.to_string())
         }
