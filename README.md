@@ -14,7 +14,7 @@ The examples can be run using `cargo run --example <name>`:
 Licence
 -------
 
-`rust-psutil` is licenced under the MIT Licence.
+`rust-psutil` is licenced under the [MIT Licence](http://opensource.org/licenses/MIT).
 
 Authors
 -------

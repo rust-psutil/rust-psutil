@@ -1,6 +1,6 @@
 //! Information about the system
 
-use std::io::fs::File;
+use std::old_io::fs::File;
 use std::str::FromStr;
 use std::str::StrExt;
 

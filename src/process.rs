@@ -1,10 +1,10 @@
 //! Information about specific processes
 
-use std::io::fs;
-use std::io::File;
-use std::io::IoError;
-use std::io::IoErrorKind;
-use std::io::IoResult;
+use std::old_io::fs;
+use std::old_io::File;
+use std::old_io::IoError;
+use std::old_io::IoErrorKind;
+use std::old_io::IoResult;
 use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
@@ -13,7 +13,7 @@ use std::vec::Vec;
 pub type PID = isize;
 
 /// Possible statuses for a process
-#[derive(Copy,Show)]
+#[derive(Copy,Debug)]
 pub enum Status {
     Running,
     Sleeping,
@@ -44,7 +44,7 @@ impl Status {
 }
 
 /// A process with a PID
-#[derive(Show)]
+#[derive(Debug)]
 pub struct Process {
     pub pid: PID,
     pub name: String,
@@ -82,7 +82,6 @@ impl Process {
     }
 
     /// Return `true` if the process is/was alive (at the time it was read).
-    #[experimental]
     pub fn alive(&self) -> bool {
         match self.status {
             Status::Zombie => false,
@@ -142,8 +141,8 @@ pub fn all() -> Vec<Process> {
 
     for path in fs::readdir(&Path::new("/proc")).unwrap().iter() {
         match FromStr::from_str(path.filename_str().unwrap()) {
-            Some(pid) => { processes.push(Process::new(pid).unwrap()) },
-            None      => ()
+            Ok(pid) => { processes.push(Process::new(pid).unwrap()) },
+            Err(_)  => ()
         }
     }
 
