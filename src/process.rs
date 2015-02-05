@@ -10,8 +10,7 @@ use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
 
-/// Int alias for process IDs
-pub type PID = isize;
+// use super::PID;
 
 /// Possible statuses for a process
 #[derive(Copy,Debug)]
@@ -47,13 +46,13 @@ impl Status {
 /// A process with a PID
 #[derive(Debug)]
 pub struct Process {
-    pub pid: PID,
+    pub pid: super::PID,
     pub name: String,
     pub status: Status
 }
 
 impl Process {
-    fn _read_proc(pid: PID, name: &str) -> IoResult<String> {
+    fn _read_proc(pid: super::PID, name: &str) -> IoResult<String> {
         let path = Path::new(format!("/proc/{}/{}", pid, name));
         return File::open(&path).read_to_string();
     }
@@ -63,7 +62,7 @@ impl Process {
     }
 
     /// Attempts to read process information from `/proc/[pid]/stat`.
-    pub fn new(pid: PID) -> IoResult<Process> {
+    pub fn new(pid: super::PID) -> IoResult<Process> {
         let contents = try!(Process::_read_proc(pid, "stat"));
         let stat: Vec<&str> = contents.split(' ').collect();
 
