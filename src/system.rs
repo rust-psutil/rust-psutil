@@ -1,4 +1,4 @@
-//! Information about the system
+//! Read information about the operating system from `/proc`
 
 use std::old_io::fs::File;
 use std::str::FromStr;

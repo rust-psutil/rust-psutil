@@ -1,4 +1,4 @@
-//! Information about specific processes
+//! Read process-specific information from `/proc`
 
 use std::old_io::fs;
 use std::old_io::File;

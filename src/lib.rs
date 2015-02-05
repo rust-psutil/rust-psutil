@@ -1,4 +1,4 @@
-//! Read information from the /proc filesystem
+//! Process monitoring utilities
 
 #![feature(collections)]
 #![feature(core)]
@@ -8,6 +8,7 @@
 
 extern crate libc;
 
+pub mod pidfile;
 pub mod process;
 pub mod system;
 
