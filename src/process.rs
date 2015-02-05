@@ -10,7 +10,13 @@ use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
 
-// use super::PID;
+/// Read a process' file from procfs - `/proc/[pid]/[name]`
+fn procfs(pid: super::PID, name: &str) -> IoResult<String> {
+    let mut path = Path::new("/proc");
+    path.push(pid.to_string());
+    path.push(name);
+    return File::open(&path).read_to_string();
+}
 
 /// Possible statuses for a process
 #[derive(Copy,Debug)]
@@ -52,18 +58,9 @@ pub struct Process {
 }
 
 impl Process {
-    fn _read_proc(pid: super::PID, name: &str) -> IoResult<String> {
-        let path = Path::new(format!("/proc/{}/{}", pid, name));
-        return File::open(&path).read_to_string();
-    }
-
-    fn read_proc(&self, name: &str) -> IoResult<String> {
-        return Process::_read_proc(self.pid, name);
-    }
-
     /// Attempts to read process information from `/proc/[pid]/stat`.
     pub fn new(pid: super::PID) -> IoResult<Process> {
-        let contents = try!(Process::_read_proc(pid, "stat"));
+        let contents = try!(procfs(pid, "stat"));
         let stat: Vec<&str> = contents.split(' ').collect();
 
         // This may only be the case for Linux, but this can be removed or
@@ -93,7 +90,7 @@ impl Process {
     ///
     /// Returns `Err` if `/proc/[pid]/cmdline` is empty.
     pub fn cmdline_vec(&self) -> IoResult<Vec<String>> {
-        let cmdline = try!(self.read_proc("cmdline"));
+        let cmdline = try!(procfs(self.pid, "cmdline"));
 
         if cmdline == "" {
             return Err(IoError {
@@ -117,10 +114,11 @@ impl Process {
         return Ok(try!(self.cmdline_vec()).connect(" "));
     }
 
-    /// Return a name for the process. If possible, it will use the command line
-    /// arguments for the process, falling back to using the name from
-    /// `/proc/[pid]/stat` if there are none. Like `ps`, names are surrounded by
-    /// square brackets if no command line arguments are available.
+    /// Return a name for the process, using the same formatting as `ps`.
+    ///
+    /// If availible, it will return the command line arguments for the process,
+    /// otherwise it will use the name from `/proc/[pid]/stat` enclosed with
+    /// square brackets.
     pub fn extended_name(&self) -> String {
         return match self.cmdline() {
             Ok(cmdline) => cmdline,
