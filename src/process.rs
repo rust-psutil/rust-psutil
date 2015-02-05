@@ -18,6 +18,21 @@ fn procfs(pid: super::PID, name: &str) -> IoResult<String> {
     return File::open(&path).read_to_string();
 }
 
+/// Memory usage of a process
+///
+/// Currently Linux specific.
+#[cfg(target_os="linux")]
+#[derive(Copy,Debug)]
+pub struct Memory {
+    pub rss: i32,
+    pub vms: i32,
+    pub shared: i32,
+    pub text: i32,
+    pub lib: i32,
+    pub data: i32,
+    pub dirty: i32
+}
+
 /// Possible statuses for a process
 #[derive(Copy,Debug)]
 pub enum Status {
@@ -71,6 +86,7 @@ impl Process {
         return Ok(Process {
             pid: FromStr::from_str(stat[0]).unwrap(),
             name: {
+                // The process name is surrounded by () becuase why not
                 let name = stat[1].to_string();
                 name[1..name.len()-1].to_string()
             },
@@ -79,6 +95,7 @@ impl Process {
     }
 
     /// Return `true` if the process is/was alive (at the time it was read).
+    #[unstable]
     pub fn alive(&self) -> bool {
         match self.status {
             Status::Zombie => false,
@@ -124,6 +141,29 @@ impl Process {
             Ok(cmdline) => cmdline,
             Err(_) => format!("[{}]", self.name.to_string())
         }
+    }
+
+    /// Reads `/proc/[pid]/statm` into a struct
+    ///
+    /// **TODO**: `i32` might not be big enough
+    #[cfg(target_os="linux")]
+    pub fn memory(&self) -> IoResult<Memory> {
+        let statm = try!(procfs(self.pid, "statm"));
+        let bytes: Vec<i32> = statm
+            .trim_right()
+            .split_str(" ")
+            .map(|n| n.parse().unwrap())
+            .collect();
+
+        return Ok(Memory {
+            rss:    bytes[0],
+            vms:    bytes[1],
+            shared: bytes[2],
+            text:   bytes[3],
+            lib:    bytes[4],
+            data:   bytes[5],
+            dirty:  bytes[6]
+        });
     }
 }
 
