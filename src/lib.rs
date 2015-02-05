@@ -12,9 +12,16 @@ pub mod process;
 pub mod system;
 
 /// Type for process identifiers
-#[stable]
-pub type PID = i32;
+///
+/// This should expand to `i32` (signed 32 bit integer).
+pub type PID = libc::types::os::arch::posix88::pid_t;
 
-/// Get the PID of the current process
-#[stable]
-pub fn getpid() -> PID { unsafe { libc::getpid() } }
+/// Return the PID of the calling process
+pub fn getpid() -> PID {
+    unsafe { libc::funcs::posix88::unistd::getpid() }
+}
+
+/// Return the PID of the parent process
+pub fn getppid() -> PID {
+    unsafe { libc::funcs::posix88::unistd::getppid() }
+}
