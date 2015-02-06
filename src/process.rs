@@ -173,14 +173,23 @@ impl Process {
         });
     }
 
+    /// Send SIGKILL to the process
     pub fn kill(&self) -> Result<(), &str> {
         use libc::funcs::posix88::signal::kill;
         use libc::consts::os::posix88::SIGKILL;
+        use libc::consts::os::posix88::EINVAL;
+        use libc::consts::os::posix88::EPERM;
+        use libc::consts::os::posix88::ESRCH;
 
         return match unsafe { kill(self.pid, SIGKILL) } {
             0  => Ok(()),
-            -1 => Err("kill() failed."),
-            _  => unreachable!("kill() should only return 0 or -1.")
+            -1 => Err(match super::errno::errno() {
+                EINVAL => "An invalid signal was specified.",
+                EPERM  => "No permission to send the signal.",
+                ESRCH  => "The pid or process group does not exist.",
+                _      => unreachable!()
+            }),
+            _  => unreachable!()
         };
     }
 }

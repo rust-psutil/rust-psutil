@@ -29,3 +29,17 @@ pub fn getpid() -> PID {
 pub fn getppid() -> PID {
     unsafe { libc::funcs::posix88::unistd::getppid() }
 }
+
+// This should be moved to a better named module
+#[unstable]
+pub mod errno {
+    use libc::types::os::arch::c95::c_int;
+
+    extern {
+        fn __errno_location() -> *const c_int;
+    }
+
+    pub fn errno() -> i32 {
+        unsafe { *__errno_location() as i32 }
+    }
+}
