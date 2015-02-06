@@ -1,5 +1,4 @@
-rust-psutil
-===========
+# rust-psutil [![](https://img.shields.io/github/tag/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/tags) [![](https://img.shields.io/travis/borntyping/rust-psutil.svg)](https://travis-ci.org/borntyping/rust-psutil) [![](https://img.shields.io/github/issues/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/issues)
 
 A process monitoring library for Rust, heavily inspired by the [psutil](https://github.com/giampaolo/psutil/) module for Python.
 
