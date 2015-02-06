@@ -3,5 +3,9 @@ env:
     - secure: LxnmzGNTN2JcXDHEJWnBTOKqWtfizvUAYSvxi2z1pUCS7YJO+BbRc7ePUuNXK/dQCtducBmrQETwg/kzZ8/7T5Ns5bnm9vCGSAU3Ayw8pQ0w3/H4152owuJFu9eq5YA2XG2iVeaL/NbrAUwOPN/osxsdJrRFNpsStmbjELpIP5s=
 language: rust
 sudo: false
+script:
+  - cargo build
+  - cargo test
+  - cargo doc
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
