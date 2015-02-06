@@ -14,5 +14,7 @@ fn main() {
     let pidfile = Path::new(os::args()[1].clone());
     let process = Process::new_from_pidfile(&pidfile).unwrap();
 
-    process.kill().unwrap();
+    if let Err(error) = process.kill() {
+        println!("Failed to kill process: {}.", error);
+    };
 }

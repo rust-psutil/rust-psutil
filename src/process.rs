@@ -5,6 +5,7 @@ use std::old_io::File;
 use std::old_io::IoError;
 use std::old_io::IoErrorKind;
 use std::old_io::IoResult;
+use std::os::last_os_error;
 use std::slice::SliceConcatExt;
 use std::str::FromStr;
 use std::str::StrExt;
@@ -174,21 +175,13 @@ impl Process {
     }
 
     /// Send SIGKILL to the process
-    pub fn kill(&self) -> Result<(), &str> {
+    pub fn kill(&self) -> Result<(), String> {
         use libc::funcs::posix88::signal::kill;
         use libc::consts::os::posix88::SIGKILL;
-        use libc::consts::os::posix88::EINVAL;
-        use libc::consts::os::posix88::EPERM;
-        use libc::consts::os::posix88::ESRCH;
 
         return match unsafe { kill(self.pid, SIGKILL) } {
             0  => Ok(()),
-            -1 => Err(match super::errno::errno() {
-                EINVAL => "An invalid signal was specified.",
-                EPERM  => "No permission to send the signal.",
-                ESRCH  => "The pid or process group does not exist.",
-                _      => unreachable!()
-            }),
+            -1 => Err(last_os_error()),
             _  => unreachable!()
         };
     }
