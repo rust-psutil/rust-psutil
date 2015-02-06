@@ -10,6 +10,8 @@ use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
 
+use super::pidfile::read_pidfile;
+
 /// Read a process' file from procfs - `/proc/[pid]/[name]`
 fn procfs(pid: super::PID, name: &str) -> IoResult<String> {
     let mut path = Path::new("/proc");
@@ -94,6 +96,11 @@ impl Process {
         });
     }
 
+    /// Call `Process::new()`, reading the PID from a pidfile
+    pub fn new_from_pidfile(path: &Path) -> IoResult<Process> {
+        Process::new(try!(read_pidfile(&path)))
+    }
+
     /// Return `true` if the process is/was alive (at the time it was read).
     #[unstable]
     pub fn alive(&self) -> bool {
@@ -164,6 +171,17 @@ impl Process {
             data:   bytes[5],
             dirty:  bytes[6]
         });
+    }
+
+    pub fn kill(&self) -> Result<(), &str> {
+        use libc::funcs::posix88::signal::kill;
+        use libc::consts::os::posix88::SIGKILL;
+
+        return match unsafe { kill(self.pid, SIGKILL) } {
+            0  => Ok(()),
+            -1 => Err("kill() failed."),
+            _  => unreachable!("kill() should only return 0 or -1.")
+        };
     }
 }
 
