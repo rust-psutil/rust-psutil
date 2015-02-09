@@ -3,7 +3,6 @@
 #![feature(collections)]
 #![feature(core)]
 #![feature(io)]
-#![feature(libc)]
 #![feature(path)]
 #![feature(os)]
 
