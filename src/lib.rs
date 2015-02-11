@@ -4,7 +4,6 @@
 #![feature(core)]
 #![feature(io)]
 #![feature(path)]
-#![feature(os)]
 
 extern crate libc;
 

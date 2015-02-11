@@ -5,7 +5,6 @@ use std::old_io::File;
 use std::old_io::IoError;
 use std::old_io::IoErrorKind;
 use std::old_io::IoResult;
-use std::os::last_os_error;
 use std::slice::SliceConcatExt;
 use std::str::FromStr;
 use std::str::StrExt;
@@ -37,7 +36,7 @@ pub struct Memory {
 }
 
 /// Possible statuses for a process
-#[derive(Copy,Debug)]
+#[derive(Clone,Copy,Debug)]
 pub enum Status {
     Running,
     Sleeping,
@@ -68,7 +67,7 @@ impl Status {
 }
 
 /// A process with a PID
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct Process {
     pub pid: super::PID,
     pub name: String,
@@ -175,13 +174,13 @@ impl Process {
     }
 
     /// Send SIGKILL to the process
-    pub fn kill(&self) -> Result<(), String> {
+    pub fn kill(&self) -> IoResult<()> {
         use libc::funcs::posix88::signal::kill;
         use libc::consts::os::posix88::SIGKILL;
 
         return match unsafe { kill(self.pid, SIGKILL) } {
             0  => Ok(()),
-            -1 => Err(last_os_error()),
+            -1 => Err(IoError::last_error()),
             _  => unreachable!()
         };
     }
