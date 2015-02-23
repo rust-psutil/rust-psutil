@@ -2,8 +2,8 @@
 
 #![feature(collections)]
 #![feature(core)]
-#![feature(io)]
-#![feature(path)]
+#![feature(old_io)]
+#![feature(old_path)]
 
 extern crate libc;
 
