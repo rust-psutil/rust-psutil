@@ -2,6 +2,10 @@
 
 A process monitoring library for Rust, heavily inspired by the [psutil](https://github.com/giampaolo/psutil/) module for Python.
 
+* `Source on GitHub <https://github.com/borntyping/rust-psutil>`_
+* `Packages on Crates.io <https://crates.io/crates/psutil>`_
+* `Builds on Travis CI <https://travis-ci.org/borntyping/rust-psutil>`_
+
 Run examples
 ------------
 
