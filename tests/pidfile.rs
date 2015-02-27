@@ -1,10 +1,12 @@
-#![feature(old_io)]
-#![feature(old_path)]
+#![feature(fs)]
+#![feature(io)]
+#![feature(path)]
+#![feature(tempdir)]
 
 extern crate psutil;
 
-use std::old_io::File;
-use std::old_io::TempDir;
+use std::fs::{File,TempDir};
+use std::io::Write;
 
 use psutil::pidfile::{read_pidfile,write_pidfile};
 

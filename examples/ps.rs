@@ -1,7 +1,5 @@
 //! Example psutil executable
 
-#![feature(core)]
-
 extern crate psutil;
 
 #[cfg(not(test))]
