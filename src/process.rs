@@ -124,7 +124,7 @@ impl Process {
 
         // Split terminator skips empty trailing substrings
         let split = cmdline.split_terminator(
-            |&: c: char| c == '\0' || c == ' ');
+            |c: char| c == '\0' || c == ' ');
 
         // `split` returns a vector of slices viewing `cmdline`, so they
         // get mapped to actuall strings before being returned as a vector.

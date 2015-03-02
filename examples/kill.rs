@@ -1,6 +1,5 @@
 //! Kill a process, reading it's PID from a file
 
-#![feature(env)]
 #![feature(path)]
 
 extern crate psutil;
