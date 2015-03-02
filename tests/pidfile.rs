@@ -24,10 +24,11 @@ fn read_write_pidfile() {
 }
 
 #[test]
+#[should_fail]
 fn read_invalid_pidfile() {
     let tempdir = TempDir::new("psutil-tests").unwrap();
     let pidfile = tempdir.path().join("read_invalid_pidfile.pid");
 
     write!(&mut File::create(&pidfile).unwrap(), "{}", "beans").unwrap();
-    assert!(read_pidfile(&pidfile).is_err());
+    assert!(read_pidfile(&pidfile).is_ok());
 }
