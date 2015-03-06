@@ -4,6 +4,7 @@
 #![feature(core)]
 #![feature(io)]
 #![feature(fs)]
+#![feature(page_size)]
 #![feature(path)]
 #![feature(os)]
 

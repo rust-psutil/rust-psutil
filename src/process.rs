@@ -1,5 +1,6 @@
 //! Read process-specific information from `/proc`
 
+use std::env::page_size;
 use std::fs::read_dir;
 use std::io::Write;
 use std::io::{Error,ErrorKind,Result};
@@ -9,9 +10,8 @@ use std::str::FromStr;
 use std::str::StrExt;
 use std::vec::Vec;
 
+use ::pidfile::read_pidfile;
 use ::utils::read_file;
-
-use super::pidfile::read_pidfile;
 
 /// Read a process' file from procfs - `/proc/[pid]/[name]`
 fn procfs(pid: super::PID, name: &str) -> Result<String> {
@@ -27,13 +27,13 @@ fn procfs(pid: super::PID, name: &str) -> Result<String> {
 #[cfg(target_os="linux")]
 #[derive(Copy,Debug)]
 pub struct Memory {
-    pub rss: i32,
-    pub vms: i32,
-    pub shared: i32,
-    pub text: i32,
-    pub lib: i32,
-    pub data: i32,
-    pub dirty: i32
+    pub rss: usize,
+    pub vms: usize,
+    pub shared: usize,
+    pub text: usize,
+    pub lib: usize,
+    pub data: usize,
+    pub dirty: usize
 }
 
 /// Possible statuses for a process
@@ -103,8 +103,7 @@ impl Process {
     }
 
     /// Return `true` if the process is/was alive (at the time it was read).
-    #[unstable]
-    pub fn alive(&self) -> bool {
+    pub fn is_alive(&self) -> bool {
         match self.status {
             Status::Zombie => false,
             _ => true
@@ -154,20 +153,22 @@ impl Process {
     #[cfg(target_os="linux")]
     pub fn memory(&self) -> Result<Memory> {
         let statm = try!(procfs(self.pid, "statm"));
-        let bytes: Vec<i32> = statm
+        let bytes: Vec<usize> = statm
             .trim_right()
             .split(" ")
             .map(|n| n.parse().unwrap())
             .collect();
 
+        let page_size = page_size();
+
         return Ok(Memory {
-            rss:    bytes[0],
-            vms:    bytes[1],
-            shared: bytes[2],
-            text:   bytes[3],
-            lib:    bytes[4],
-            data:   bytes[5],
-            dirty:  bytes[6]
+            rss:    bytes[0] * page_size,
+            vms:    bytes[1] * page_size,
+            shared: bytes[2] * page_size,
+            text:   bytes[3] * page_size,
+            lib:    bytes[4] * page_size,
+            data:   bytes[5] * page_size,
+            dirty:  bytes[6] * page_size
         });
     }
 
