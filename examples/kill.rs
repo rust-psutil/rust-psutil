@@ -11,7 +11,7 @@ use psutil::process::Process;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let pidfile = Path::new(&args[1][..]);
-    let process = Process::new_from_pidfile(&pidfile).unwrap();
+    let process = Process::from_pidfile(&pidfile).unwrap();
 
     if let Err(error) = process.kill() {
         println!("Failed to kill process: {}.", error);

@@ -23,12 +23,6 @@ fn process_cmdline() {
 }
 
 #[test]
-fn process_extended_name() {
-    assert!(get_process().extended_name().len() > 0);
-}
-
-
-#[test]
 fn process_memory() {
     assert!(get_process().memory().is_ok());
 }
