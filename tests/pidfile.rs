@@ -1,9 +1,10 @@
-#![feature(tempdir)]
-
 extern crate psutil;
+extern crate tempdir;
 
-use std::fs::{File,TempDir};
+use std::fs::File;
 use std::io::Write;
+
+use tempdir::TempDir;
 
 use psutil::pidfile::{read_pidfile,write_pidfile};
 

@@ -9,3 +9,6 @@ license = "MIT"
 
 [dependencies]
 libc = "0.1.2"
+
+[dev-dependencies]
+tempdir = "*"
