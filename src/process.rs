@@ -2,7 +2,6 @@
 
 use std::env::page_size;
 use std::fs::read_dir;
-use std::io::Write;
 use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
 use std::slice::SliceConcatExt;

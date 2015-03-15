@@ -1,7 +1,5 @@
 //! Kill a process, reading it's PID from a file
 
-#![feature(path)]
-
 extern crate psutil;
 
 use std::path::Path;

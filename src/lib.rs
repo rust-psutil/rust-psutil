@@ -3,10 +3,7 @@
 #![feature(collections)]
 #![feature(core)]
 #![feature(io)]
-#![feature(fs)]
 #![feature(page_size)]
-#![feature(path)]
-#![feature(os)]
 
 extern crate libc;
 
