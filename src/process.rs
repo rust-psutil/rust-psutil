@@ -22,21 +22,6 @@ fn procfs(pid: super::PID, name: &str) -> Result<String> {
     return read_file(&path);
 }
 
-/// Memory usage of a process
-///
-/// Currently Linux specific.
-#[cfg(target_os="linux")]
-#[derive(Copy,Debug)]
-pub struct Memory {
-    pub rss: usize,
-    pub vms: usize,
-    pub shared: usize,
-    pub text: usize,
-    pub lib: usize,
-    pub data: usize,
-    pub dirty: usize
-}
-
 /// Possible statuses for a process
 #[derive(Clone,Copy,Debug)]
 pub enum State {
@@ -79,6 +64,43 @@ impl FromStr for State {
         } else {
             Ok(try!(State::from_char(s.char_at(0))))
         }
+    }
+}
+
+/// Memory usage of a process
+///
+/// Read from `/proc/[pid]/statm`
+#[derive(Copy,Debug)]
+pub struct Memory {
+    pub size: u64,
+    pub resident: u64,
+    pub share: u64,
+    pub text: u64,
+    pub lib: u64,
+    pub data: u64,
+    pub dt: u64
+}
+
+impl Memory {
+    fn new(pid: PID) -> Result<Memory> {
+        let statm = try!(procfs(pid, "statm"));
+        let bytes: Vec<u64> = statm
+            .trim_right()
+            .split(" ")
+            .map(|n| n.parse().unwrap())
+            .collect();
+
+        let page_size = page_size() as u64;
+
+        return Ok(Memory {
+            size:       bytes[0] * page_size,
+            resident:   bytes[1] * page_size,
+            share:      bytes[2] * page_size,
+            text:       bytes[3] * page_size,
+            lib:        bytes[4] * page_size,
+            data:       bytes[5] * page_size,
+            dt:         bytes[6] * page_size
+        });
     }
 }
 
@@ -281,28 +303,8 @@ impl Process {
     }
 
     /// Reads `/proc/[pid]/statm` into a struct
-    ///
-    /// **TODO**: `i32` might not be big enough
-    #[cfg(target_os="linux")]
     pub fn memory(&self) -> Result<Memory> {
-        let statm = try!(procfs(self.pid, "statm"));
-        let bytes: Vec<usize> = statm
-            .trim_right()
-            .split(" ")
-            .map(|n| n.parse().unwrap())
-            .collect();
-
-        let page_size = page_size();
-
-        return Ok(Memory {
-            rss:    bytes[0] * page_size,
-            vms:    bytes[1] * page_size,
-            shared: bytes[2] * page_size,
-            text:   bytes[3] * page_size,
-            lib:    bytes[4] * page_size,
-            data:   bytes[5] * page_size,
-            dirty:  bytes[6] * page_size
-        });
+        Memory::new(self.pid)
     }
 
     /// Send SIGKILL to the process
