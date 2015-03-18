@@ -1,4 +1,33 @@
 //! Read process-specific information from `/proc`
+//!
+//! More information about specific fields can be found in
+//! [proc(5)](http://man7.org/linux/man-pages/man5/proc.5.html).
+//!
+//! ### Field sizes
+//!
+//! The manual pages for `proc` define integer sizes using `scanf(3)` format
+//! specifiers, which parse to implementation specific sizes. This is obviously
+//! a terrible idea, and so this code makes some assumptions about the sizes of
+//! those specifiers.
+//!
+//! These assumptions are backed up by `libc::types::os::arch::posix88::pid_t`,
+//! which declares PIDs to be signed 32 bit integers. `proc(5)` declares that
+//! PIDs use the `%d` format specifier.
+//!
+//! - `%d` / `%u` - 32 bit integers
+//! - `%ld` / `%lu` - 64 bit integers
+//!
+//! **WARNING**: Rust currently has no support for 128 bit integers[1], so
+//! `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
+//! instead represented by a 64 bit integer, with the hope that doesn't break.
+//!
+//! ### Clock ticks
+//!
+//! Many fields return a value in terms of clock ticks. These can be divided by
+//! `sysconf(_SC_CLK_TCK)` to get a value in seconds.
+//!
+//! **WARNING**: In the furture this conversion may be done automatically.
+
 
 use std::env::page_size;
 use std::fs::read_dir;
@@ -117,34 +146,6 @@ impl Memory {
 }
 
 /// Information about a process gathered from `/proc/pid/stat`.
-///
-/// More information about specific fields can be found in
-/// [proc(5)](http://man7.org/linux/man-pages/man5/proc.5.html).
-///
-/// ### Field sizes
-///
-/// The manual pages for `proc` define integer sizes using `scanf(3)` format
-/// specifiers, which parse to implementation specific sizes. This is obviously
-/// a terrible idea, and so this code makes some assumptions about the sizes of
-/// those specifiers.
-///
-/// These assumptions are backed up by `libc::types::os::arch::posix88::pid_t`,
-/// which declares PIDs to be signed 32 bit integers. `proc(5)` declares that
-/// PIDs use the `%d` format specifier.
-///
-/// - `%d` / `%u` - 32 bit integers
-/// - `%ld` / `%lu` - 64 bit integers
-///
-/// **WARNING**: Rust currently has no support for 128 bit integers[1], so
-/// `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
-/// instead represented by a 64 bit integer, with the hope that doesn't break.
-///
-/// ### Clock ticks
-///
-/// Many fields return a value in terms of clock ticks. These can be divided by
-/// `sysconf(_SC_CLK_TCK)` to get a value in seconds.
-///
-/// **WARNING**: In the furture this conversion may be done automatically.
 #[derive(Debug)]
 pub struct Process {
     /// PID of the process
