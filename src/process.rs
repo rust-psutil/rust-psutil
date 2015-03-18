@@ -71,13 +71,26 @@ impl FromStr for State {
 /// Read from `/proc/[pid]/statm`
 #[derive(Copy,Debug)]
 pub struct Memory {
+    /// Total program size (bytes)
     pub size: u64,
+
+    /// Resident Set Size (bytes)
     pub resident: u64,
+
+    /// Shared pages (bytes)
     pub share: u64,
+
+    /// Text
     pub text: u64,
-    pub lib: u64,
+
+    // /// Library (unused)
+    // pub lib: u64,
+
+    /// Data + stack
     pub data: u64,
-    pub dt: u64
+
+    // /// Dirty pages (unused)
+    // pub dt: u65
 }
 
 impl Memory {
@@ -96,14 +109,19 @@ impl Memory {
             resident:   bytes[1] * page_size,
             share:      bytes[2] * page_size,
             text:       bytes[3] * page_size,
-            lib:        bytes[4] * page_size,
+            // lib:     bytes[4] * page_size,
             data:       bytes[5] * page_size,
-            dt:         bytes[6] * page_size
+            // dt:      bytes[6] * page_size
         });
     }
 }
 
-/// A process with a PID
+/// Information about a process gathered from `/proc/pid/stat`.
+///
+/// More information about specific fields can be found in
+/// [proc(5)](http://man7.org/linux/man-pages/man5/proc.5.html).
+///
+/// ### Field sizes
 ///
 /// The manual pages for `proc` define integer sizes using `scanf(3)` format
 /// specifiers, which parse to implementation specific sizes. This is obviously
@@ -117,62 +135,147 @@ impl Memory {
 /// - `%d` / `%u` - 32 bit integers
 /// - `%ld` / `%lu` - 64 bit integers
 ///
-/// *WARNING*: Rust currently has no support for 128 bit integers[1], so `%llu`
-/// (used by the `starttime` and `delayacct_blkio_ticks` fields) is is instead
-/// represented by a 64 bit integer, with the hope that doesn't break.
+/// **WARNING**: Rust currently has no support for 128 bit integers[1], so
+/// `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
+/// instead represented by a 64 bit integer, with the hope that doesn't break.
+///
+/// ### Clock ticks
+///
+/// Many fields return a value in terms of clock ticks. These can be divided by
+/// `sysconf(_SC_CLK_TCK)` to get a value in seconds.
+///
+/// **WARNING**: In the furture this conversion may be done automatically.
 #[derive(Debug)]
 pub struct Process {
+    /// PID of the process
     pub pid: PID,
+
+    /// Filename of the executable
     pub comm: String,
+
+    /// State of the process as an enum
     pub state: State,
+
+    /// PID of the parent process
     pub ppid: PID,
+
+    /// Process group ID
     pub pgrp: i32,
+
+    /// Session ID
     pub session: i32,
+
+    /// Controlling terminal of the process [TODO: Actually two numbers]
     pub tty_nr: i32,
+
+    /// ID of the foreground group of the controlling terminal
     pub tpgid: i32,
+
+    /// Kernel flags for the process
     pub flags: u32,
+
+    /// Minor faults
     pub minflt: u64,
+
+    /// Minor faults by child processes
     pub cminflt: u64,
+
+    /// Major faults
     pub majflt: u64,
+
+    /// Major faults by child processes
     pub cmajflt: u64,
+
+    /// Time scheduled in user mode (clock ticks)
     pub utime: u64,
+
+    /// Time scheduled in kernel mode (clock ticks)
     pub stime: u64,
+
+    /// Time waited-for child processes were scheduled in user mode
     pub cutime: i64,
+
+    /// Time waited-for child processes were scheduled in kernel mode
     pub cstime: i64,
+
+    /// Priority value (-100..-2 | 0..39)
     pub priority: i64,
+
+    /// Nice value (-20..19)
     pub nice: i64,
+
+    /// Number of threads in the process
     pub num_threads: i64,
-    pub itrealvalue: i64,
+
+    // /// Unmaintained field since linux 2.6.17, always 0
+    // itrealvalue: i64,
+
+    /// Time the process was started after system boot (clock ticks)
     pub starttime: u64,
+
+    /// Virtual memory size in bytes
     pub vsize: u64,
+
+    /// Resident Set Size (pages) [TODO: Calculate size in bytes]
     pub rss: i64,
+
+    /// Current soft limit on process RSS (bytes)
     pub rsslim: u64,
-    pub startcode: u64,
-    pub endcode: u64,
-    pub startstack: u64,
-    pub kstkesp: u64,
-    pub kstkeip: u64,
-    pub signal: u64,
-    pub blocked: u64,
-    pub sigignore: u64,
-    pub sigcatch: u64,
+
+    // These values are memory addresses
+    startcode: u64,
+    endcode: u64,
+    startstack: u64,
+    kstkesp: u64,
+    kstkeip: u64,
+
+    // /// Signal bitmaps
+    // /// These are obselete, use `/proc/[pid]/status` instead
+    // signal: u64,
+    // blocked: u64,
+    // sigignore: u64,
+    // sigcatch: u64,
+
+    /// Channel the process is waiting on (address of a system call)
     pub wchan: u64,
-    pub nswap: u64,
-    pub cnswap: u64,
+
+    // /// Number of pages swapped (not maintained)
+    // pub nswap: u64,
+
+    // /// Number of pages swapped for child processes (not maintained)
+    // pub cnswap: u64,
+
+    /// Signal sent to parent when process dies
     pub exit_signal: i32,
+
+    /// Number of the CPU the process was last executed on
     pub processor: i32,
+
+    /// Real-time scheduling priority (0 | 1..99)
     pub rt_priority: u32,
+
+    /// Scheduling policy
     pub policy: u32,
+
+    /// Aggregated block I/O delays (clock ticks)
     pub delayacct_blkio_ticks: u64,
+
+    /// Guest time of the process (clock ticks)
     pub guest_time: u64,
+
+    /// Guest time of the process's children (clock ticks)
     pub cguest_time: i64,
-    pub start_data: u64,
-    pub end_data: u64,
-    pub start_brk: u64,
-    pub arg_start: u64,
-    pub arg_end: u64,
-    pub env_start: u64,
-    pub env_end: u64,
+
+    // More memory addresses
+    start_data: u64,
+    end_data: u64,
+    start_brk: u64,
+    arg_start: u64,
+    arg_end: u64,
+    env_start: u64,
+    env_end: u64,
+
+    /// The thread's exit status
     pub exit_code: i32
 }
 
@@ -227,7 +330,7 @@ impl Process {
             priority:               from_str!(stat[17]),
             nice:                   from_str!(stat[18]),
             num_threads:            from_str!(stat[19]),
-            itrealvalue:            from_str!(stat[20]),
+            // itrealvalue:         from_str!(stat[20]),
             starttime:              from_str!(stat[21]),
             vsize:                  from_str!(stat[22]),
             rss:                    from_str!(stat[23]),
@@ -237,13 +340,13 @@ impl Process {
             startstack:             from_str!(stat[27]),
             kstkesp:                from_str!(stat[28]),
             kstkeip:                from_str!(stat[29]),
-            signal:                 from_str!(stat[30]),
-            blocked:                from_str!(stat[31]),
-            sigignore:              from_str!(stat[32]),
-            sigcatch:               from_str!(stat[33]),
+            // signal:              from_str!(stat[30]),
+            // blocked:             from_str!(stat[31]),
+            // sigignore:           from_str!(stat[32]),
+            // sigcatch:            from_str!(stat[33]),
             wchan:                  from_str!(stat[34]),
-            nswap:                  from_str!(stat[35]),
-            cnswap:                 from_str!(stat[36]),
+            // nswap:               from_str!(stat[35]),
+            // cnswap:              from_str!(stat[36]),
             exit_signal:            from_str!(stat[37]),
             processor:              from_str!(stat[38]),
             rt_priority:            from_str!(stat[39]),
@@ -262,12 +365,12 @@ impl Process {
         });
     }
 
-    /// Create a `Process` reading it's PID from a pidfile
+    /// Create a Process by reading it's PID from a pidfile.
     pub fn from_pidfile(path: &Path) -> Result<Process> {
         Process::new(try!(read_pidfile(&path)))
     }
 
-    /// Return `true` if the process was alive at the time it was read
+    /// Return `true` if the process was alive at the time it was read.
     pub fn is_alive(&self) -> bool {
         match self.state {
             State::Zombie => false,
@@ -278,35 +381,33 @@ impl Process {
     /// Read `/proc/[pid]/cmdline` as a vector.
     ///
     /// Returns `Err` if `/proc/[pid]/cmdline` is empty.
-    pub fn cmdline_vec(&self) -> Result<Vec<String>> {
+    pub fn cmdline_vec(&self) -> Result<Option<Vec<String>>> {
         let cmdline = try!(procfs(self.pid, "cmdline"));
 
         if cmdline == "" {
-            // TODO: This should not use `std::io::Error`
-            return Err(Error::new(
-                ErrorKind::Other, "No cmdline present for process", None));
+            return Ok(None);
+        } else {
+            // Split terminator skips empty trailing substrings
+            let split = cmdline.split_terminator(
+                |c: char| c == '\0' || c == ' ');
+
+            // `split` returns a vector of slices viewing `cmdline`, so they
+            // get mapped to actuall strings before being returned as a vector.
+            return Ok(Some(split.map(|x| x.to_string()).collect()));
         }
-
-        // Split terminator skips empty trailing substrings
-        let split = cmdline.split_terminator(
-            |c: char| c == '\0' || c == ' ');
-
-        // `split` returns a vector of slices viewing `cmdline`, so they
-        // get mapped to actuall strings before being returned as a vector.
-        return Ok(split.map(|x| x.to_string()).collect());
     }
 
-    /// Return the result of `cmdline_vec` as a String
-    pub fn cmdline(&self) -> Result<String> {
-        return Ok(try!(self.cmdline_vec()).connect(" "));
+    /// Return the result of `cmdline_vec` as a String.
+    pub fn cmdline(&self) -> Result<Option<String>> {
+        Ok(try!(self.cmdline_vec()).and_then(|c| Some(c.connect(" "))))
     }
 
-    /// Reads `/proc/[pid]/statm` into a struct
+    /// Reads `/proc/[pid]/statm` into a struct.
     pub fn memory(&self) -> Result<Memory> {
         Memory::new(self.pid)
     }
 
-    /// Send SIGKILL to the process
+    /// Send SIGKILL to the process.
     pub fn kill(&self) -> Result<()> {
         use libc::funcs::posix88::signal::kill;
         use libc::consts::os::posix88::SIGKILL;
