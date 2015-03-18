@@ -10,7 +10,7 @@ fn main() {
     for process in psutil::process::all().iter() {
         // Limited to 100 chars becuase working out the term width is hard
         println!("{:>5} {:.100}", process.pid, match process.cmdline() {
-            Ok(cmdline) => cmdline,
+            Ok(cmdline) => cmdline.unwrap(),
             Err(_) => format!("[{}]", process.comm)
         });
     }
