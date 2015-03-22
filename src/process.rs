@@ -35,7 +35,6 @@ use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
 use std::slice::SliceConcatExt;
 use std::str::FromStr;
-use std::str::StrExt;
 use std::vec::Vec;
 
 use ::PID;
@@ -88,9 +87,10 @@ impl FromStr for State {
     fn from_str(s: &str) -> Result<Self> {
         if !s.len() == 1 {
             Err(Error::new(ErrorKind::Other,
-                "State must be a single character", None))
+                "State must be a single character",
+                Some(format!("State string was: {}", s))))
         } else {
-            Ok(try!(State::from_char(s.char_at(0))))
+            State::from_char(s.char_at(0))
         }
     }
 }

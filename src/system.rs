@@ -1,7 +1,6 @@
 //! Read information about the operating system from `/proc`
 
 use std::str::FromStr;
-use std::str::StrExt;
 use std::path::Path;
 
 use ::utils::read_file;

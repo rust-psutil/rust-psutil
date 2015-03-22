@@ -4,6 +4,7 @@
 #![feature(core)]
 #![feature(io)]
 #![feature(page_size)]
+#![feature(str_char)]
 
 extern crate libc;
 
