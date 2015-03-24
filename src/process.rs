@@ -17,24 +17,28 @@
 //! - `%d` / `%u` - 32 bit signed and unsigned integers
 //! - `%ld` / `%lu` - 64 bit signed and unsigned integers
 //!
-//! **WARNING**: Rust currently has no support for 128 bit integers[2], so
-//! `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
+//! **WARNING**: Rust currently has no support for 128 bit integers^[rfc521]
+//! so `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
 //! instead represented by a 64 bit integer, with the hope that doesn't break.
 //!
 //! ### CPU time fields and clock ticks
 //!
-//! The CPU time fields are very strange. Inside the Linux kernel they all use
-//! the same type[1:L361], but when printed use different types[1:L456,L489] -
-//! `utime`, `stime` and `gtime` are unsigned, whereas `cutime`, `cstime` and
-//! `cgtime` are signed.
+
+//! The CPU time fields are very strange. Inside the Linux kernel they each use
+//! the same type^[array.c:361] but when printed use different
+//! types^[array.c:456] - the fields `utime`, `stime` and `gtime` are
+//! unsigned integers, whereas `cutime`, `cstime` and `cgtime` are signed
+//! integers.
+
 //!
 //! These values are all returned as a number of clock ticks, which can be
 //! divided by `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process`
 //! struct does this conversion automatically, and all CPU time fields use the
 //! `f64` type.
 //!
-//! [1]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c
-//! [2]: https://github.com/rust-lang/rfcs/issues/521
+//! [rfc521]: https://github.com/rust-lang/rfcs/issues/521
+//! [array.c:361]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L361
+//! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
 //!
 
 use std::env::page_size;
