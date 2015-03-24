@@ -14,20 +14,28 @@
 //! which declares PIDs to be signed 32 bit integers. `proc(5)` declares that
 //! PIDs use the `%d` format specifier.
 //!
-//! - `%d` / `%u` - 32 bit integers
-//! - `%ld` / `%lu` - 64 bit integers
+//! - `%d` / `%u` - 32 bit signed and unsigned integers
+//! - `%ld` / `%lu` - 64 bit signed and unsigned integers
 //!
-//! **WARNING**: Rust currently has no support for 128 bit integers[1], so
+//! **WARNING**: Rust currently has no support for 128 bit integers[2], so
 //! `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
 //! instead represented by a 64 bit integer, with the hope that doesn't break.
 //!
-//! ### Clock ticks
+//! ### CPU time fields and clock ticks
 //!
-//! Many fields return a value in terms of clock ticks. These can be divided by
-//! `sysconf(_SC_CLK_TCK)` to get a value in seconds.
+//! The CPU time fields are very strange. Inside the Linux kernel they all use
+//! the same type[1:L361], but when printed use different types[1:L456,L489] -
+//! `utime`, `stime` and `gtime` are unsigned, whereas `cutime`, `cstime` and
+//! `cgtime` are signed.
 //!
-//! **WARNING**: In the furture this conversion may be done automatically.
-
+//! These values are all returned as a number of clock ticks, which can be
+//! divided by `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process`
+//! struct does this conversion automatically, and all CPU time fields use the
+//! `f64` type.
+//!
+//! [1]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c
+//! [2]: https://github.com/rust-lang/rfcs/issues/521
+//!
 
 use std::env::page_size;
 use std::fs::read_dir;
@@ -35,7 +43,11 @@ use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
 use std::slice::SliceConcatExt;
 use std::str::FromStr;
+use std::string::ToString;
 use std::vec::Vec;
+
+use libc::consts::os::sysconf::_SC_CLK_TCK;
+use libc::funcs::posix88::unistd::sysconf;
 
 use ::PID;
 use ::pidfile::read_pidfile;
@@ -95,6 +107,19 @@ impl FromStr for State {
     }
 }
 
+impl ToString for State {
+    fn to_string(&self) -> String {
+        match self {
+            &State::Running  => "R".to_string(),
+            &State::Sleeping => "S".to_string(),
+            &State::Waiting  => "D".to_string(),
+            &State::Zombie   => "Z".to_string(),
+            &State::Traced   => "T".to_string(),
+            &State::Paging   => "W".to_string()
+        }
+    }
+}
+
 /// Memory usage of a process
 ///
 /// Read from `/proc/[pid]/statm`
@@ -145,7 +170,10 @@ impl Memory {
     }
 }
 
-/// Information about a process gathered from `/proc/pid/stat`.
+/// Information about a process gathered from `/proc/[pid]/stat`.
+///
+/// **IMPORTANT**: See the module level notes for information on the types used
+/// by this struct, as some do not match those used by `/proc/[pid]/stat`.
 #[derive(Debug)]
 pub struct Process {
     /// PID of the process
@@ -187,17 +215,17 @@ pub struct Process {
     /// Major faults by child processes
     pub cmajflt: u64,
 
-    /// Time scheduled in user mode (clock ticks)
-    pub utime: u64,
+    /// Time scheduled in user mode (seconds)
+    pub utime: f64,
 
-    /// Time scheduled in kernel mode (clock ticks)
-    pub stime: u64,
+    /// Time scheduled in kernel mode (seconds)
+    pub stime: f64,
 
-    /// Time waited-for child processes were scheduled in user mode
-    pub cutime: i64,
+    /// Time waited-for child processes were scheduled in user mode (seconds)
+    pub cutime: f64,
 
-    /// Time waited-for child processes were scheduled in kernel mode
-    pub cstime: i64,
+    /// Time waited-for child processes were scheduled in kernel mode (seconds)
+    pub cstime: f64,
 
     /// Priority value (-100..-2 | 0..39)
     pub priority: i64,
@@ -261,11 +289,11 @@ pub struct Process {
     /// Aggregated block I/O delays (clock ticks)
     pub delayacct_blkio_ticks: u64,
 
-    /// Guest time of the process (clock ticks)
-    pub guest_time: u64,
+    /// Guest time of the process (seconds)
+    pub guest_time: f64,
 
-    /// Guest time of the process's children (clock ticks)
-    pub cguest_time: i64,
+    /// Guest time of the process's children (seconds)
+    pub cguest_time: f64,
 
     // More memory addresses
     start_data: u64,
@@ -309,6 +337,10 @@ impl Process {
                 "Unexpected number of fields from /proc/[pid]/stat", None));
         }
 
+        // This is 'safe' to call as sysconf should only return an error for
+        // invalid inputs, or options and limits (which _SC_CLK_TCK is not).
+        let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
+
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
             pid:                    from_str!(stat[00]),
@@ -324,10 +356,10 @@ impl Process {
             cminflt:                from_str!(stat[10]),
             majflt:                 from_str!(stat[11]),
             cmajflt:                from_str!(stat[12]),
-            utime:                  from_str!(stat[13]),
-            stime:                  from_str!(stat[14]),
-            cutime:                 from_str!(stat[15]),
-            cstime:                 from_str!(stat[16]),
+            utime:                  u64::from_str(stat[13]).unwrap() as f64 / ticks_per_second,
+            stime:                  u64::from_str(stat[14]).unwrap() as f64 / ticks_per_second,
+            cutime:                 i64::from_str(stat[15]).unwrap() as f64 / ticks_per_second,
+            cstime:                 i64::from_str(stat[16]).unwrap() as f64 / ticks_per_second,
             priority:               from_str!(stat[17]),
             nice:                   from_str!(stat[18]),
             num_threads:            from_str!(stat[19]),
@@ -353,8 +385,8 @@ impl Process {
             rt_priority:            from_str!(stat[39]),
             policy:                 from_str!(stat[40]),
             delayacct_blkio_ticks:  from_str!(stat[41]),
-            guest_time:             from_str!(stat[42]),
-            cguest_time:            from_str!(stat[43]),
+            guest_time:             u64::from_str(stat[42]).unwrap() as f64 / ticks_per_second,
+            cguest_time:            i64::from_str(stat[43]).unwrap() as f64 / ticks_per_second,
             start_data:             from_str!(stat[44]),
             end_data:               from_str!(stat[45]),
             start_brk:              from_str!(stat[46]),

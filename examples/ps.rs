@@ -4,14 +4,12 @@ extern crate psutil;
 
 #[cfg(not(test))]
 fn main() {
-    println!("{:>5} {}", "PID", "CMD");
+    println!("{:>5} {:^5} {:>8} {:>8} {:.100}",
+        "PID", "STATE", "UTIME", "STIME", "CMD");
 
-    // Print all processes that are not zombies
-    for process in psutil::process::all().iter() {
-        // Limited to 100 chars becuase working out the term width is hard
-        println!("{:>5} {:.100}", process.pid, match process.cmdline() {
-            Ok(cmdline) => cmdline.unwrap(),
-            Err(_) => format!("[{}]", process.comm)
-        });
+    for p in psutil::process::all().iter() {
+        println!("{:>5} {:^5} {:>8.2} {:>8.2} {:.100}",
+            p.pid, p.state.to_string(), p.utime, p.stime,
+            p.cmdline().unwrap().unwrap_or(format!("[{}]", p.comm)));
     }
 }
