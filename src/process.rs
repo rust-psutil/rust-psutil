@@ -59,7 +59,8 @@ use ::utils::read_file;
 
 /// Read a process' file from procfs - `/proc/[pid]/[name]`
 fn procfs(pid: super::PID, name: &str) -> Result<String> {
-    let mut path = PathBuf::new("/proc");
+    let mut path = PathBuf::new();
+    path.push("/proc");
     path.push(&pid.to_string());
     path.push(&name);
     return read_file(&path);
