@@ -5,6 +5,7 @@ use std::io::{Read,Write};
 use std::io::{Error,ErrorKind,Result};
 use std::path::Path;
 use std::str::FromStr;
+use std::convert::AsRef;
 
 pub fn write_pidfile(path: &Path) -> Result<()> {
     return write!(&mut File::create(path).unwrap(), "{}", super::getpid());
@@ -15,7 +16,7 @@ pub fn read_pidfile(path: &Path) -> Result<super::PID> {
     let mut contents = String::new();
     try!(file.read_to_string(&mut contents));
 
-    match FromStr::from_str(contents.as_slice()) {
+    match FromStr::from_str(AsRef::as_ref(&contents)) {
         Ok(pid) => Ok(pid),
         Err(_)  => Err(Error::new(
             ErrorKind::Other,
