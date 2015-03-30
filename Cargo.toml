@@ -1,6 +1,6 @@
 [package]
 name = "psutil"
-version = "0.8.1"
+version = "0.8.2"
 authors = ["Sam Clements <sam@borntyping.co.uk>"]
 description = "Process monitoring library"
 repository = "https://github.com/borntyping/rust-psutil"
@@ -8,7 +8,7 @@ readme = "README.md"
 license = "MIT"
 
 [dependencies]
-libc = "0.1.2"
+libc = "^0.1.4"
 
 [dev-dependencies]
 tempdir = "*"
