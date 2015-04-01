@@ -35,3 +35,15 @@ fn process_cmdline() {
 fn process_memory() {
     assert!(get_process().memory().is_ok());
 }
+
+#[test]
+fn process_equality() {
+    assert_eq!(get_process(), get_process());
+}
+
+/// This could fail if you run the tests as PID 1. Please don't do that.
+#[test]
+fn process_inequality() {
+    assert!(get_process() != Process::new(1).unwrap());
+}
+

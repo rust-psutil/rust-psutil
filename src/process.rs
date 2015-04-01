@@ -179,7 +179,7 @@ impl Memory {
 ///
 /// **IMPORTANT**: See the module level notes for information on the types used
 /// by this struct, as some do not match those used by `/proc/[pid]/stat`.
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct Process {
     /// PID of the process
     pub pid: PID,
@@ -455,6 +455,13 @@ impl Process {
             -1 => Err(Error::last_os_error()),
             _  => unreachable!()
         };
+    }
+}
+
+impl PartialEq for Process {
+    // Compares processes using their PID and starttime as an indentity
+    fn eq(&self, other: &Process) -> bool {
+        (self.pid == other.pid) && (self.starttime == other.starttime)
     }
 }
 
