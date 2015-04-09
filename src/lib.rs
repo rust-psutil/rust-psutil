@@ -1,7 +1,6 @@
 //! Process monitoring utilities
 
 #![feature(collections)]
-#![feature(io)]
 #![feature(page_size)]
 #![feature(str_char)]
 

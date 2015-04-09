@@ -92,8 +92,7 @@ impl State {
             'Z' => Ok(State::Zombie),
             'T' => Ok(State::Traced),
             'W' => Ok(State::Paging),
-             s  => Err(Error::new(ErrorKind::Other, "Invalid state character",
-                    Some(format!("{} is not a known state", s))))
+             _  => Err(Error::new(ErrorKind::Other, "Invalid state character"))
         }
     }
 }
@@ -103,9 +102,7 @@ impl FromStr for State {
 
     fn from_str(s: &str) -> Result<Self> {
         if !s.len() == 1 {
-            Err(Error::new(ErrorKind::Other,
-                "State must be a single character",
-                Some(format!("State string was: {}", s))))
+            Err(Error::new(ErrorKind::Other, "State is not a single character"))
         } else {
             State::from_char(s.char_at(0))
         }
@@ -128,7 +125,7 @@ impl ToString for State {
 /// Memory usage of a process
 ///
 /// Read from `/proc/[pid]/statm`
-#[derive(Copy,Debug)]
+#[derive(Clone,Copy,Debug)]
 pub struct Memory {
     /// Total program size (bytes)
     pub size: u64,
@@ -339,7 +336,7 @@ impl Process {
         // changed when/if support for other kernels is needed
         if !stat.len() == 52 {
             return Err(Error::new(ErrorKind::Other,
-                "Unexpected number of fields from /proc/[pid]/stat", None));
+                "Unexpected number of fields from /proc/[pid]/stat"));
         }
 
         // This is 'safe' to call as sysconf should only return an error for

@@ -17,10 +17,8 @@ pub fn read_pidfile(path: &Path) -> Result<super::PID> {
 
     match FromStr::from_str(&contents) {
         Ok(pid) => Ok(pid),
-        Err(_)  => Err(Error::new(
-            ErrorKind::Other,
-            "Could not parse pidfile as PID",
-            Some(contents)
-        ))
+        Err(_)  => {
+            Err(Error::new(ErrorKind::Other, "Could not parse pidfile as PID"))
+        }
     }
 }
