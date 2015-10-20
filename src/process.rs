@@ -41,29 +41,31 @@
 //! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
 //!
 
-use std::env::page_size;
 use std::fs::read_dir;
 use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
-use std::slice::SliceConcatExt;
 use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
 
-use libc::consts::os::sysconf::_SC_CLK_TCK;
+use libc::consts::os::sysconf::{_SC_CLK_TCK,_SC_PAGESIZE};
 use libc::funcs::posix88::unistd::sysconf;
 
 use ::PID;
 use ::pidfile::read_pidfile;
 use ::utils::read_file;
 
-/// Read a process' file from procfs - `/proc/[pid]/[name]`
-fn procfs(pid: super::PID, name: &str) -> Result<String> {
+fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     let mut path = PathBuf::new();
     path.push("/proc");
     path.push(&pid.to_string());
     path.push(&name);
-    return read_file(&path);
+    return path;
+}
+
+/// Read a process' file from procfs - `/proc/[pid]/[name]`
+fn procfs(pid: super::PID, name: &str) -> Result<String> {
+    return read_file(&procfs_path(pid, name));
 }
 
 /// Possible statuses for a process
@@ -104,7 +106,7 @@ impl FromStr for State {
         if !s.len() == 1 {
             Err(Error::new(ErrorKind::Other, "State is not a single character"))
         } else {
-            State::from_char(s.char_at(0))
+            State::from_char(s.chars().nth(0).unwrap())
         }
     }
 }
@@ -158,7 +160,8 @@ impl Memory {
             .map(|n| n.parse().unwrap())
             .collect();
 
-        let page_size = page_size() as u64;
+        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
+        //let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
 
         return Ok(Memory {
             size:       bytes[0] * page_size,
@@ -434,7 +437,7 @@ impl Process {
 
     /// Return the result of `cmdline_vec` as a String.
     pub fn cmdline(&self) -> Result<Option<String>> {
-        Ok(try!(self.cmdline_vec()).and_then(|c| Some(c.connect(" "))))
+        Ok(try!(self.cmdline_vec()).and_then(|c| Some(c.join(" "))))
     }
 
     /// Reads `/proc/[pid]/statm` into a struct.

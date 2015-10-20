@@ -1,9 +1,5 @@
 //! Process monitoring utilities
 
-#![feature(collections)]
-#![feature(page_size)]
-#![feature(str_char)]
-
 extern crate libc;
 
 pub mod pidfile;
