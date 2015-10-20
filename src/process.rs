@@ -257,7 +257,7 @@ pub struct Process {
     /// Virtual memory size in bytes
     pub vsize: u64,
 
-    /// Resident Set Size (pages) [TODO: Calculate size in bytes]
+    /// Resident Set Size (bytes)
     pub rss: i64,
 
     /// Current soft limit on process RSS (bytes)
@@ -354,6 +354,7 @@ impl Process {
         // This is 'safe' to call as sysconf should only return an error for
         // invalid inputs, or options and limits (which _SC_CLK_TCK is not).
         let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
+        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
 
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
@@ -382,7 +383,7 @@ impl Process {
             // itrealvalue:         from_str!(stat[20]),
             starttime:              from_str!(stat[21]),
             vsize:                  from_str!(stat[22]),
-            rss:                    from_str!(stat[23]),
+            rss:                    i64::from_str(stat[23]).unwrap() * page_size as i64,
             rsslim:                 from_str!(stat[24]),
             startcode:              from_str!(stat[25]),
             endcode:                from_str!(stat[26]),
