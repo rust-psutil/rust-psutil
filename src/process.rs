@@ -75,27 +75,28 @@ pub enum State {
     Running,
     Sleeping,
     Waiting,
-    Zombie,
+    Stopped,
     Traced,
-    Paging
+    Paging,
+    Dead,
+    Zombie,
 }
 
 impl State {
     /// Returns a State based on a status character from `/proc/[pid]/stat`
     ///
-    /// > One character from the string "RSDZTW" where R is running, S is
-    /// > sleeping in an interruptible wait, D is waiting in uninterruptible
-    /// > disk sleep, Z is zombie, T is traced or stopped (on a signal), and W
-    /// > is paging.
+    /// See http://lxr.free-electrons.com/source/fs/proc/array.c#L115
     fn from_char(state: char) -> Result<Self> {
         match state {
             'R' => Ok(State::Running),
             'S' => Ok(State::Sleeping),
             'D' => Ok(State::Waiting),
-            'Z' => Ok(State::Zombie),
-            'T' => Ok(State::Traced),
+            'T' => Ok(State::Stopped),
+            't' => Ok(State::Traced),
             'W' => Ok(State::Paging),
-             _  => Err(Error::new(ErrorKind::Other, "Invalid state character"))
+            'Z' => Ok(State::Zombie),
+            'X' => Ok(State::Dead),
+             _  => Err(Error::new(ErrorKind::Other, format!("Invalid state character: {}", state)))
         }
     }
 }
@@ -118,9 +119,11 @@ impl ToString for State {
             &State::Running  => "R".to_string(),
             &State::Sleeping => "S".to_string(),
             &State::Waiting  => "D".to_string(),
+            &State::Stopped  => "T".to_string(),
+            &State::Traced   => "t".to_string(),
+            &State::Paging   => "W".to_string(),
             &State::Zombie   => "Z".to_string(),
-            &State::Traced   => "T".to_string(),
-            &State::Paging   => "W".to_string()
+            &State::Dead     => "X".to_string(),
         }
     }
 }
