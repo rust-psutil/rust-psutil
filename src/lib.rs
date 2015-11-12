@@ -21,3 +21,9 @@ pub fn getpid() -> PID {
 pub fn getppid() -> PID {
     unsafe { libc::funcs::posix88::unistd::getppid() }
 }
+
+/// Type for user identifiers
+pub type UID = libc::types::os::arch::posix88::uid_t;
+
+/// Type for group identifiers
+pub type GID = libc::types::os::arch::posix88::gid_t;

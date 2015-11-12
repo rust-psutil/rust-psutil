@@ -41,7 +41,8 @@
 //! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
 //!
 
-use std::fs::read_dir;
+use std::fs::{self,read_dir};
+use std::os::unix::fs::MetadataExt;
 use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
 use std::str::FromStr;
@@ -51,7 +52,7 @@ use std::vec::Vec;
 use libc::consts::os::sysconf::{_SC_CLK_TCK,_SC_PAGESIZE};
 use libc::funcs::posix88::unistd::sysconf;
 
-use ::PID;
+use ::{PID,UID,GID};
 use ::pidfile::read_pidfile;
 use ::utils::read_file;
 
@@ -183,6 +184,12 @@ impl Memory {
 pub struct Process {
     /// PID of the process
     pub pid: PID,
+
+    /// UID of the process
+    pub uid: UID,
+
+    /// UID of the process
+    pub gid: GID,
 
     /// Filename of the executable
     pub comm: String,
@@ -332,8 +339,10 @@ impl Process {
     /// This should return a psutil/process specific error type, so that  errors
     /// can be raised by `FromStr` too
     pub fn new(pid: PID) -> Result<Process> {
+        let path = procfs_path(pid, "stat");
         let stat = try!(procfs(pid, "stat"));
         let stat: Vec<&str> = stat[0..stat.len()-1].split(' ').collect();
+        let meta = try!(fs::metadata(path));
 
         // This may only be the case for Linux, but this can be removed or
         // changed when/if support for other kernels is needed
@@ -349,6 +358,8 @@ impl Process {
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
             pid:                    from_str!(stat[00]),
+            uid:                    meta.uid(),
+            gid:                    meta.gid(),
             comm:         Process::parse_comm(stat[01]),
             state:                  from_str!(stat[02]),
             ppid:                   from_str!(stat[03]),
