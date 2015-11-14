@@ -339,7 +339,7 @@ impl Process {
     /// This should return a psutil/process specific error type, so that  errors
     /// can be raised by `FromStr` too
     pub fn new(pid: PID) -> Result<Process> {
-        let path = procfs_path(pid, "stat");
+        let path = procfs_path(pid, "");
         let stat = try!(procfs(pid, "stat"));
         let stat: Vec<&str> = stat[0..stat.len()-1].split(' ').collect();
         let meta = try!(fs::metadata(path));
