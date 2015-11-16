@@ -165,7 +165,6 @@ impl Memory {
             .collect();
 
         let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
-        //let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
 
         return Ok(Memory {
             size:       bytes[0] * page_size,
@@ -342,10 +341,8 @@ impl Process {
     /// This should return a psutil/process specific error type, so that  errors
     /// can be raised by `FromStr` too
     pub fn new(pid: PID) -> Result<Process> {
-        let path = procfs_path(pid, "");
         let stat = try!(procfs(pid, "stat"));
         let stat: Vec<&str> = stat[0..stat.len()-1].split(' ').collect();
-        let meta = try!(fs::metadata(path));
 
         // This may only be the case for Linux, but this can be removed or
         // changed when/if support for other kernels is needed
@@ -353,6 +350,9 @@ impl Process {
             return Err(Error::new(ErrorKind::Other,
                 "Unexpected number of fields from /proc/[pid]/stat"));
         }
+
+        // Read the metadata for `/proc/[pid]/`, which defines the process UID/GID.
+        let meta = try!(fs::metadata(procfs_path(pid, "")));
 
         // This is 'safe' to call as sysconf should only return an error for
         // invalid inputs, or options and limits (which _SC_CLK_TCK is not).
