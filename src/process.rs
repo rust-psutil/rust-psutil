@@ -41,7 +41,7 @@
 //! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
 //!
 
-use std::fs::{self,read_dir};
+use std::fs::{self,read_dir,read_link};
 use std::os::unix::fs::MetadataExt;
 use std::io::{Error,ErrorKind,Result};
 use std::path::{Path,PathBuf};
@@ -467,6 +467,10 @@ impl Process {
             -1 => Err(Error::last_os_error()),
             _  => unreachable!()
         };
+    }
+
+    pub fn cwd(&self) -> Result<PathBuf> {
+        read_link(procfs_path(self.pid, "cwd"))
     }
 }
 
