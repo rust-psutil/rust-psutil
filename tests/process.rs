@@ -32,6 +32,11 @@ fn process_cmdline() {
 }
 
 #[test]
+fn process_cwd() {
+    assert!(get_process().cwd().is_ok());
+}
+
+#[test]
 fn process_memory() {
     assert!(get_process().memory().is_ok());
 }
