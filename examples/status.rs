@@ -1,4 +1,4 @@
-//! Example psutil executable
+//! Example psutil executable.
 
 extern crate psutil;
 

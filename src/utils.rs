@@ -1,4 +1,4 @@
-//! Utility methods, mostly for dealing with IO
+//! Utility methods, mostly for dealing with IO.
 
 use std::fs::File;
 use std::io::{Read,Result};

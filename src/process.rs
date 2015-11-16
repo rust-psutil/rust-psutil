@@ -1,4 +1,4 @@
-//! Read process-specific information from `/proc`
+//! Read process-specific information from `/proc`.
 //!
 //! More information about specific fields can be found in [proc(5)].
 //!
@@ -33,10 +33,10 @@
 //! struct does this conversion automatically, and all CPU time fields use the
 //! `f64` type.
 //!
+//! [array.c:361]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L361
+//! [array.c:456]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L456
 //! [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
 //! [rfc521]: https://github.com/rust-lang/rfcs/issues/521
-//! [array.c:361]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L361
-//! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
 //!
 
 use std::fs::{self,read_dir,read_link};
@@ -63,12 +63,12 @@ fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     return path;
 }
 
-/// Read a process' file from procfs - `/proc/[pid]/[name]`
+/// Read a process' file from procfs - `/proc/[pid]/[name]`.
 fn procfs(pid: super::PID, name: &str) -> Result<String> {
     return read_file(&procfs_path(pid, name));
 }
 
-/// Possible statuses for a process
+/// Possible statuses for a process.
 #[derive(Clone,Copy,Debug)]
 pub enum State {
     Running,
@@ -82,10 +82,13 @@ pub enum State {
 }
 
 impl State {
-    /// Returns a State based on a status character from `/proc/[pid]/stat`
+    /// Returns a State based on a status character from `/proc/[pid]/stat`.
     ///
-    /// See http://lxr.free-electrons.com/source/fs/proc/array.c#L115
-    fn from_char(state: char) -> Result<Self> {
+    /// See [array.c:115] and [proc(5)].
+    ///
+    /// [array.c:115]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L115
+    /// [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
+    pub fn from_char(state: char) -> Result<Self> {
         match state {
             'R' => Ok(State::Running),
             'S' => Ok(State::Sleeping),
@@ -127,30 +130,30 @@ impl ToString for State {
     }
 }
 
-/// Memory usage of a process
+/// Memory usage of a process.
 ///
-/// Read from `/proc/[pid]/statm`
+/// Read from `/proc/[pid]/statm`.
 #[derive(Clone,Copy,Debug)]
 pub struct Memory {
-    /// Total program size (bytes)
+    /// Total program size (bytes).
     pub size: u64,
 
-    /// Resident Set Size (bytes)
+    /// Resident Set Size (bytes).
     pub resident: u64,
 
-    /// Shared pages (bytes)
+    /// Shared pages (bytes).
     pub share: u64,
 
-    /// Text
+    /// Text.
     pub text: u64,
 
-    // /// Library (unused)
+    // /// Library (unused).
     // pub lib: u64,
 
-    /// Data + stack
+    /// Data + stack.
     pub data: u64,
 
-    // /// Dirty pages (unused)
+    // /// Dirty pages (unused).
     // pub dt: u65
 }
 
@@ -183,85 +186,85 @@ impl Memory {
 /// by this struct, as some do not match those used by `/proc/[pid]/stat`.
 #[derive(Clone,Debug)]
 pub struct Process {
-    /// PID of the process
+    /// PID of the process.
     pub pid: PID,
 
-    /// UID of the process
+    /// UID of the process.
     pub uid: UID,
 
-    /// UID of the process
+    /// UID of the process.
     pub gid: GID,
 
-    /// Filename of the executable
+    /// Filename of the executable.
     pub comm: String,
 
-    /// State of the process as an enum
+    /// State of the process as an enum.
     pub state: State,
 
-    /// PID of the parent process
+    /// PID of the parent process.
     pub ppid: PID,
 
-    /// Process group ID
+    /// Process group ID.
     pub pgrp: i32,
 
-    /// Session ID
+    /// Session ID.
     pub session: i32,
 
-    /// Controlling terminal of the process [TODO: Actually two numbers]
+    /// Controlling terminal of the process [TODO: Actually two numbers].
     pub tty_nr: i32,
 
-    /// ID of the foreground group of the controlling terminal
+    /// ID of the foreground group of the controlling terminal.
     pub tpgid: i32,
 
-    /// Kernel flags for the process
+    /// Kernel flags for the process.
     pub flags: u32,
 
-    /// Minor faults
+    /// Minor faults.
     pub minflt: u64,
 
-    /// Minor faults by child processes
+    /// Minor faults by child processes.
     pub cminflt: u64,
 
-    /// Major faults
+    /// Major faults.
     pub majflt: u64,
 
-    /// Major faults by child processes
+    /// Major faults by child processes.
     pub cmajflt: u64,
 
-    /// Time scheduled in user mode (seconds)
+    /// Time scheduled in user mode (seconds).
     pub utime: f64,
 
-    /// Time scheduled in kernel mode (seconds)
+    /// Time scheduled in kernel mode (seconds).
     pub stime: f64,
 
-    /// Time waited-for child processes were scheduled in user mode (seconds)
+    /// Time waited-for child processes were scheduled in user mode (seconds).
     pub cutime: f64,
 
-    /// Time waited-for child processes were scheduled in kernel mode (seconds)
+    /// Time waited-for child processes were scheduled in kernel mode (seconds).
     pub cstime: f64,
 
-    /// Priority value (-100..-2 | 0..39)
+    /// Priority value (-100..-2 | 0..39).
     pub priority: i64,
 
-    /// Nice value (-20..19)
+    /// Nice value (-20..19).
     pub nice: i64,
 
-    /// Number of threads in the process
+    /// Number of threads in the process.
     pub num_threads: i64,
 
-    // /// Unmaintained field since linux 2.6.17, always 0
+    // /// Unmaintained field since linux 2.6.17, always 0.
     // itrealvalue: i64,
 
-    /// Time the process was started after system boot (clock ticks)
+    /// Time the process was started after system boot (clock ticks).
     pub starttime: u64,
 
-    /// Virtual memory size in bytes
+    /// Virtual memory size in bytes.
     pub vsize: u64,
 
-    /// Resident Set Size (bytes)
+    /// Resident Set Size (bytes).
     pub rss: i64,
 
-    /// Current soft limit on process RSS (bytes)
+    /// Current soft limit on process RSS (bytes).
     pub rsslim: u64,
 
     // These values are memory addresses
@@ -271,44 +274,44 @@ pub struct Process {
     kstkesp: u64,
     kstkeip: u64,
 
-    // /// Signal bitmaps
-    // /// These are obselete, use `/proc/[pid]/status` instead
+    // /// Signal bitmaps.
+    // /// These are obsolete, use `/proc/[pid]/status` instead.
     // signal: u64,
     // blocked: u64,
     // sigignore: u64,
     // sigcatch: u64,
 
-    /// Channel the process is waiting on (address of a system call)
+    /// Channel the process is waiting on (address of a system call).
     pub wchan: u64,
 
-    // /// Number of pages swapped (not maintained)
+    // /// Number of pages swapped (not maintained).
     // pub nswap: u64,
 
-    // /// Number of pages swapped for child processes (not maintained)
+    // /// Number of pages swapped for child processes (not maintained).
     // pub cnswap: u64,
 
-    /// Signal sent to parent when process dies
+    /// Signal sent to parent when process dies.
     pub exit_signal: i32,
 
-    /// Number of the CPU the process was last executed on
+    /// Number of the CPU the process was last executed on.
     pub processor: i32,
 
-    /// Real-time scheduling priority (0 | 1..99)
+    /// Real-time scheduling priority (0 | 1..99).
     pub rt_priority: u32,
 
-    /// Scheduling policy
+    /// Scheduling policy.
     pub policy: u32,
 
-    /// Aggregated block I/O delays (clock ticks)
+    /// Aggregated block I/O delays (clock ticks).
     pub delayacct_blkio_ticks: u64,
 
-    /// Guest time of the process (seconds)
+    /// Guest time of the process (seconds).
     pub guest_time: f64,
 
-    /// Guest time of the process's children (seconds)
+    /// Guest time of the process's children (seconds).
     pub cguest_time: f64,
 
-    // More memory addresses
+    // More memory addresses.
     start_data: u64,
     end_data: u64,
     start_brk: u64,
@@ -317,15 +320,15 @@ pub struct Process {
     env_start: u64,
     env_end: u64,
 
-    /// The thread's exit status
+    /// The thread's exit status.
     pub exit_code: i32
 }
 
-/// TODO: This should use `try!` instead of `unwrap()`
+/// TODO: This should use `try!` instead of `unwrap()`.
 macro_rules! from_str { ($field:expr) => (FromStr::from_str($field).unwrap()) }
 
 impl Process {
-    /// Parses a process name
+    /// Parses a process name.
     ///
     /// Process names are surrounded by `()` characters, which are removed.
     fn parse_comm(s: &str) -> String {
@@ -335,10 +338,10 @@ impl Process {
 
     /// Attempts to read process information from `/proc/[pid]/stat`.
     ///
-    /// `/stat` is seperated by spaces and contains a trailing newline.
+    /// `/stat` is separated by spaces and contains a trailing newline.
     ///
-    /// This should return a psutil/process specific error type, so that  errors
-    /// can be raised by `FromStr` too
+    /// This should return a psutil/process specific error type, so that errors
+    /// can be raised by `FromStr` too.
     pub fn new(pid: PID) -> Result<Process> {
         let stat = try!(procfs(pid, "stat"));
         let stat: Vec<&str> = stat[0..stat.len()-1].split(' ').collect();
@@ -439,12 +442,12 @@ impl Process {
         if cmdline == "" {
             return Ok(None);
         } else {
-            // Split terminator skips empty trailing substrings
+            // Split terminator skips empty trailing substrings.
             let split = cmdline.split_terminator(
                 |c: char| c == '\0' || c == ' ');
 
             // `split` returns a vector of slices viewing `cmdline`, so they
-            // get mapped to actuall strings before being returned as a vector.
+            // get mapped to actual strings before being returned as a vector.
             return Ok(Some(split.map(|x| x.to_string()).collect()));
         }
     }
@@ -452,6 +455,11 @@ impl Process {
     /// Return the result of `cmdline_vec` as a String.
     pub fn cmdline(&self) -> Result<Option<String>> {
         Ok(try!(self.cmdline_vec()).and_then(|c| Some(c.join(" "))))
+    }
+
+    /// Read the path of the process' current working directory.
+    pub fn cwd(&self) -> Result<PathBuf> {
+        read_link(procfs_path(self.pid, "cwd"))
     }
 
     /// Reads `/proc/[pid]/statm` into a struct.
@@ -470,21 +478,16 @@ impl Process {
             _  => unreachable!()
         };
     }
-
-    /// Read the path of the process' current working directory.
-    pub fn cwd(&self) -> Result<PathBuf> {
-        read_link(procfs_path(self.pid, "cwd"))
-    }
 }
 
 impl PartialEq for Process {
-    // Compares processes using their PID and starttime as an indentity
+    // Compares processes using their PID and `starttime` as an identity.
     fn eq(&self, other: &Process) -> bool {
         (self.pid == other.pid) && (self.starttime == other.starttime)
     }
 }
 
-/// Return a vector of all processes in /proc
+/// Return a vector of all processes in `/proc`.
 pub fn all() -> Vec<Process> {
     let mut processes = Vec::new();
 

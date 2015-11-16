@@ -1,4 +1,4 @@
-//! Kill a process, reading it's PID from a file
+//! Kill a process, reading it's PID from a file.
 
 extern crate psutil;
 
