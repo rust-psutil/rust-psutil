@@ -47,8 +47,8 @@ use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
 
-use libc::consts::os::sysconf::{_SC_CLK_TCK,_SC_PAGESIZE};
-use libc::funcs::posix88::unistd::sysconf;
+use libc::{_SC_CLK_TCK,_SC_PAGESIZE,SIGKILL};
+use libc::{kill,sysconf};
 
 use ::{PID,UID,GID};
 use ::pidfile::read_pidfile;
@@ -469,9 +469,6 @@ impl Process {
 
     /// Send SIGKILL to the process.
     pub fn kill(&self) -> Result<()> {
-        use libc::funcs::posix88::signal::kill;
-        use libc::consts::os::posix88::SIGKILL;
-
         return match unsafe { kill(self.pid, SIGKILL) } {
             0  => Ok(()),
             -1 => Err(Error::last_os_error()),
