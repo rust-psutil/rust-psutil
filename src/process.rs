@@ -1,7 +1,6 @@
 //! Read process-specific information from `/proc`
 //!
-//! More information about specific fields can be found in
-//! [proc(5)](http://man7.org/linux/man-pages/man5/proc.5.html).
+//! More information about specific fields can be found in [proc(5)].
 //!
 //! ### Field sizes
 //!
@@ -23,19 +22,18 @@
 //!
 //! ### CPU time fields and clock ticks
 //!
-
 //! The CPU time fields are very strange. Inside the Linux kernel they each use
 //! the same type^[array.c:361] but when printed use different
 //! types^[array.c:456] - the fields `utime`, `stime` and `gtime` are
 //! unsigned integers, whereas `cutime`, `cstime` and `cgtime` are signed
 //! integers.
-
 //!
 //! These values are all returned as a number of clock ticks, which can be
 //! divided by `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process`
 //! struct does this conversion automatically, and all CPU time fields use the
 //! `f64` type.
 //!
+//! [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
 //! [rfc521]: https://github.com/rust-lang/rfcs/issues/521
 //! [array.c:361]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L361
 //! [array.c:456]: https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/proc/array.c#L456
@@ -56,6 +54,7 @@ use ::{PID,UID,GID};
 use ::pidfile::read_pidfile;
 use ::utils::read_file;
 
+/// Return a path to a file in `/proc/[pid]/`.
 fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     let mut path = PathBuf::new();
     path.push("/proc");
@@ -472,6 +471,7 @@ impl Process {
         };
     }
 
+    /// Read the path of the process' current working directory.
     pub fn cwd(&self) -> Result<PathBuf> {
         read_link(procfs_path(self.pid, "cwd"))
     }
