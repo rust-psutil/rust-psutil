@@ -38,7 +38,7 @@ fn process_cwd() {
 
 #[test]
 fn process_memory() {
-    assert!(get_process().memory().is_ok());
+    get_process().memory().unwrap();
 }
 
 #[test]
