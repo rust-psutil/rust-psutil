@@ -330,95 +330,95 @@ macro_rules! from_str { ($field:expr) => (FromStr::from_str($field).unwrap()) }
 impl Process {
     /// Attempts to read process information from `/proc/[pid]/stat`.
     ///
-    /// `/stat` format is defined in proc(5)
+    /// Some additional metadata is read from the permissions on the `/proc/[pid]/`, which defines
+    /// the process UID/GID. The format of `/proc/[pid]/stat` format is defined in proc(5).
     ///
-    /// This should return a psutil/process specific error type, so that errors
-    /// can be raised by `FromStr` too.
+    /// TODO: This should return a psutil/process specific error type, so that errors can be raised
+    /// by `FromStr` too.
     pub fn new(pid: PID) -> Result<Process> {
         let stat = try!(procfs(pid, "stat"));
+        let meta = try!(fs::metadata(procfs_path(pid, "")));
 
-        // read pid
-        let mut iter = stat.splitn(2, ' ');
-        let pid = iter.next().map(str::parse::<PID>).unwrap().unwrap();
+        // Read the PID and comm fields seperatley, as the comm field is delimited by brackets and
+        // could contain spaces.
+        let (pid_, rest) = stat.split_at(stat.find('(').unwrap()-1);
+        let (comm, rest) = rest.split_at(rest.rfind(')').unwrap()+2);
 
-        // read command
-        let rest = iter.next().unwrap();
-        let start_of_cmd = rest.find('(').unwrap();
-        let end_of_cmd = rest.rfind(')').unwrap();
-        let cmd = rest[start_of_cmd+1..end_of_cmd].to_string();
+        // Split the rest of the fields on the space character and read them into a vector.
+        let mut fields: Vec<&str> = Vec::new();
+        fields.push(pid_);
+        fields.push(&comm[2..comm.len()-2]);
+        fields.extend(rest.trim_right().split(' '));
 
-        let stat: Vec<&str> = rest[end_of_cmd+2..].trim_right().split(' ').collect();
-
-        if stat.len() != 50 {
+        // Check we haven't read more or less fields than expected.
+        if fields.len() != 52 {
             return Err(Error::new(ErrorKind::Other,
                 "Unexpected number of fields from /proc/[pid]/stat"));
         }
 
-        // Read the metadata for `/proc/[pid]/`, which defines the process UID/GID.
-        let meta = try!(fs::metadata(procfs_path(pid, "")));
-
-        // This is 'safe' to call as sysconf should only return an error for
-        // invalid inputs, or options and limits (which _SC_CLK_TCK is not).
+        // This is 'safe' to call as sysconf should only return an error for invalid inputs, or
+        // options and limits (which `_SC_CLK_TCK` and `_SC_PAGESIZE` are not).
+        //
+        // TODO: These don't change per process, but there's nowhere to store them for now.
         let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
-        // TODO: page size can't change on every process
         let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
 
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
-            pid:                    pid,
+            pid:                    from_str!(fields[00]),
             uid:                    meta.uid(),
             gid:                    meta.gid(),
-            comm:                   cmd,
-            state:                  from_str!(stat[00]),
-            ppid:                   from_str!(stat[01]),
-            pgrp:                   from_str!(stat[02]),
-            session:                from_str!(stat[03]),
-            tty_nr:                 from_str!(stat[04]),
-            tpgid:                  from_str!(stat[05]),
-            flags:                  from_str!(stat[06]),
-            minflt:                 from_str!(stat[07]),
-            cminflt:                from_str!(stat[8]),
-            majflt:                 from_str!(stat[9]),
-            cmajflt:                from_str!(stat[10]),
-            utime:                  u64::from_str(stat[11]).unwrap() as f64 / ticks_per_second,
-            stime:                  u64::from_str(stat[12]).unwrap() as f64 / ticks_per_second,
-            cutime:                 i64::from_str(stat[13]).unwrap() as f64 / ticks_per_second,
-            cstime:                 i64::from_str(stat[14]).unwrap() as f64 / ticks_per_second,
-            priority:               from_str!(stat[15]),
-            nice:                   from_str!(stat[16]),
-            num_threads:            from_str!(stat[17]),
-            // itrealvalue:         from_str!(stat[18]),
-            starttime:              from_str!(stat[19]),
-            vsize:                  from_str!(stat[20]),
-            rss:                    i64::from_str(stat[21]).unwrap() * page_size as i64,
-            rsslim:                 from_str!(stat[22]),
-            startcode:              from_str!(stat[23]),
-            endcode:                from_str!(stat[24]),
-            startstack:             from_str!(stat[25]),
-            kstkesp:                from_str!(stat[26]),
-            kstkeip:                from_str!(stat[27]),
-            // signal:              from_str!(stat[28]),
-            // blocked:             from_str!(stat[29]),
-            // sigignore:           from_str!(stat[30]),
-            // sigcatch:            from_str!(stat[31]),
-            wchan:                  from_str!(stat[32]),
-            // nswap:               from_str!(stat[33]),
-            // cnswap:              from_str!(stat[34]),
-            exit_signal:            from_str!(stat[35]),
-            processor:              from_str!(stat[36]),
-            rt_priority:            from_str!(stat[37]),
-            policy:                 from_str!(stat[38]),
-            delayacct_blkio_ticks:  from_str!(stat[39]),
-            guest_time:             u64::from_str(stat[40]).unwrap() as f64 / ticks_per_second,
-            cguest_time:            i64::from_str(stat[41]).unwrap() as f64 / ticks_per_second,
-            start_data:             from_str!(stat[42]),
-            end_data:               from_str!(stat[43]),
-            start_brk:              from_str!(stat[44]),
-            arg_start:              from_str!(stat[45]),
-            arg_end:                from_str!(stat[46]),
-            env_start:              from_str!(stat[47]),
-            env_end:                from_str!(stat[48]),
-            exit_code:              from_str!(stat[49])
+            comm:                   from_str!(fields[01]),
+            state:                  from_str!(fields[02]),
+            ppid:                   from_str!(fields[03]),
+            pgrp:                   from_str!(fields[04]),
+            session:                from_str!(fields[05]),
+            tty_nr:                 from_str!(fields[06]),
+            tpgid:                  from_str!(fields[07]),
+            flags:                  from_str!(fields[08]),
+            minflt:                 from_str!(fields[09]),
+            cminflt:                from_str!(fields[10]),
+            majflt:                 from_str!(fields[11]),
+            cmajflt:                from_str!(fields[12]),
+            utime:                  u64::from_str(fields[13]).unwrap() as f64 / ticks_per_second,
+            stime:                  u64::from_str(fields[14]).unwrap() as f64 / ticks_per_second,
+            cutime:                 i64::from_str(fields[15]).unwrap() as f64 / ticks_per_second,
+            cstime:                 i64::from_str(fields[16]).unwrap() as f64 / ticks_per_second,
+            priority:               from_str!(fields[17]),
+            nice:                   from_str!(fields[18]),
+            num_threads:            from_str!(fields[19]),
+            // itrealvalue:         from_str!(fields[20]),
+            starttime:              from_str!(fields[21]),
+            vsize:                  from_str!(fields[22]),
+            rss:                    i64::from_str(fields[23]).unwrap() * page_size as i64,
+            rsslim:                 from_str!(fields[24]),
+            startcode:              from_str!(fields[25]),
+            endcode:                from_str!(fields[26]),
+            startstack:             from_str!(fields[27]),
+            kstkesp:                from_str!(fields[28]),
+            kstkeip:                from_str!(fields[29]),
+            // signal:              from_str!(fields[30]),
+            // blocked:             from_str!(fields[31]),
+            // sigignore:           from_str!(fields[32]),
+            // sigcatch:            from_str!(fields[33]),
+            wchan:                  from_str!(fields[34]),
+            // nswap:               from_str!(fields[35]),
+            // cnswap:              from_str!(fields[36]),
+            exit_signal:            from_str!(fields[37]),
+            processor:              from_str!(fields[38]),
+            rt_priority:            from_str!(fields[39]),
+            policy:                 from_str!(fields[40]),
+            delayacct_blkio_ticks:  from_str!(fields[41]),
+            guest_time:             u64::from_str(fields[42]).unwrap() as f64 / ticks_per_second,
+            cguest_time:            i64::from_str(fields[43]).unwrap() as f64 / ticks_per_second,
+            start_data:             from_str!(fields[44]),
+            end_data:               from_str!(fields[45]),
+            start_brk:              from_str!(fields[46]),
+            arg_start:              from_str!(fields[47]),
+            arg_end:                from_str!(fields[48]),
+            env_start:              from_str!(fields[49]),
+            env_end:                from_str!(fields[50]),
+            exit_code:              from_str!(fields[51])
         });
     }
 
