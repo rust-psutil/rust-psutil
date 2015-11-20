@@ -1,15 +1,7 @@
 extern crate psutil;
 
-use psutil::getpid;
-use psutil::process::Process;
-
-fn get_process() -> Process {
-    Process::new(getpid()).unwrap()
-}
-
-#[test]
-fn process() {
-    assert!(Process::new(getpid()).is_ok());
+fn get_process() -> psutil::process::Process {
+    psutil::process::Process::new(psutil::getpid()).unwrap()
 }
 
 #[test]
@@ -49,6 +41,10 @@ fn process_equality() {
 /// This could fail if you run the tests as PID 1. Please don't do that.
 #[test]
 fn process_inequality() {
-    assert!(get_process() != Process::new(1).unwrap());
+    assert!(get_process() != psutil::process::Process::new(1).unwrap());
 }
 
+#[test]
+fn all() {
+    psutil::process::all().unwrap();
+}

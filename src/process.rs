@@ -194,6 +194,12 @@ impl Memory {
 ///
 /// **IMPORTANT**: See the module level notes for information on the types used
 /// by this struct, as some do not match those used by `/proc/[pid]/stat`.
+///
+/// # Examples
+///
+/// ```
+/// psutil::process::Process::new(psutil::getpid()).unwrap();
+/// ```
 #[derive(Clone,Debug)]
 pub struct Process {
     /// PID of the process.
@@ -504,17 +510,22 @@ impl PartialEq for Process {
 }
 
 /// Return a vector of all processes in `/proc`.
-pub fn all() -> Vec<Process> {
+///
+/// ```
+/// psutil::process::all().unwrap();
+/// ```
+pub fn all() -> Result<Vec<Process>> {
     let mut processes = Vec::new();
 
-    for entry in read_dir(&Path::new("/proc")).unwrap() {
-        let path = entry.unwrap().path();
-        let file_name = path.file_name().unwrap();
-        match FromStr::from_str(&file_name.to_string_lossy()) {
-            Ok(pid) => { processes.push(Process::new(pid).unwrap()) },
-            Err(_)  => ()
+    for entry in try!(read_dir(&Path::new("/proc"))) {
+        let path = try!(entry).path();
+        let name = try!(path.file_name().ok_or(
+            parse_error("Could not read /proc entry", &path)));
+
+        if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
+            processes.push(try!(Process::new(pid)))
         }
     }
 
-    return processes;
+    return Ok(processes);
 }
