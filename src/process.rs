@@ -1,58 +1,19 @@
 //! Read process-specific information from `/proc`.
-//!
-//! More information about specific fields can be found in [proc(5)].
-//!
-//! ### Field sizes
-//!
-//! The manual pages for `proc` define integer sizes using `scanf(3)` format
-//! specifiers, which parse to implementation specific sizes. This is obviously
-//! a terrible idea, and so this code makes some assumptions about the sizes of
-//! those specifiers.
-//!
-//! These assumptions are backed up by `libc::types::os::arch::posix88::pid_t`,
-//! which declares PIDs to be signed 32 bit integers. `proc(5)` declares that
-//! PIDs use the `%d` format specifier.
-//!
-//! - `%d` / `%u` - 32 bit signed and unsigned integers
-//! - `%ld` / `%lu` - 64 bit signed and unsigned integers
-//!
-//! **WARNING**: Rust currently has no support for 128 bit integers^[rfc521]
-//! so `%llu` (used by the `starttime` and `delayacct_blkio_ticks` fields) is is
-//! instead represented by a 64 bit integer, with the hope that doesn't break.
-//!
-//! ### CPU time fields and clock ticks
-//!
-//! The CPU time fields are very strange. Inside the Linux kernel they each use
-//! the same type^[array.c:361] but when printed use different
-//! types^[array.c:456] - the fields `utime`, `stime` and `gtime` are
-//! unsigned integers, whereas `cutime`, `cstime` and `cgtime` are signed
-//! integers.
-//!
-//! These values are all returned as a number of clock ticks, which can be
-//! divided by `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process`
-//! struct does this conversion automatically, and all CPU time fields use the
-//! `f64` type.
-//!
-//! [array.c:361]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L361
-//! [array.c:456]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L456
-//! [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
-//! [rfc521]: https://github.com/rust-lang/rfcs/issues/521
-//!
 
-use std::fs::{self,read_dir,read_link};
+use std::fs::{self, read_dir, read_link};
 use std::os::unix::fs::MetadataExt;
-use std::io::{Error,ErrorKind,Result};
-use std::path::{Path,PathBuf};
+use std::io::{Error, ErrorKind, Result};
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
 
-use libc::{_SC_CLK_TCK,_SC_PAGESIZE,SIGKILL};
-use libc::{kill,sysconf};
+use libc::{_SC_CLK_TCK, _SC_PAGESIZE, SIGKILL};
+use libc::{kill, sysconf};
 
-use ::{PID,UID,GID};
-use ::pidfile::read_pidfile;
-use ::utils::read_file;
+use {PID, UID, GID};
+use pidfile::read_pidfile;
+use utils::read_file;
 
 lazy_static! {
     static ref TICKS_PER_SECOND: f64 = {
@@ -74,8 +35,9 @@ fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
 
 /// Return an `io::Error` value and include the path in the message.
 fn parse_error(message: &str, path: &PathBuf) -> Error {
+    let path = path.to_str().unwrap_or("unknown path");
     Error::new(ErrorKind::InvalidInput,
-        format!("{} (from {})", message, path.to_str().unwrap_or("unknown path")))
+               format!("{} (from {})", message, path))
 }
 
 /// Possible statuses for a process.
@@ -108,7 +70,8 @@ impl State {
             'W' => Ok(State::Paging),
             'Z' => Ok(State::Zombie),
             'X' => Ok(State::Dead),
-             _  => Err(Error::new(ErrorKind::Other, format!("Invalid state character: {}", state)))
+            _ => Err(Error::new(ErrorKind::InvalidInput,
+                                format!("Invalid state character: {:?}", state))),
         }
     }
 }
@@ -118,7 +81,8 @@ impl FromStr for State {
 
     fn from_str(s: &str) -> Result<Self> {
         if !s.len() == 1 {
-            Err(Error::new(ErrorKind::Other, "State is not a single character"))
+            Err(Error::new(ErrorKind::InvalidInput,
+                           format!("State is not a single character: {:?}", s)))
         } else {
             State::from_char(s.chars().nth(0).unwrap())
         }
@@ -128,21 +92,21 @@ impl FromStr for State {
 impl ToString for State {
     fn to_string(&self) -> String {
         match self {
-            &State::Running  => "R".to_string(),
+            &State::Running => "R".to_string(),
             &State::Sleeping => "S".to_string(),
-            &State::Waiting  => "D".to_string(),
-            &State::Stopped  => "T".to_string(),
-            &State::Traced   => "t".to_string(),
-            &State::Paging   => "W".to_string(),
-            &State::Zombie   => "Z".to_string(),
-            &State::Dead     => "X".to_string(),
+            &State::Waiting => "D".to_string(),
+            &State::Stopped => "T".to_string(),
+            &State::Traced => "t".to_string(),
+            &State::Paging => "W".to_string(),
+            &State::Zombie => "Z".to_string(),
+            &State::Dead => "X".to_string(),
         }
     }
 }
 
-/// Memory usage of a process.
+/// Memory usage of a process read from `/proc/[pid]/statm`.
 ///
-/// Read from `/proc/[pid]/statm`.
+/// The `lib` [4, u64] and `dt` [6, u64] fields are ignored.
 #[derive(Clone,Copy,Debug)]
 pub struct Memory {
     /// Total program size (bytes).
@@ -157,49 +121,79 @@ pub struct Memory {
     /// Text.
     pub text: u64,
 
-    // /// Library (unused).
-    // pub lib: u64,
-
     /// Data + stack.
     pub data: u64,
-
-    // /// Dirty pages (unused).
-    // pub dt: u65
 }
 
 impl Memory {
-    fn new(pid: PID) -> Result<Memory> {
+    pub fn new(pid: PID) -> Result<Memory> {
         let path = procfs_path(pid, "statm");
         let statm = try!(read_file(&path));
-        let bytes: Vec<u64> = try!(statm
-            .trim_right()
-            .split(" ")
-            .map(|n| u64::from_str(n).map_err(|e| parse_error(
-                &format!("Could not parse memory: {}", e), &path)))
-            .collect());
+        let fields: Vec<&str> = statm.trim_right().split(" ").collect();
 
         return Ok(Memory {
-            size:       bytes[0] * *PAGE_SIZE,
-            resident:   bytes[1] * *PAGE_SIZE,
-            share:      bytes[2] * *PAGE_SIZE,
-            text:       bytes[3] * *PAGE_SIZE,
-            // lib:     bytes[4] * *PAGE_SIZE,
-            data:       bytes[5] * *PAGE_SIZE,
-            // dt:      bytes[6] * *PAGE_SIZE
+            size: try!(Memory::parse_bytes(fields[0], &path)) * *PAGE_SIZE,
+            resident: try!(Memory::parse_bytes(fields[1], &path)) * *PAGE_SIZE,
+            share: try!(Memory::parse_bytes(fields[2], &path)) * *PAGE_SIZE,
+            text: try!(Memory::parse_bytes(fields[3], &path)) * *PAGE_SIZE,
+            data: try!(Memory::parse_bytes(fields[5], &path)) * *PAGE_SIZE,
         });
+    }
+
+    fn parse_bytes(field: &str, path: &PathBuf) -> Result<u64> {
+        u64::from_str(field)
+            .map_err(|e| parse_error(&format!("Could not parse memory: {}", e), path))
     }
 }
 
 /// Information about a process gathered from `/proc/[pid]/stat`.
 ///
-/// **IMPORTANT**: See the module level notes for information on the types used
-/// by this struct, as some do not match those used by `/proc/[pid]/stat`.
+/// More information about specific fields can be found in [proc(5)].
+///
+/// # Field sizes
+///
+/// The manual pages for `proc` define integer sizes using `scanf(3)` format specifiers, which parse
+/// to implementation specific sizes. This is obviously a terrible idea, and so this code makes some
+/// assumptions about the sizes of those specifiers.
+///
+/// These assumptions are backed up by `libc::types::os::arch::posix88::pid_t`, which declares PIDs
+/// to be signed 32 bit integers. `proc(5)` declares that PIDs use the `%d` format specifier.
+///
+/// - `%d` / `%u` - 32 bit signed and unsigned integers
+/// - `%ld` / `%lu` - 64 bit signed and unsigned integers
+///
+/// Rust currently has no support for 128 bit integers ([rfc521]) so `%llu` (used by the `starttime`
+/// and `delayacct_blkio_ticks` fields) is is instead represented by a 64 bit integer, with the hope
+/// that doesn't break.
+///
+/// ### CPU time fields and clock ticks
+///
+/// The CPU time fields are very strange. Inside the Linux kernel they each use the same type
+/// ([array.c:361]) but when printed use different types ([array.c:456]) - the fields `utime`,
+/// `stime` and `gtime` are unsigned integers, whereas `cutime`, `cstime` and `cgtime` are signed
+/// integers.
+///
+/// These values are all returned as a number of clock ticks, which can be divided by
+/// `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process` struct does this conversion
+/// automatically, and all CPU time fields use the `f64` type.
+///
+/// # Unmaintained fields
+///
+/// The `itrealvalue` [20], `nswap` [35] and `cnswap` [36] fields are not maintained, and in some
+/// cases are hardcoded to 0 in the kernel. The `signal` [30], `blocked` [31], `sigignore` [32] and
+/// `sigcatch` [33] fields are included as private fields, but `proc(5)` recommends the use of
+/// `/proc/[pid]/status` instead.
 ///
 /// # Examples
 ///
 /// ```
 /// psutil::process::Process::new(psutil::getpid()).unwrap();
 /// ```
+///
+/// [array.c:361]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L361
+/// [array.c:456]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L456
+/// [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
+/// [rfc521]: https://github.com/rust-lang/rfcs/issues/521
 #[derive(Clone,Debug)]
 pub struct Process {
     /// PID of the process.
@@ -268,9 +262,8 @@ pub struct Process {
     /// Number of threads in the process.
     pub num_threads: i64,
 
-    // /// Unmaintained field since linux 2.6.17, always 0.
+    // Unmaintained field since linux 2.6.17, always 0.
     // itrealvalue: i64,
-
     /// Time the process was started after system boot (clock ticks).
     pub starttime: u64,
 
@@ -290,22 +283,21 @@ pub struct Process {
     kstkesp: u64,
     kstkeip: u64,
 
-    // /// Signal bitmaps.
-    // /// These are obsolete, use `/proc/[pid]/status` instead.
-    // signal: u64,
-    // blocked: u64,
-    // sigignore: u64,
-    // sigcatch: u64,
+    // Signal bitmaps.
+    // These are obsolete, use `/proc/[pid]/status` instead.
+    signal: u64,
+    blocked: u64,
+    sigignore: u64,
+    sigcatch: u64,
 
     /// Channel the process is waiting on (address of a system call).
     pub wchan: u64,
 
-    // /// Number of pages swapped (not maintained).
+    // Number of pages swapped (not maintained).
     // pub nswap: u64,
-
-    // /// Number of pages swapped for child processes (not maintained).
+    //
+    // Number of pages swapped for child processes (not maintained).
     // pub cnswap: u64,
-
     /// Signal sent to parent when process dies.
     pub exit_signal: i32,
 
@@ -337,7 +329,7 @@ pub struct Process {
     env_end: u64,
 
     /// The thread's exit status.
-    pub exit_code: i32
+    pub exit_code: i32,
 }
 
 macro_rules! try_parse {
@@ -366,82 +358,81 @@ impl Process {
         // Read the PID and comm fields seperatley, as the comm field is delimited by brackets and
         // could contain spaces.
         let (pid_, rest) = match stat.find('(') {
-            Some(i) => stat.split_at(i-1),
-            None => return Err(parse_error("Could not parse comm", &path))
+            Some(i) => stat.split_at(i - 1),
+            None => return Err(parse_error("Could not parse comm", &path)),
         };
         let (comm, rest) = match rest.rfind(')') {
-            Some(i) => rest.split_at(i+2),
-            None => return Err(parse_error("Could not parse comm", &path))
+            Some(i) => rest.split_at(i + 2),
+            None => return Err(parse_error("Could not parse comm", &path)),
         };
 
         // Split the rest of the fields on the space character and read them into a vector.
         let mut fields: Vec<&str> = Vec::new();
         fields.push(pid_);
-        fields.push(&comm[2..comm.len()-2]);
+        fields.push(&comm[2..comm.len() - 2]);
         fields.extend(rest.trim_right().split(' '));
 
         // Check we haven't read more or less fields than expected.
         if fields.len() != 52 {
-            return Err(parse_error(
-                &format!("Expected 52 fields, got {}", fields.len()), &path));
+            return Err(parse_error(&format!("Expected 52 fields, got {}", fields.len()), &path));
         }
 
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
-            pid:                    try_parse!(fields[00]),
-            uid:                    meta.uid(),
-            gid:                    meta.gid(),
-            comm:                   try_parse!(fields[01]),
-            state:                  try_parse!(fields[02]),
-            ppid:                   try_parse!(fields[03]),
-            pgrp:                   try_parse!(fields[04]),
-            session:                try_parse!(fields[05]),
-            tty_nr:                 try_parse!(fields[06]),
-            tpgid:                  try_parse!(fields[07]),
-            flags:                  try_parse!(fields[08]),
-            minflt:                 try_parse!(fields[09]),
-            cminflt:                try_parse!(fields[10]),
-            majflt:                 try_parse!(fields[11]),
-            cmajflt:                try_parse!(fields[12]),
-            utime:                  try_parse!(fields[13], u64::from_str) as f64 / *TICKS_PER_SECOND,
-            stime:                  try_parse!(fields[14], u64::from_str) as f64 / *TICKS_PER_SECOND,
-            cutime:                 try_parse!(fields[15], i64::from_str) as f64 / *TICKS_PER_SECOND,
-            cstime:                 try_parse!(fields[16], i64::from_str) as f64 / *TICKS_PER_SECOND,
-            priority:               try_parse!(fields[17]),
-            nice:                   try_parse!(fields[18]),
-            num_threads:            try_parse!(fields[19]),
-            // itrealvalue:         try_parse!(fields[20]),
-            starttime:              try_parse!(fields[21]),
-            vsize:                  try_parse!(fields[22]),
-            rss:                    try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
-            rsslim:                 try_parse!(fields[24]),
-            startcode:              try_parse!(fields[25]),
-            endcode:                try_parse!(fields[26]),
-            startstack:             try_parse!(fields[27]),
-            kstkesp:                try_parse!(fields[28]),
-            kstkeip:                try_parse!(fields[29]),
-            // signal:              try_parse!(fields[30]),
-            // blocked:             try_parse!(fields[31]),
-            // sigignore:           try_parse!(fields[32]),
-            // sigcatch:            try_parse!(fields[33]),
-            wchan:                  try_parse!(fields[34]),
-            // nswap:               try_parse!(fields[35]),
-            // cnswap:              try_parse!(fields[36]),
-            exit_signal:            try_parse!(fields[37]),
-            processor:              try_parse!(fields[38]),
-            rt_priority:            try_parse!(fields[39]),
-            policy:                 try_parse!(fields[40]),
-            delayacct_blkio_ticks:  try_parse!(fields[41]),
-            guest_time:             try_parse!(fields[42], u64::from_str) as f64 / *TICKS_PER_SECOND,
-            cguest_time:            try_parse!(fields[43], i64::from_str) as f64 / *TICKS_PER_SECOND,
-            start_data:             try_parse!(fields[44]),
-            end_data:               try_parse!(fields[45]),
-            start_brk:              try_parse!(fields[46]),
-            arg_start:              try_parse!(fields[47]),
-            arg_end:                try_parse!(fields[48]),
-            env_start:              try_parse!(fields[49]),
-            env_end:                try_parse!(fields[50]),
-            exit_code:              try_parse!(fields[51])
+            pid: try_parse!(fields[00]),
+            uid: meta.uid(),
+            gid: meta.gid(),
+            comm: try_parse!(fields[01]),
+            state: try_parse!(fields[02]),
+            ppid: try_parse!(fields[03]),
+            pgrp: try_parse!(fields[04]),
+            session: try_parse!(fields[05]),
+            tty_nr: try_parse!(fields[06]),
+            tpgid: try_parse!(fields[07]),
+            flags: try_parse!(fields[08]),
+            minflt: try_parse!(fields[09]),
+            cminflt: try_parse!(fields[10]),
+            majflt: try_parse!(fields[11]),
+            cmajflt: try_parse!(fields[12]),
+            utime: try_parse!(fields[13], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            stime: try_parse!(fields[14], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            cutime: try_parse!(fields[15], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            cstime: try_parse!(fields[16], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            priority: try_parse!(fields[17]),
+            nice: try_parse!(fields[18]),
+            num_threads: try_parse!(fields[19]),
+            // itrealvalue: try_parse!(fields[20]),
+            starttime: try_parse!(fields[21]),
+            vsize: try_parse!(fields[22]),
+            rss: try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
+            rsslim: try_parse!(fields[24]),
+            startcode: try_parse!(fields[25]),
+            endcode: try_parse!(fields[26]),
+            startstack: try_parse!(fields[27]),
+            kstkesp: try_parse!(fields[28]),
+            kstkeip: try_parse!(fields[29]),
+            signal: try_parse!(fields[30]),
+            blocked: try_parse!(fields[31]),
+            sigignore: try_parse!(fields[32]),
+            sigcatch: try_parse!(fields[33]),
+            wchan: try_parse!(fields[34]),
+            // nswap: try_parse!(fields[35]),
+            // cnswap: try_parse!(fields[36]),
+            exit_signal: try_parse!(fields[37]),
+            processor: try_parse!(fields[38]),
+            rt_priority: try_parse!(fields[39]),
+            policy: try_parse!(fields[40]),
+            delayacct_blkio_ticks: try_parse!(fields[41]),
+            guest_time: try_parse!(fields[42], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            cguest_time: try_parse!(fields[43], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            start_data: try_parse!(fields[44]),
+            end_data: try_parse!(fields[45]),
+            start_brk: try_parse!(fields[46]),
+            arg_start: try_parse!(fields[47]),
+            arg_end: try_parse!(fields[48]),
+            env_start: try_parse!(fields[49]),
+            env_end: try_parse!(fields[50]),
+            exit_code: try_parse!(fields[51]),
         });
     }
 
@@ -454,7 +445,7 @@ impl Process {
     pub fn is_alive(&self) -> bool {
         match self.state {
             State::Zombie => false,
-            _ => true
+            _ => true,
         }
     }
 
@@ -468,8 +459,7 @@ impl Process {
             return Ok(None);
         } else {
             // Split terminator skips empty trailing substrings.
-            let split = cmdline.split_terminator(
-                |c: char| c == '\0' || c == ' ');
+            let split = cmdline.split_terminator(|c: char| c == '\0' || c == ' ');
 
             // `split` returns a vector of slices viewing `cmdline`, so they
             // get mapped to actual strings before being returned as a vector.
@@ -495,9 +485,9 @@ impl Process {
     /// Send SIGKILL to the process.
     pub fn kill(&self) -> Result<()> {
         return match unsafe { kill(self.pid, SIGKILL) } {
-            0  => Ok(()),
+            0 => Ok(()),
             -1 => Err(Error::last_os_error()),
-            _  => unreachable!()
+            _ => unreachable!(),
         };
     }
 }
@@ -519,9 +509,7 @@ pub fn all() -> Result<Vec<Process>> {
 
     for entry in try!(read_dir(&Path::new("/proc"))) {
         let path = try!(entry).path();
-        let name = try!(path.file_name().ok_or(
-            parse_error("Could not read /proc entry", &path)));
-
+        let name = try!(path.file_name().ok_or(parse_error("Could not read /proc entry", &path)));
         if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
             processes.push(try!(Process::new(pid)))
         }

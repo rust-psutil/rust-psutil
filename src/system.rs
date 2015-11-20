@@ -3,7 +3,7 @@
 use std::str::FromStr;
 use std::path::Path;
 
-use ::utils::read_file;
+use utils::read_file;
 
 /// Returns the system uptime in seconds.
 ///
