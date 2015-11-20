@@ -54,6 +54,15 @@ use ::{PID,UID,GID};
 use ::pidfile::read_pidfile;
 use ::utils::read_file;
 
+lazy_static! {
+    static ref TICKS_PER_SECOND: f64 = {
+        unsafe { sysconf(_SC_CLK_TCK) as f64 }
+    };
+    static ref PAGE_SIZE: u64 = {
+        unsafe { sysconf(_SC_PAGESIZE) as u64 }
+    };
+}
+
 /// Return a path to a file in `/proc/[pid]/`.
 fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     let mut path = PathBuf::new();
@@ -169,16 +178,14 @@ impl Memory {
                 &format!("Could not parse memory: {}", e), &path)))
             .collect());
 
-        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
-
         return Ok(Memory {
-            size:       bytes[0] * page_size,
-            resident:   bytes[1] * page_size,
-            share:      bytes[2] * page_size,
-            text:       bytes[3] * page_size,
-            // lib:     bytes[4] * page_size,
-            data:       bytes[5] * page_size,
-            // dt:      bytes[6] * page_size
+            size:       bytes[0] * *PAGE_SIZE,
+            resident:   bytes[1] * *PAGE_SIZE,
+            share:      bytes[2] * *PAGE_SIZE,
+            text:       bytes[3] * *PAGE_SIZE,
+            // lib:     bytes[4] * *PAGE_SIZE,
+            data:       bytes[5] * *PAGE_SIZE,
+            // dt:      bytes[6] * *PAGE_SIZE
         });
     }
 }
@@ -373,13 +380,6 @@ impl Process {
                 &format!("Expected 52 fields, got {}", fields.len()), &path));
         }
 
-        // This is 'safe' to call as sysconf should only return an error for invalid inputs, or
-        // options and limits (which `_SC_CLK_TCK` and `_SC_PAGESIZE` are not).
-        //
-        // TODO: These don't change per process, but there's nowhere to store them for now.
-        let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
-        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
-
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
             pid:                    try_parse!(fields[00]),
@@ -397,17 +397,17 @@ impl Process {
             cminflt:                try_parse!(fields[10]),
             majflt:                 try_parse!(fields[11]),
             cmajflt:                try_parse!(fields[12]),
-            utime:                  try_parse!(fields[13], u64::from_str) as f64 / ticks_per_second,
-            stime:                  try_parse!(fields[14], u64::from_str) as f64 / ticks_per_second,
-            cutime:                 try_parse!(fields[15], i64::from_str) as f64 / ticks_per_second,
-            cstime:                 try_parse!(fields[16], i64::from_str) as f64 / ticks_per_second,
+            utime:                  try_parse!(fields[13], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            stime:                  try_parse!(fields[14], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            cutime:                 try_parse!(fields[15], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            cstime:                 try_parse!(fields[16], i64::from_str) as f64 / *TICKS_PER_SECOND,
             priority:               try_parse!(fields[17]),
             nice:                   try_parse!(fields[18]),
             num_threads:            try_parse!(fields[19]),
             // itrealvalue:         try_parse!(fields[20]),
             starttime:              try_parse!(fields[21]),
             vsize:                  try_parse!(fields[22]),
-            rss:                    try_parse!(fields[23], i64::from_str) * page_size as i64,
+            rss:                    try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
             rsslim:                 try_parse!(fields[24]),
             startcode:              try_parse!(fields[25]),
             endcode:                try_parse!(fields[26]),
@@ -426,8 +426,8 @@ impl Process {
             rt_priority:            try_parse!(fields[39]),
             policy:                 try_parse!(fields[40]),
             delayacct_blkio_ticks:  try_parse!(fields[41]),
-            guest_time:             try_parse!(fields[42], u64::from_str) as f64 / ticks_per_second,
-            cguest_time:            try_parse!(fields[43], i64::from_str) as f64 / ticks_per_second,
+            guest_time:             try_parse!(fields[42], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            cguest_time:            try_parse!(fields[43], i64::from_str) as f64 / *TICKS_PER_SECOND,
             start_data:             try_parse!(fields[44]),
             end_data:               try_parse!(fields[45]),
             start_brk:              try_parse!(fields[46]),
