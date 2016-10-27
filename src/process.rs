@@ -501,8 +501,22 @@ impl PartialEq for Process {
 
 /// Return a vector of all processes in `/proc`.
 ///
-/// ```
-/// psutil::process::all().unwrap();
+/// You may want to retry after a `std::io::ErrorKind::NotFound` error
+/// due to a race condition where the contents of `/proc` are read,
+/// and then a particular process dies before getting to read its info.
+/// See example below.
+///
+/// ```ignore
+/// loop {
+///     match psutil::process::all() {
+///         Ok(procs) => return Ok(procs),
+///         Err(why) => {
+///             if why.kind() != std::io::ErrorKind::NotFound {
+///                 return Err(why);
+///             }
+///         }
+///     }
+/// }
 /// ```
 pub fn all() -> Result<Vec<Process>> {
     let mut processes = Vec::new();
