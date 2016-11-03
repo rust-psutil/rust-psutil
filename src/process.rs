@@ -30,7 +30,7 @@ fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     path.push("/proc");
     path.push(&pid.to_string());
     path.push(&name);
-    return path;
+    path
 }
 
 /// Return an `io::Error` value and include the path in the message.
@@ -91,15 +91,15 @@ impl FromStr for State {
 
 impl ToString for State {
     fn to_string(&self) -> String {
-        match self {
-            &State::Running => "R".to_string(),
-            &State::Sleeping => "S".to_string(),
-            &State::Waiting => "D".to_string(),
-            &State::Stopped => "T".to_string(),
-            &State::Traced => "t".to_string(),
-            &State::Paging => "W".to_string(),
-            &State::Zombie => "Z".to_string(),
-            &State::Dead => "X".to_string(),
+        match *self {
+            State::Running => "R".to_string(),
+            State::Sleeping => "S".to_string(),
+            State::Waiting => "D".to_string(),
+            State::Stopped => "T".to_string(),
+            State::Traced => "t".to_string(),
+            State::Paging => "W".to_string(),
+            State::Zombie => "Z".to_string(),
+            State::Dead => "X".to_string(),
         }
     }
 }
@@ -129,15 +129,15 @@ impl Memory {
     pub fn new(pid: PID) -> Result<Memory> {
         let path = procfs_path(pid, "statm");
         let statm = try!(read_file(&path));
-        let fields: Vec<&str> = statm.trim_right().split(" ").collect();
+        let fields: Vec<&str> = statm.trim_right().split(' ').collect();
 
-        return Ok(Memory {
+        Ok(Memory {
             size: try!(Memory::parse_bytes(fields[0], &path)) * *PAGE_SIZE,
             resident: try!(Memory::parse_bytes(fields[1], &path)) * *PAGE_SIZE,
             share: try!(Memory::parse_bytes(fields[2], &path)) * *PAGE_SIZE,
             text: try!(Memory::parse_bytes(fields[3], &path)) * *PAGE_SIZE,
             data: try!(Memory::parse_bytes(fields[5], &path)) * *PAGE_SIZE,
-        });
+        })
     }
 
     fn parse_bytes(field: &str, path: &PathBuf) -> Result<u64> {
@@ -355,7 +355,7 @@ impl Process {
         let stat = try!(read_file(&path));
         let meta = try!(fs::metadata(procfs_path(pid, "")));
 
-        // Read the PID and comm fields seperatley, as the comm field is delimited by brackets and
+        // Read the PID and comm fields separately, as the comm field is delimited by brackets and
         // could contain spaces.
         let (pid_, rest) = match stat.find('(') {
             Some(i) => stat.split_at(i - 1),
@@ -378,19 +378,19 @@ impl Process {
         }
 
         // Read each field into an attribute for a new Process instance
-        return Ok(Process {
+        Ok(Process {
             pid: try_parse!(fields[00]),
             uid: meta.uid(),
             gid: meta.gid(),
-            comm: try_parse!(fields[01]),
-            state: try_parse!(fields[02]),
-            ppid: try_parse!(fields[03]),
-            pgrp: try_parse!(fields[04]),
-            session: try_parse!(fields[05]),
-            tty_nr: try_parse!(fields[06]),
-            tpgid: try_parse!(fields[07]),
-            flags: try_parse!(fields[08]),
-            minflt: try_parse!(fields[09]),
+            comm: try_parse!(fields[1]),
+            state: try_parse!(fields[2]),
+            ppid: try_parse!(fields[3]),
+            pgrp: try_parse!(fields[4]),
+            session: try_parse!(fields[5]),
+            tty_nr: try_parse!(fields[6]),
+            tpgid: try_parse!(fields[7]),
+            flags: try_parse!(fields[8]),
+            minflt: try_parse!(fields[9]),
             cminflt: try_parse!(fields[10]),
             majflt: try_parse!(fields[11]),
             cmajflt: try_parse!(fields[12]),
@@ -433,7 +433,7 @@ impl Process {
             env_start: try_parse!(fields[49]),
             env_end: try_parse!(fields[50]),
             exit_code: try_parse!(fields[51]),
-        });
+        })
     }
 
     /// Create a Process by reading it's PID from a pidfile.
@@ -455,16 +455,15 @@ impl Process {
     pub fn cmdline_vec(&self) -> Result<Option<Vec<String>>> {
         let cmdline = try!(read_file(&procfs_path(self.pid, "cmdline")));
 
-        if cmdline == "" {
+        if cmdline.is_empty() {
             return Ok(None);
-        } else {
-            // Split terminator skips empty trailing substrings.
-            let split = cmdline.split_terminator(|c: char| c == '\0' || c == ' ');
-
-            // `split` returns a vector of slices viewing `cmdline`, so they
-            // get mapped to actual strings before being returned as a vector.
-            return Ok(Some(split.map(|x| x.to_string()).collect()));
         }
+        // Split terminator skips empty trailing substrings.
+        let split = cmdline.split_terminator(|c: char| c == '\0' || c == ' ');
+
+        // `split` returns a vector of slices viewing `cmdline`, so they
+        // get mapped to actual strings before being returned as a vector.
+        Ok(Some(split.map(|x| x.to_string()).collect()))
     }
 
     /// Return the result of `cmdline_vec` as a String.
@@ -484,11 +483,11 @@ impl Process {
 
     /// Send SIGKILL to the process.
     pub fn kill(&self) -> Result<()> {
-        return match unsafe { kill(self.pid, SIGKILL) } {
+        match unsafe { kill(self.pid, SIGKILL) } {
             0 => Ok(()),
             -1 => Err(Error::last_os_error()),
             _ => unreachable!(),
-        };
+        }
     }
 }
 
@@ -529,5 +528,5 @@ pub fn all() -> Result<Vec<Process>> {
         }
     }
 
-    return Ok(processes);
+    Ok(processes)
 }
