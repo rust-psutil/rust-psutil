@@ -29,6 +29,11 @@ fn process_cwd() {
 }
 
 #[test]
+fn process_exe() {
+    assert!(get_process().exe().is_ok());
+}
+
+#[test]
 fn process_memory() {
     get_process().memory().unwrap();
 }

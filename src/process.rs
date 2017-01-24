@@ -476,6 +476,11 @@ impl Process {
         read_link(procfs_path(self.pid, "cwd"))
     }
 
+    /// Read the absolute path of the process
+    pub fn exe(&self) -> Result<PathBuf> {
+        read_link(procfs_path(self.pid, "exe"))
+    }
+    
     /// Reads `/proc/[pid]/statm` into a struct.
     pub fn memory(&self) -> Result<Memory> {
         Memory::new(self.pid)
