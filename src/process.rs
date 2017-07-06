@@ -146,6 +146,16 @@ impl Memory {
     }
 }
 
+pub struct Fd {
+    /// Number of fd
+    pub number: i32,
+
+    /// Path to resolved fd
+    pub path: PathBuf,
+
+}
+
+
 /// Information about a process gathered from `/proc/[pid]/stat`.
 ///
 /// More information about specific fields can be found in [proc(5)].
@@ -484,6 +494,24 @@ impl Process {
     /// Reads `/proc/[pid]/statm` into a struct.
     pub fn memory(&self) -> Result<Memory> {
         Memory::new(self.pid)
+    }
+
+    /// Reads `/proc/[pid]/fd` directory
+    pub fn open_fds(&self) -> Result<Vec<Fd>> {
+        ///
+        let mut fds = Vec::new();
+        let entry_set = try!(read_dir(procfs_path(self.pid, "fd")));
+        for entry in entry_set {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                let fd_number =  try!(path.file_name().ok_or(parse_error("Could not read /proc entry", &path)));
+                if let Ok(fd_path) = read_link(&path) {
+                    fds.push(Fd{number: fd_number.to_string_lossy().parse::<i32>().unwrap(), path: fd_path})
+                }
+            }
+        }
+
+        Ok(fds)
     }
 
     /// Send SIGKILL to the process.
