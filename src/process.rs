@@ -51,6 +51,7 @@ pub enum State {
     Paging,
     Dead,
     Zombie,
+    Idle,
 }
 
 impl State {
@@ -70,6 +71,7 @@ impl State {
             'W' => Ok(State::Paging),
             'Z' => Ok(State::Zombie),
             'X' => Ok(State::Dead),
+            'I' => Ok(State::Idle),
             _ => Err(Error::new(ErrorKind::InvalidInput,
                                 format!("Invalid state character: {:?}", state))),
         }
@@ -100,6 +102,7 @@ impl ToString for State {
             State::Paging => "W".to_string(),
             State::Zombie => "Z".to_string(),
             State::Dead => "X".to_string(),
+            State::Idle => "I".to_string(),
         }
     }
 }
