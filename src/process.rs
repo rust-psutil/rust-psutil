@@ -277,8 +277,11 @@ pub struct Process {
 
     // Unmaintained field since linux 2.6.17, always 0.
     // itrealvalue: i64,
+    /// Time the process was started after system boot (seconds).
+    pub starttime: f64,
+
     /// Time the process was started after system boot (clock ticks).
-    pub starttime: u64,
+    pub starttime_raw: u64,
 
     /// Virtual memory size in bytes.
     pub vsize: u64,
@@ -367,7 +370,10 @@ impl Process {
         let path = procfs_path(pid, "stat");
         let stat = try!(read_file(&path));
         let meta = try!(fs::metadata(procfs_path(pid, "")));
+        Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
+    }
 
+    fn new_internal(stat: &str, file_uid: UID, file_gid: GID, path: &PathBuf) -> Result<Process> {
         // Read the PID and comm fields separately, as the comm field is delimited by brackets and
         // could contain spaces.
         let (pid_, rest) = match stat.find('(') {
@@ -393,8 +399,8 @@ impl Process {
         // Read each field into an attribute for a new Process instance
         Ok(Process {
             pid: try_parse!(fields[00]),
-            uid: meta.uid(),
-            gid: meta.gid(),
+            uid: file_uid,
+            gid: file_gid,
             comm: try_parse!(fields[1]),
             state: try_parse!(fields[2]),
             ppid: try_parse!(fields[3]),
@@ -415,7 +421,8 @@ impl Process {
             nice: try_parse!(fields[18]),
             num_threads: try_parse!(fields[19]),
             // itrealvalue: try_parse!(fields[20]),
-            starttime: try_parse!(fields[21]),
+            starttime: try_parse!(fields[21], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            starttime_raw: try_parse!(fields[21]),
             vsize: try_parse!(fields[22]),
             rss: try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
             rsslim: try_parse!(fields[24]),
@@ -565,4 +572,36 @@ pub fn all() -> Result<Vec<Process>> {
     }
 
     Ok(processes)
+}
+
+#[cfg(test)]
+mod unit_tests {
+    use super::*;
+
+    #[test]
+    fn stat_52_fields() {
+        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        assert_eq!(p.pid, 1);
+        assert_eq!(p.comm, "init");
+        assert_eq!(p.utime, 17.81);
+    }
+
+    #[test]
+    fn starttime_in_seconds_and_ticks() {
+        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+
+        // This field should be in seconds
+        if *TICKS_PER_SECOND == 100.0 {
+            assert_eq!(p.starttime, 0.09);
+        } else if *TICKS_PER_SECOND == 1000.0 {
+            assert_eq!(p.starttime, 0.009);
+        }
+        assert_eq!((p.starttime * *TICKS_PER_SECOND) as u64, 9);
+
+
+        // This field should be in clock ticks, i.e. the raw value from the file
+        assert_eq!(p.starttime_raw, 9);
+    }
 }
