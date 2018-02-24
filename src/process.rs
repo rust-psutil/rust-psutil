@@ -339,13 +339,15 @@ pub struct Process {
     start_data: u64,
     end_data: u64,
     start_brk: u64,
-    arg_start: u64,
-    arg_end: u64,
-    env_start: u64,
-    env_end: u64,
+
+    // These fields were only introduced in Linux 3.5, so are optional.
+    arg_start: Option<u64>,
+    arg_end: Option<u64>,
+    env_start: Option<u64>,
+    env_end: Option<u64>,
 
     /// The thread's exit status.
-    pub exit_code: i32,
+    pub exit_code: Option<i32>,
 }
 
 macro_rules! try_parse {
@@ -391,9 +393,13 @@ impl Process {
         fields.push(&comm[2..comm.len() - 2]);
         fields.extend(rest.trim_right().split(' '));
 
-        // Check we haven't read more or less fields than expected.
-        if fields.len() != 52 {
-            return Err(parse_error(&format!("Expected 52 fields, got {}", fields.len()), &path));
+        // Check we haven't read more or less fields than expected. Linux 3.3 has 47 fields in
+        // /proc, and Linux 3.5 has 52, so support multiple values.
+        //
+        // TODO: Linux pre-2.1.22 had 37 fields, 2.1.22 had 38, 2.2.8 had 39, 2.5.19 had 41, 2.6.18
+        //       had 42 and 2.6.24 had 44, so we should support a wider range of values here.
+        if fields.len() < 47  || fields.len() > 52 {
+            return Err(parse_error(&format!("Expected between 47 and 52 fields, got {}", fields.len()), &path));
         }
 
         // Read each field into an attribute for a new Process instance
@@ -448,11 +454,11 @@ impl Process {
             start_data: try_parse!(fields[44]),
             end_data: try_parse!(fields[45]),
             start_brk: try_parse!(fields[46]),
-            arg_start: try_parse!(fields[47]),
-            arg_end: try_parse!(fields[48]),
-            env_start: try_parse!(fields[49]),
-            env_end: try_parse!(fields[50]),
-            exit_code: try_parse!(fields[51]),
+            arg_start: if fields.len() > 47 { Some(try_parse!(fields[47])) } else { None },
+            arg_end:   if fields.len() > 48 { Some(try_parse!(fields[48])) } else { None },
+            env_start: if fields.len() > 49 { Some(try_parse!(fields[49])) } else { None },
+            env_end:   if fields.len() > 50 { Some(try_parse!(fields[50])) } else { None },
+            exit_code: if fields.len() > 51 { Some(try_parse!(fields[51])) } else { None },
         })
     }
 
@@ -585,6 +591,17 @@ mod unit_tests {
         assert_eq!(p.pid, 1);
         assert_eq!(p.comm, "init");
         assert_eq!(p.utime, 17.81);
+        assert_eq!(p.exit_code, Some(0));
+    }
+
+    #[test]
+    fn stat_47_fields() {
+        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0\n";
+        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        assert_eq!(p.pid, 1);
+        assert_eq!(p.comm, "init");
+        assert_eq!(p.utime, 17.81);
+        assert_eq!(p.exit_code, None);
     }
 
     #[test]
