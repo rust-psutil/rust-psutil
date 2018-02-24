@@ -277,11 +277,11 @@ pub struct Process {
 
     // Unmaintained field since linux 2.6.17, always 0.
     // itrealvalue: i64,
-    /// Time the process was started after system boot (seconds).
-    pub starttime: f64,
-
     /// Time the process was started after system boot (clock ticks).
-    pub starttime_raw: u64,
+    pub starttime: u64,
+
+    /// Time the process was started after system boot (seconds).
+    pub starttime_seconds: f64,
 
     /// Virtual memory size in bytes.
     pub vsize: u64,
@@ -421,8 +421,8 @@ impl Process {
             nice: try_parse!(fields[18]),
             num_threads: try_parse!(fields[19]),
             // itrealvalue: try_parse!(fields[20]),
-            starttime: try_parse!(fields[21], u64::from_str) as f64 / *TICKS_PER_SECOND,
-            starttime_raw: try_parse!(fields[21]),
+            starttime: try_parse!(fields[21]),
+            starttime_seconds: try_parse!(fields[21], u64::from_str) as f64 / *TICKS_PER_SECOND,
             vsize: try_parse!(fields[22]),
             rss: try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
             rsslim: try_parse!(fields[24]),
@@ -594,14 +594,14 @@ mod unit_tests {
 
         // This field should be in seconds
         if *TICKS_PER_SECOND == 100.0 {
-            assert_eq!(p.starttime, 0.09);
+            assert_eq!(p.starttime_seconds, 0.09);
         } else if *TICKS_PER_SECOND == 1000.0 {
-            assert_eq!(p.starttime, 0.009);
+            assert_eq!(p.starttime_seconds, 0.009);
         }
-        assert_eq!((p.starttime * *TICKS_PER_SECOND) as u64, 9);
+        assert_eq!((p.starttime_seconds * *TICKS_PER_SECOND) as u64, 9);
 
 
         // This field should be in clock ticks, i.e. the raw value from the file
-        assert_eq!(p.starttime_raw, 9);
+        assert_eq!(p.starttime, 9);
     }
 }
