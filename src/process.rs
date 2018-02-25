@@ -449,7 +449,7 @@ impl Process {
         })
     }
 
-    /// Create a Process by reading it's PID from a pidfile.
+    /// Create a Process by reading its PID from a pidfile.
     pub fn from_pidfile(path: &Path) -> Result<Process> {
         Process::new(try!(read_pidfile(&path)))
     }
@@ -501,7 +501,6 @@ impl Process {
 
     /// Reads `/proc/[pid]/fd` directory
     pub fn open_fds(&self) -> Result<Vec<Fd>> {
-        ///
         let mut fds = Vec::new();
         let entry_set = try!(read_dir(procfs_path(self.pid, "fd")));
         for entry in entry_set {
