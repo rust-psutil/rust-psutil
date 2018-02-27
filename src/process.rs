@@ -188,7 +188,8 @@ pub struct Fd {
 ///
 /// These values are all returned as a number of clock ticks, which can be divided by
 /// `sysconf(_SC_CLK_TCK)` to get a value in seconds. The `Process` struct does this conversion
-/// automatically, and all CPU time fields use the `f64` type.
+/// automatically, and all CPU time fields use the `f64` type. A corresponding `_ticks` field  (e.g.
+/// `utime_ticks` gives the raw number of ticks as found in `/proc`.
 ///
 /// # Unmaintained fields
 ///
@@ -257,14 +258,26 @@ pub struct Process {
     /// Time scheduled in user mode (seconds).
     pub utime: f64,
 
+    /// Time scheduled in user mode (ticks).
+    pub utime_ticks: u64,
+
     /// Time scheduled in kernel mode (seconds).
     pub stime: f64,
+
+    /// Time scheduled in kernel mode (ticks).
+    pub stime_ticks: u64,
 
     /// Time waited-for child processes were scheduled in user mode (seconds).
     pub cutime: f64,
 
+    /// Time waited-for child processes were scheduled in user mode (ticks).
+    pub cutime_ticks: i64,
+
     /// Time waited-for child processes were scheduled in kernel mode (seconds).
     pub cstime: f64,
+
+    /// Time waited-for child processes were scheduled in kernel mode (ticks).
+    pub cstime_ticks: i64,
 
     /// Priority value (-100..-2 | 0..39).
     pub priority: i64,
@@ -277,8 +290,11 @@ pub struct Process {
 
     // Unmaintained field since linux 2.6.17, always 0.
     // itrealvalue: i64,
-    /// Time the process was started after system boot (clock ticks).
-    pub starttime: u64,
+    /// Time the process was started after system boot (seconds).
+    pub starttime: f64,
+
+    /// Time the process was started after system boot (ticks).
+    pub starttime_ticks: u64,
 
     /// Virtual memory size in bytes.
     pub vsize: u64,
@@ -323,14 +339,23 @@ pub struct Process {
     /// Scheduling policy.
     pub policy: u32,
 
-    /// Aggregated block I/O delays (clock ticks).
+    /// Aggregated block I/O delays (seconds).
+    pub delayacct_blkio: f64,
+
+    /// Aggregated block I/O delays (ticks).
     pub delayacct_blkio_ticks: u64,
 
     /// Guest time of the process (seconds).
     pub guest_time: f64,
 
+    /// Guest time of the process (ticks).
+    pub guest_time_ticks: u64,
+
     /// Guest time of the process's children (seconds).
     pub cguest_time: f64,
+
+    /// Guest time of the process's children (ticks).
+    pub cguest_time_ticks: i64,
 
     // More memory addresses.
     start_data: u64,
@@ -367,7 +392,10 @@ impl Process {
         let path = procfs_path(pid, "stat");
         let stat = try!(read_file(&path));
         let meta = try!(fs::metadata(procfs_path(pid, "")));
+        Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
+    }
 
+    fn new_internal(stat: &str, file_uid: UID, file_gid: GID, path: &PathBuf) -> Result<Process> {
         // Read the PID and comm fields separately, as the comm field is delimited by brackets and
         // could contain spaces.
         let (pid_, rest) = match stat.find('(') {
@@ -393,8 +421,8 @@ impl Process {
         // Read each field into an attribute for a new Process instance
         Ok(Process {
             pid: try_parse!(fields[00]),
-            uid: meta.uid(),
-            gid: meta.gid(),
+            uid: file_uid,
+            gid: file_gid,
             comm: try_parse!(fields[1]),
             state: try_parse!(fields[2]),
             ppid: try_parse!(fields[3]),
@@ -408,14 +436,19 @@ impl Process {
             majflt: try_parse!(fields[11]),
             cmajflt: try_parse!(fields[12]),
             utime: try_parse!(fields[13], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            utime_ticks: try_parse!(fields[13], u64::from_str),
             stime: try_parse!(fields[14], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            stime_ticks: try_parse!(fields[14], u64::from_str),
             cutime: try_parse!(fields[15], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            cutime_ticks: try_parse!(fields[15], i64::from_str),
             cstime: try_parse!(fields[16], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            cstime_ticks: try_parse!(fields[16], i64::from_str),
             priority: try_parse!(fields[17]),
             nice: try_parse!(fields[18]),
             num_threads: try_parse!(fields[19]),
             // itrealvalue: try_parse!(fields[20]),
-            starttime: try_parse!(fields[21]),
+            starttime: try_parse!(fields[21], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            starttime_ticks: try_parse!(fields[21]),
             vsize: try_parse!(fields[22]),
             rss: try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64,
             rsslim: try_parse!(fields[24]),
@@ -435,9 +468,12 @@ impl Process {
             processor: try_parse!(fields[38]),
             rt_priority: try_parse!(fields[39]),
             policy: try_parse!(fields[40]),
+            delayacct_blkio: try_parse!(fields[41], u64::from_str) as f64 / *TICKS_PER_SECOND,
             delayacct_blkio_ticks: try_parse!(fields[41]),
             guest_time: try_parse!(fields[42], u64::from_str) as f64 / *TICKS_PER_SECOND,
+            guest_time_ticks: try_parse!(fields[42], u64::from_str),
             cguest_time: try_parse!(fields[43], i64::from_str) as f64 / *TICKS_PER_SECOND,
+            cguest_time_ticks: try_parse!(fields[43], i64::from_str),
             start_data: try_parse!(fields[44]),
             end_data: try_parse!(fields[45]),
             start_brk: try_parse!(fields[46]),
@@ -564,4 +600,36 @@ pub fn all() -> Result<Vec<Process>> {
     }
 
     Ok(processes)
+}
+
+#[cfg(test)]
+mod unit_tests {
+    use super::*;
+
+    #[test]
+    fn stat_52_fields() {
+        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        assert_eq!(p.pid, 1);
+        assert_eq!(p.comm, "init");
+        assert_eq!(p.utime, 17.81);
+    }
+
+    #[test]
+    fn starttime_in_seconds_and_ticks() {
+        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+
+        // This field should be in seconds
+        if *TICKS_PER_SECOND == 100.0 {
+            assert_eq!(p.starttime, 0.09);
+        } else if *TICKS_PER_SECOND == 1000.0 {
+            assert_eq!(p.starttime, 0.009);
+        }
+        assert_eq!((p.starttime * *TICKS_PER_SECOND) as u64, 9);
+
+
+        // This field should be in clock ticks, i.e. the raw value from the file
+        assert_eq!(p.starttime_ticks, 9);
+    }
 }
