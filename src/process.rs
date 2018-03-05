@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
+use std::collections::HashMap;
 
 use libc::{_SC_CLK_TCK, _SC_PAGESIZE, SIGKILL};
 use libc::{kill, sysconf};
@@ -529,7 +530,27 @@ impl Process {
     pub fn exe(&self) -> Result<PathBuf> {
         read_link(procfs_path(self.pid, "exe"))
     }
+
+    fn environ_internal(file_contents: &str) -> Result<HashMap<String, String>> {
+        let mut ret = HashMap::new();
+        for s in file_contents.split_terminator('\0') {
+            let vv: Vec<&str> = s.splitn(2, "=").collect();
+            if vv.len() != 2 {
+                return Err(Error::new(ErrorKind::InvalidInput,
+                                  format!("Item {} has too few fields", s)));
+            }
+            ret.insert(vv[0].to_owned(), vv[1].to_owned());
+        }
+
+        Ok(ret)
+    }
     
+    pub fn environ(&self) -> Result<HashMap<String, String>> {
+        let path = procfs_path(self.pid, "environ");
+        let env = try!(read_file(&path));
+        Process::environ_internal(&env)
+    }
+
     /// Reads `/proc/[pid]/statm` into a struct.
     pub fn memory(&self) -> Result<Memory> {
         Memory::new(self.pid)
@@ -631,5 +652,14 @@ mod unit_tests {
 
         // This field should be in clock ticks, i.e. the raw value from the file
         assert_eq!(p.starttime_ticks, 9);
+    }
+
+    #[test]
+    fn environ() {
+        let fc = "HOME=/\0init=/sbin/init\0recovery=\0TERM=linux\0BOOT_IMAGE=/boot/vmlinuz-3.13.0-128-generic\0PATH=/sbin:/usr/sbin:/bin:/usr/bin\0PWD=/\0rootmnt=/root\0";
+        let e = Process::environ_internal(fc).unwrap();
+        assert_eq!(e["HOME"], "/");
+        assert_eq!(e["rootmnt"], "/root");
+        assert_eq!(e["recovery"], "");
     }
 }
