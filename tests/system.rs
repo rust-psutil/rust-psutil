@@ -18,7 +18,8 @@ fn virtual_memory() {
 fn swap_memory() {
     let sm = psutil::system::swap_memory().unwrap();
     // simple sanity checking
-    assert!(sm.total != 0);
-    assert!(sm.free <= sm.total);
-    assert!(sm.percent >= 0.0);
+    if sm.total != 0 {
+        assert!(sm.free <= sm.total);
+        assert!(sm.percent >= 0.0);
+    }
 }
