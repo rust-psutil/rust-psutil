@@ -4,18 +4,9 @@ use std::str::FromStr;
 use std::path::Path;
 use std::collections::HashMap;
 
-use utils::read_file;
+use std::io::{Result, ErrorKind, Error};
 
-/// Gets a value from a hashmap and dereferences it.
-/// If the key doesn't exist, return `None`
-macro_rules! get_deref(
-    ($map:expr,$key:expr) => (
-        match $map.get($key) {
-            Some(e) => *e,
-            None => return None
-        }
-    )
-);
+use utils::read_file;
 
 #[derive(Debug)]
 pub struct VirtualMemory {
@@ -50,23 +41,33 @@ pub struct VirtualMemory {
     pub shared: u64,
 }
 
-impl Default for VirtualMemory {
-    fn default() -> VirtualMemory {
+impl VirtualMemory {
+    pub fn new(
+        total: u64,
+        available: u64,
+        shared: u64,
+        free: u64,
+        buffers: u64,
+        cached: u64,
+        active: u64,
+        inactive: u64,
+    ) -> VirtualMemory {
+        let used = total - free - cached - buffers;
+
         VirtualMemory {
-            total: 0,
-            available: 0,
-            percent: 0.0,
-            used: 0,
-            free: 0,
-            active: 0,
-            inactive: 0,
-            buffers: 0,
-            cached: 0,
-            shared: 0,
+            total: total,
+            available: available,
+            shared: shared,
+            free: free,
+            buffers: buffers,
+            cached: cached,
+            active: active,
+            inactive: inactive,
+            used: used,
+            percent: (used as f32 / total as f32) * 100.0,
         }
     }
 }
-
 #[derive(Debug)]
 pub struct SwapMemory {
     /// Amount of total swap memory
@@ -88,15 +89,18 @@ pub struct SwapMemory {
     pub sout: u64,
 }
 
-impl Default for SwapMemory {
-    fn default() -> Self {
+impl SwapMemory {
+    pub fn new(total: u64, free: u64, sin: u64, sout: u64) -> SwapMemory {
+        let used = total - free;
+        let percent = (used as f32 / total as f32) * 100.0;
+
         SwapMemory {
-            total: 0,
-            used: 0,
-            free: 0,
-            percent: 0.0,
-            sin: 0,
-            sout: 0,
+            total: total,
+            used: used,
+            free: free,
+            percent: percent,
+            sin: sin,
+            sout: sout,
         }
     }
 }
@@ -126,58 +130,105 @@ mod unit_tests {
     fn uptime_parses() {
         assert_eq!(uptime_internal("12489513.08 22906637.29\n"), 12489513);
     }
+
+    #[test]
+    fn make_map_spaces() {
+        let input = "field1: 23\nfield2: 45\nfield3: 100\n";
+        let out = make_map(&input);
+        assert_eq!(out.get("field1:"), Some(&23));
+        assert_eq!(out.get("field2:"), Some(&45));
+    }
+
+    #[test]
+    fn make_map_tabs() {
+        let input = "field1:\t\t\t45\nfield2:\t\t100\nfield4:\t\t\t\t4\n";
+        let out = make_map(&input);
+        assert_eq!(out.get("field1:"), Some(&45));
+        assert_eq!(out.get("field2:"), Some(&100));
+    }
+
+    #[test]
+    fn make_map_with_ext() {
+        let input = "field1: 100 kB\n field2: 200";
+        let out = make_map(&input);
+        assert_eq!(out.get("field1:"), Some(&102400));
+        assert_eq!(out.get("field2:"), Some(&200));
+    }
+
+    #[test]
+    fn multipler_kb() {
+        assert_eq!(get_multiplier(&mut vec!["100", "kB"]), Some(1024));
+    }
+
+    #[test]
+    fn multiplier_none() {
+        assert_eq!(get_multiplier(&mut vec!["100", "200"]), None);
+    }
+
+    #[test]
+    fn multiplier_last() {
+        assert_eq!(
+            get_multiplier(&mut vec!["100", "200", "400", "700", "kB"]),
+            Some(1024)
+        );
+    }
+}
+
+fn not_found(key: &str) -> Error {
+    Error::new(ErrorKind::NotFound, format!("{} not found", key))
 }
 
 /// Returns information about virtual memory usage
 ///
 /// `/proc/meminfo` contains the virtual memory statistics
-pub fn virtual_memory() -> Option<VirtualMemory> {
-    let data = read_file(Path::new("/proc/meminfo")).unwrap();
+pub fn virtual_memory() -> Result<VirtualMemory> {
+    let data = read_file(Path::new("/proc/meminfo"))?;
     let mem_info = make_map(&data);
 
-    let mut virtual_memory: VirtualMemory = Default::default();
-
-    virtual_memory.total = get_deref!(mem_info, "MemTotal:");
-    virtual_memory.free = get_deref!(mem_info, "MemFree:");
-    virtual_memory.buffers = get_deref!(mem_info, "Buffers:");
-    virtual_memory.cached = get_deref!(mem_info, "Cached:");
-    virtual_memory.active = get_deref!(mem_info, "Active:");
-    virtual_memory.inactive = get_deref!(mem_info, "Inactive:");
+    let total = *mem_info.get("MemTotal:").ok_or(not_found("MemTotal"))?;
+    let free = *mem_info.get("MemFree:").ok_or(not_found("MemFree"))?;
+    let buffers = *mem_info.get("Buffers:").ok_or(not_found("Buffers"))?;
+    let cached = *mem_info.get("Cached:").ok_or(not_found("Cached"))?;
+    let active = *mem_info.get("Active:").ok_or(not_found("Active"))?;
+    let inactive = *mem_info.get("Inactive:").ok_or(not_found("Inactive"))?;
 
     // MemAvailable was introduced in kernel 3.14. The original psutil computes it if it's not
     // found, but since 3.14 has already reached EOL, let's assume that it's there.
-    virtual_memory.available = get_deref!(mem_info, "MemAvailable:");
+    let available = *mem_info.get("MemAvailable:").ok_or(
+        not_found("MemAvailable"),
+    )?;
 
     // Shmem was introduced in 2.6.19
-    virtual_memory.shared = get_deref!(mem_info, "Shmem:");
+    let shared = *mem_info.get("Shmem:").ok_or(not_found("Shmem"))?;
 
-    virtual_memory.used = virtual_memory.total - virtual_memory.free - virtual_memory.cached -
-        virtual_memory.buffers;
-    virtual_memory.percent = (virtual_memory.used as f32 / virtual_memory.total as f32) * 100.0;
-
-    Some(virtual_memory)
+    Ok(VirtualMemory::new(
+        total,
+        available,
+        shared,
+        free,
+        buffers,
+        cached,
+        active,
+        inactive,
+    ))
 }
 
 /// Returns information about swap memory usage
 ///
 /// `/proc/meminfo` and `/proc/vmstat` contains the information
-pub fn swap_memory() -> Option<SwapMemory> {
-    let data = read_file(Path::new("/proc/meminfo")).unwrap();
+pub fn swap_memory() -> Result<SwapMemory> {
+    let data = read_file(Path::new("/proc/meminfo"))?;
     let swap_info = make_map(&data);
 
-    let vmstat = read_file(Path::new("/proc/vmstat")).unwrap();
+    let vmstat = read_file(Path::new("/proc/vmstat"))?;
     let vmstat_info = make_map(&vmstat);
 
-    let mut swap_memory: SwapMemory = Default::default();
+    let total = *swap_info.get("SwapTotal:").ok_or(not_found("SwapTotal"))?;
+    let free = *swap_info.get("SwapFree:").ok_or(not_found("SwapFree"))?;
+    let sin = *vmstat_info.get("pswpin").ok_or(not_found("pswpin"))?;
+    let sout = *vmstat_info.get("pswpout").ok_or(not_found("pswpout"))?;
 
-    swap_memory.total = get_deref!(swap_info, "SwapTotal:");
-    swap_memory.free = get_deref!(swap_info, "SwapFree:");
-    swap_memory.sin = get_deref!(vmstat_info, "pswpin");
-    swap_memory.sout = get_deref!(vmstat_info, "pswpout");
-    swap_memory.used = swap_memory.total - swap_memory.free;
-    swap_memory.percent = (swap_memory.used as f32 / swap_memory.total as f32) * 100.0;
-
-    Some(swap_memory)
+    Ok(SwapMemory::new(total, free, sin, sout))
 }
 
 fn get_multiplier(fields: &mut Vec<&str>) -> Option<u64> {
