@@ -134,7 +134,7 @@ mod unit_tests {
     #[test]
     fn make_map_spaces() {
         let input = "field1: 23\nfield2: 45\nfield3: 100\n";
-        let out = make_map(&input);
+        let out = make_map(&input).unwrap();
         assert_eq!(out.get("field1:"), Some(&23));
         assert_eq!(out.get("field2:"), Some(&45));
     }
@@ -142,7 +142,7 @@ mod unit_tests {
     #[test]
     fn make_map_tabs() {
         let input = "field1:\t\t\t45\nfield2:\t\t100\nfield4:\t\t\t\t4\n";
-        let out = make_map(&input);
+        let out = make_map(&input).unwrap();
         assert_eq!(out.get("field1:"), Some(&45));
         assert_eq!(out.get("field2:"), Some(&100));
     }
@@ -150,9 +150,16 @@ mod unit_tests {
     #[test]
     fn make_map_with_ext() {
         let input = "field1: 100 kB\n field2: 200";
-        let out = make_map(&input);
+        let out = make_map(&input).unwrap();
         assert_eq!(out.get("field1:"), Some(&102400));
         assert_eq!(out.get("field2:"), Some(&200));
+    }
+
+    #[test]
+    fn make_map_error() {
+        let input = "field1: 2\nfield2: four";
+        let out = make_map(&input);
+        assert!(out.is_err())
     }
 
     #[test]
@@ -183,7 +190,7 @@ fn not_found(key: &str) -> Error {
 /// `/proc/meminfo` contains the virtual memory statistics
 pub fn virtual_memory() -> Result<VirtualMemory> {
     let data = read_file(Path::new("/proc/meminfo"))?;
-    let mem_info = make_map(&data);
+    let mem_info = make_map(&data)?;
 
     let total = *mem_info.get("MemTotal:").ok_or(not_found("MemTotal"))?;
     let free = *mem_info.get("MemFree:").ok_or(not_found("MemFree"))?;
@@ -218,10 +225,10 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
 /// `/proc/meminfo` and `/proc/vmstat` contains the information
 pub fn swap_memory() -> Result<SwapMemory> {
     let data = read_file(Path::new("/proc/meminfo"))?;
-    let swap_info = make_map(&data);
+    let swap_info = make_map(&data)?;
 
     let vmstat = read_file(Path::new("/proc/vmstat"))?;
-    let vmstat_info = make_map(&vmstat);
+    let vmstat_info = make_map(&vmstat)?;
 
     let total = *swap_info.get("SwapTotal:").ok_or(not_found("SwapTotal"))?;
     let free = *swap_info.get("SwapFree:").ok_or(not_found("SwapFree"))?;
@@ -245,14 +252,22 @@ fn get_multiplier(fields: &mut Vec<&str>) -> Option<u64> {
     }
 }
 
-fn make_map(data: &str) -> HashMap<&str, u64> {
+fn make_map(data: &str) -> Result<HashMap<&str, u64>> {
     let lines: Vec<&str> = data.lines().collect();
     let mut map = HashMap::new();
 
     for line in lines {
         let mut fields: Vec<&str> = line.split_whitespace().collect();
         let key = fields[0];
-        let mut value = fields[1].parse::<u64>().unwrap();
+        let mut value = match fields[1].parse::<u64>() {
+            Ok(v) => v,
+            Err(_) => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("failed to parse {}", key),
+                ))
+            }
+        };
 
         if let Some(multiplier) = get_multiplier(&mut fields) {
             value = value * multiplier;
@@ -261,5 +276,5 @@ fn make_map(data: &str) -> HashMap<&str, u64> {
         map.insert(key, value);
     }
 
-    map
+    Ok(map)
 }
