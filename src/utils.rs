@@ -10,3 +10,16 @@ pub fn read_file(path: &Path) -> Result<String> {
     try!(file.read_to_string(&mut buffer));
     Ok(buffer)
 }
+
+macro_rules! try_parse {
+    ($field:expr) => {
+        try_parse!($field, FromStr::from_str)
+    };
+    ($field:expr, $from_str:path) => {
+        try!(match $from_str($field) {
+            Ok(result) => Ok(result),
+            Err(_) => Err(Error::new(ErrorKind::InvalidInput,
+                format!("Could not parse {:?}", $field)))
+        })
+    };
+}

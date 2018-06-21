@@ -23,3 +23,12 @@ fn swap_memory() {
         assert!(sm.percent >= 0.0);
     }
 }
+
+#[test]
+fn loadaverage() {
+    let load = psutil::system::loadavg().unwrap();
+    // shouldn't be negative
+    assert!(load.one >= 0.0);
+    assert!(load.five >= 0.0);
+    assert!(load.fifteen >= 0.0);
+}

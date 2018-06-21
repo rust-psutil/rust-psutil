@@ -371,19 +371,6 @@ pub struct Process {
     pub exit_code: i32,
 }
 
-macro_rules! try_parse {
-    ($field:expr) => {
-        try_parse!($field, FromStr::from_str)
-    };
-    ($field:expr, $from_str:path) => {
-        try!(match $from_str($field) {
-            Ok(result) => Ok(result),
-            Err(_) => Err(Error::new(ErrorKind::InvalidInput,
-                format!("Could not parse {:?}", $field)))
-        })
-    };
-}
-
 impl Process {
     /// Attempts to read process information from `/proc/[pid]/stat`.
     ///
