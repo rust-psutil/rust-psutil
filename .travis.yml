@@ -11,6 +11,6 @@ deploy:
   skip-cleanup: true
   github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
   keep-history: true
-  local-dir: target/doc/psutil
+  local-dir: target/doc/
   on:
     branch: master
