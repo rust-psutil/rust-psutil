@@ -1,2 +1,16 @@
 language: rust
 sudo: false
+
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo doc --verbose
+
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  keep-history: true
+  local-dir: target/doc/
+  on:
+    branch: master
