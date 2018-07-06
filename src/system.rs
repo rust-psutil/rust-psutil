@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 use std::str::FromStr;
+use std::{thread, time};
 
 use std::io::{Error, ErrorKind, Result};
 
@@ -70,6 +71,7 @@ impl VirtualMemory {
         }
     }
 }
+
 #[derive(Debug)]
 pub struct SwapMemory {
     /// Amount of total swap memory
@@ -126,6 +128,384 @@ pub struct LoadAverage {
 
     /// pid for the most recently created process
     pub last_pid: PID,
+}
+
+#[derive(Debug, Clone)]
+pub struct CpuTimes {
+    /// Time spent by normal processes executing in user mode;
+    /// on Linux this also includes guest time
+    pub user: u64,
+
+    /// Time spent by niced (prioritized) processes executing in user mode;
+    /// on Linux this also includes guest_nice time
+    pub nice: u64,
+
+    /// Time spent by processes executing in kernel mode
+    pub system: u64,
+
+    /// Time spent doing nothing
+    pub idle: u64,
+
+    /// Time spent waiting for I/O to complete
+    pub iowait: u64,
+
+    /// Time spent for servicing hardware interrupts
+    pub irq: u64,
+
+    /// Time spent for servicing software interrupts
+    pub softirq: u64,
+
+    /// Time spent by other operating systems running in a virtualized environment
+    pub steal: u64,
+
+    /// Time spent running a virtual CPU for guest operating systems
+    /// under the control of the Linux kernel
+    pub guest: u64,
+
+    /// Time spent running a niced guest
+    /// (virtual CPU for guest operating systems
+    /// under the control of the Linux kernel)
+    pub guest_nice: u64,
+}
+
+impl CpuTimes {
+    /// Initialize CpuTimes struct
+    pub fn new(
+        user: u64,
+        nice: u64,
+        system: u64,
+        idle: u64,
+        iowait: u64,
+        irq: u64,
+        softirq: u64,
+        steal: u64,
+        guest: u64,
+        guest_nice: u64,
+    ) -> CpuTimes {
+        CpuTimes {
+            user,
+            nice,
+            system,
+            idle,
+            iowait,
+            irq,
+            softirq,
+            steal,
+            guest,
+            guest_nice,
+        }
+    }
+
+    /// Calculate the total time of CPU utilization.
+    /// guest time and guest_nice time are respectively include
+    /// on user and nice times
+    fn total_time(&self) -> u64 {
+        self.user
+            + self.nice
+            + self.system
+            + self.idle
+            + self.iowait
+            + self.irq
+            + self.softirq
+            + self.steal
+    }
+
+    /// Return the CpuTimesPercent object that contains the detailed
+    /// CPU times percentage of CPU utilization between two instants.
+    fn cpu_percent_since(&self, past_cpu_times: &CpuTimes) -> CpuTimesPercent {
+        if self.total_time() > past_cpu_times.total_time() {
+            let diff_total = (self.total_time() - past_cpu_times.total_time()) as f64;
+            CpuTimesPercent::new(
+                {
+                    if past_cpu_times.user <= self.user {
+                        let user = (100. * (self.user - past_cpu_times.user) as f64) / diff_total;
+                        if user > 100. {
+                            100.
+                        } else {
+                            user
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.nice <= self.nice {
+                        let nice = (100. * (self.nice - past_cpu_times.nice) as f64) / diff_total;
+                        if nice > 100. {
+                            100.
+                        } else {
+                            nice
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.system <= self.system {
+                        let system =
+                            (100. * (self.system - past_cpu_times.system) as f64) / diff_total;
+                        if system > 100. {
+                            100.
+                        } else {
+                            system
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.idle <= self.idle {
+                        let idle = (100. * (self.idle - past_cpu_times.idle) as f64) / diff_total;
+                        if idle > 100. {
+                            100.
+                        } else {
+                            idle
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.iowait <= self.iowait {
+                        let iowait =
+                            (100. * (self.iowait - past_cpu_times.iowait) as f64) / diff_total;
+                        if iowait > 100. {
+                            100.
+                        } else {
+                            iowait
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.irq <= self.irq {
+                        let irq = (100. * (self.irq - past_cpu_times.irq) as f64) / diff_total;
+                        if irq > 100. {
+                            100.
+                        } else {
+                            irq
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.softirq <= self.softirq {
+                        let softirq =
+                            (100. * (self.softirq - past_cpu_times.softirq) as f64) / diff_total;
+                        if softirq > 100. {
+                            100.
+                        } else {
+                            softirq
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.steal <= self.steal {
+                        let steal =
+                            (100. * (self.steal - past_cpu_times.steal) as f64) / diff_total;
+                        if steal > 100. {
+                            100.
+                        } else {
+                            steal
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.guest <= self.guest {
+                        let guest =
+                            (100. * (self.guest - past_cpu_times.guest) as f64) / diff_total;
+                        if guest > 100. {
+                            100.
+                        } else {
+                            guest
+                        }
+                    } else {
+                        0.
+                    }
+                },
+                {
+                    if past_cpu_times.guest_nice <= self.guest_nice {
+                        let guest_nice = (100.
+                            * (self.guest_nice - past_cpu_times.guest_nice) as f64)
+                            / diff_total;
+                        if guest_nice > 100. {
+                            100.
+                        } else {
+                            guest_nice
+                        }
+                    } else {
+                        0.
+                    }
+                },
+            )
+        } else {
+            CpuTimesPercent::new(0., 0., 0., 0., 0., 0., 0., 0., 0., 0.)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CpuTimesPercent {
+    /// Percentage of time spent by normal processes executing in user mode
+    /// between two instants;
+    /// on Linux this also includes guest time
+    pub user: f64,
+
+    /// Percentage of time spent by niced (prioritized) processes
+    /// executing in user mode between two instants;
+    /// on Linux this also includes guest_nice time
+    pub nice: f64,
+
+    /// Percentage of time spent by processes executing in kernel
+    /// mode between two instants
+    pub system: f64,
+
+    /// Percentage of time spent doing nothing between two instants
+    pub idle: f64,
+
+    /// Percentage of time spent waiting for I/O to complete between two instants
+    pub iowait: f64,
+
+    /// Percentage of time spent for servicing hardware interrupts
+    /// between two instants
+    pub irq: f64,
+
+    /// Percentage of time spent for servicing software interrupts
+    /// between two instants
+    pub softirq: f64,
+
+    /// Percentage of time spent by other operating systems running
+    /// in a virtualized environment between two instants
+    pub steal: f64,
+
+    /// Percentage of time spent running a virtual CPU for guest operating systems
+    /// under the control of the Linux kernel between two instants
+    pub guest: f64,
+
+    /// Percentage of time spent running a niced guest
+    /// (virtual CPU for guest operating systems
+    /// under the control of the Linux kernel) between two instants
+    pub guest_nice: f64,
+}
+
+impl CpuTimesPercent {
+    /// Initialize the CpuTimesPercent struct
+    pub fn new(
+        user: f64,
+        nice: f64,
+        system: f64,
+        idle: f64,
+        iowait: f64,
+        irq: f64,
+        softirq: f64,
+        steal: f64,
+        guest: f64,
+        guest_nice: f64,
+    ) -> CpuTimesPercent {
+        CpuTimesPercent {
+            user,
+            nice,
+            system,
+            idle,
+            iowait,
+            irq,
+            softirq,
+            steal,
+            guest,
+            guest_nice,
+        }
+    }
+
+    /// Caculculate the busy time in percent of a CPU
+    /// Guest and guest_nice are count in user and nice.
+    /// We ignore the CPU time in idle and iowait.
+    fn busy_times(&self) -> f64 {
+        self.user + self.nice + self.system + self.irq + self.softirq + self.steal
+    }
+}
+
+/// To get a CpuPercent struct in non-blocking mode.
+///
+/// Example :
+///
+///     let mut cpu_percent_collector = match psutil::system::CpuPercentCollector::new() {
+///         Ok(cpu_percent_collector) => cpu_percent_collector,
+///         Err(_) => {
+///             println!("Could not initialize cpu_percent_collector");
+///             return;
+///         },
+///     };
+///
+///     // {... Your programme ...}
+///
+///     let cpu_times_percent = cpu_percent_collector.cpu_times_percent();
+///     let cpu_times_percent_percpu = cpu_percent_collector.cpu_times_percent_percpu();
+///
+/// See an other example in examples/cpu_percent.
+#[derive(Clone, Debug)]
+pub struct CpuPercentCollector {
+    /// Store the CPU times informations of the last call
+    /// of class method cpu_times_percent or cpu_times_percent_percpu
+    /// for the global CPU
+    last_statement_cpu: CpuTimes,
+
+    /// Store the CPU times informations of the last call
+    /// of class method cpu_times_percent or cpu_times_percent_percpu per CPU.
+    last_statement_percpu: Vec<CpuTimes>,
+}
+
+impl CpuPercentCollector {
+    /// Initialize the CpuPercentCollector struct with the cpu_times informations.
+    pub fn new() -> Result<CpuPercentCollector> {
+        let last_statement_cpu = cpu_times()?;
+        let last_statement_percpu = cpu_times_percpu()?;
+        Ok(CpuPercentCollector {
+            last_statement_cpu,
+            last_statement_percpu,
+        })
+    }
+
+    /// Returns a Result of CpuTimesPercent calculate
+    /// since the last call of the method.
+    /// For the first call it is since the object creation.
+    ///
+    /// The CpuTimesPercent object contains the detailed CPU utilization
+    /// as percentage.
+    pub fn cpu_times_percent(&mut self) -> Result<CpuTimesPercent> {
+        let current_cpu_times = cpu_times()?;
+
+        let cpu_percent_since = current_cpu_times.cpu_percent_since(&self.last_statement_cpu);
+
+        self.last_statement_cpu = current_cpu_times;
+
+        Ok(cpu_percent_since)
+    }
+
+    /// Returns a Result of vector of CpuTimesPercent
+    /// calculate since the last call of the method.
+    /// For the first call it is since the object creation.
+    ///
+    /// Each element of the vector reprensents the detailed
+    /// CPU utilization as percentage per CPU.
+    pub fn cpu_times_percent_percpu(&mut self) -> Result<Vec<CpuTimesPercent>> {
+        let current_cpu_times_percpu = cpu_times_percpu()?;
+
+        let mut cpu_times_percent_vector: Vec<CpuTimesPercent> = Vec::new();
+        let current_cpu_times_percpu_copy = current_cpu_times_percpu.clone();
+        for (iter, cpu_times) in current_cpu_times_percpu.iter().enumerate() {
+            cpu_times_percent_vector
+                .push(cpu_times.cpu_percent_since(&self.last_statement_percpu[iter]));
+        }
+        self.last_statement_percpu = current_cpu_times_percpu_copy;
+
+        Ok(cpu_times_percent_vector)
+    }
 }
 
 /// Returns the system uptime in seconds.
@@ -245,6 +625,64 @@ mod unit_tests {
             Some(1024)
         );
     }
+
+    #[test]
+    fn info_cpu_line_test() {
+        let input = "cpu0 61286 322 19182 1708940 323 0 322 0 0 0 ";
+        let result = match info_cpu_line(input) {
+            Ok(r) => r,
+            Err(e) => panic!("{}", e),
+        };
+        assert_eq!(
+            result,
+            vec![61286, 322, 19182, 1708940, 323, 0, 322, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn cpu_line_to_cpu_times_test() {
+        let input = vec![62972, 178, 18296, 349198, 163, 0, 493, 0, 0, 0];
+        let result = cpu_line_to_cpu_times(&input);
+        assert_eq!(result.user, 62972);
+        assert_eq!(result.nice, 178);
+        assert_eq!(result.system, 18296);
+        assert_eq!(result.idle, 349198);
+        assert_eq!(result.iowait, 163);
+        assert_eq!(result.irq, 0);
+        assert_eq!(result.softirq, 493);
+        assert_eq!(result.steal, 0);
+        assert_eq!(result.guest, 0);
+        assert_eq!(result.guest_nice, 0);
+    }
+
+    #[test]
+    fn cpu_time_percent_test() {
+        let input1 = vec![62972, 178, 18296, 349198, 163, 0, 493, 0, 0, 0];
+        let input2 = vec![61286, 322, 19182, 1708940, 323, 0, 322, 0, 0, 0];
+        let result1 = cpu_line_to_cpu_times(&input1);
+        let result2 = cpu_line_to_cpu_times(&input2);
+        let percent = result2.cpu_percent_since(&result1);
+        assert!(percent.user >= 0.);
+        assert!(percent.user <= 100.);
+        assert!(percent.nice >= 0.);
+        assert!(percent.nice <= 100.);
+        assert!(percent.system >= 0.);
+        assert!(percent.system <= 100.);
+        assert!(percent.idle >= 0.);
+        assert!(percent.idle <= 100.);
+        assert!(percent.iowait >= 0.);
+        assert!(percent.iowait <= 100.);
+        assert!(percent.irq >= 0.);
+        assert!(percent.irq <= 100.);
+        assert!(percent.softirq >= 0.);
+        assert!(percent.softirq <= 100.);
+        assert!(percent.guest >= 0.);
+        assert!(percent.guest <= 100.);
+        assert!(percent.guest_nice >= 0.);
+        assert!(percent.guest_nice <= 100.);
+        assert!(percent.steal >= 0.);
+        assert!(percent.steal <= 100.);
+    }
 }
 
 fn not_found(key: &str) -> Error {
@@ -336,4 +774,173 @@ fn make_map(data: &str) -> Result<HashMap<&str, u64>> {
     }
 
     Ok(map)
+}
+
+/// Convert a cpu line from /proc/stat into a Vec<u64>.
+fn info_cpu_line(cpu_line: &str) -> Result<Vec<u64>> {
+    let mut fields: Vec<&str> = cpu_line.split_whitespace().collect();
+    if fields.len() < 2 {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("Wrong line use from /proc/stat : {}", cpu_line),
+        ));
+    }
+    if fields.len() < 10 {
+        return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Wrong format of /proc/stat line : {}, Maybe the kernel version is too older (Linux 2.6.33)", cpu_line),
+        ));
+    }
+    // The first element of the line contains "cpux", we remove it.
+    fields.remove(0);
+    let mut values: Vec<u64> = Vec::new();
+    for elt in fields {
+        let value = match elt.parse::<u64>() {
+            Ok(v) => v,
+            Err(_) => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("failed to parse {}", elt),
+                ))
+            }
+        };
+        values.push(value);
+    }
+    Ok(values)
+}
+
+/// Return the CpuTimes object from the Vec<u64> obtain by info_cpu_line.
+fn cpu_line_to_cpu_times(cpu_info: &[u64]) -> CpuTimes {
+    let user = cpu_info[0];
+    let nice = cpu_info[1];
+    let system = cpu_info[2];
+    let idle = cpu_info[3];
+    let iowait = cpu_info[4];
+    let irq = cpu_info[5];
+    let softirq = cpu_info[6];
+    let steal = cpu_info[7];
+    let guest = cpu_info[8];
+    let guest_nice = cpu_info[9];
+
+    CpuTimes::new(
+        user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice,
+    )
+}
+
+/// Returns information about cpu times usage.
+///
+/// `/proc/stat` contains the cpu times statistics
+pub fn cpu_times() -> Result<CpuTimes> {
+    let data = read_file(Path::new("/proc/stat"))?;
+    let lines: Vec<&str> = data.lines().collect();
+    let cpu_info = match info_cpu_line(lines[0]) {
+        Ok(cpu_info) => cpu_info,
+        Err(error) => return Err(error),
+    };
+    Ok(cpu_line_to_cpu_times(&cpu_info))
+}
+
+/// Returns information about cpu time usage on a Vec
+/// that contains information per cpu
+///
+/// '/proc/stat' contains the cpu times statistics
+pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
+    let data = read_file(Path::new("/proc/stat"))?;
+    let mut lines: Vec<&str> = data.lines().collect();
+    let mut cpu_times_vector: Vec<CpuTimes> = Vec::new();
+    // Remove the first line that contain the total cpu: "cpu"
+    lines.remove(0);
+    for line in lines {
+        if line.starts_with("cpu") {
+            let cpu_info = match info_cpu_line(line) {
+                Ok(cpu_info) => cpu_info,
+                Err(error) => return Err(error),
+            };
+            let cpu_time = cpu_line_to_cpu_times(&cpu_info);
+            cpu_times_vector.push(cpu_time);
+        }
+    }
+    Ok(cpu_times_vector)
+}
+
+/// Return a float representing the current system-wide
+/// CPU utilization as percentage.
+///
+/// Interval must be > 0 seconds.
+/// If interval < 0.1, the result of this function will be meaningless.
+/// The function compares system CPU times elapsed before and after
+/// the interval (blocking).
+///
+/// Use information contains in '/proc/stat'
+pub fn cpu_percent(interval: f64) -> Result<f64> {
+    Ok(cpu_times_percent(interval)?.busy_times())
+}
+
+/// Return a vector of floats representing the current system-wide
+/// CPU utilization as percentage.
+///
+/// Interval must be > 0.0 seconds.
+/// If interval < 0.1, the result of this function will be meaningless.
+/// The function compares system CPU times per CPU elapsed before and after
+/// the interval (blocking).
+///
+/// Use information contains in '/proc/stat'
+pub fn cpu_percent_percpu(interval: f64) -> Result<Vec<f64>> {
+    let cpu_percent_percpu = cpu_times_percent_percpu(interval)?;
+    let mut cpu_percents: Vec<f64> = Vec::new();
+
+    for cpu_percent in cpu_percent_percpu {
+        cpu_percents.push(cpu_percent.busy_times());
+    }
+    Ok(cpu_percents)
+}
+
+/// Return a CpuTimesPercent representing the current detailed
+/// CPU utilization as a percentage.
+///
+/// Interval must be > 0.0 seconds.
+/// If interval is < 0.1, the result of this function will be meaningless.
+/// The function compares all CPU times elapsed before and after
+/// the interval (blocking).
+///
+/// Use informations contains in '/proc/stat'
+pub fn cpu_times_percent(interval: f64) -> Result<CpuTimesPercent> {
+    if interval <= 0. {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("Interval must be greater than 0 : {}", interval),
+        ));
+    }
+    let mut cpu_percent_last_call = CpuPercentCollector::new()?;
+
+    let interval = (interval * 1000.) as u64;
+    let block_time = time::Duration::from_millis(interval);
+    thread::sleep(block_time);
+
+    cpu_percent_last_call.cpu_times_percent()
+}
+
+/// Return a vector of CpuTimesPercent representing the current detailed
+/// CPU utilization as percentage per cpu.
+///
+/// Interval must be > 0.0 seconds.
+/// If interval is < 0.1, the result of this function will be meaningless.
+/// The function compares all  CPU times per CPU elapsed before and after
+/// the interval(blocking).
+///
+/// Use informations contains in '/proc/stat'
+pub fn cpu_times_percent_percpu(interval: f64) -> Result<Vec<CpuTimesPercent>> {
+    if interval <= 0. {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("Interval must be greater than 0 : {}", interval),
+        ));
+    }
+    let mut cpu_percent_last_call = CpuPercentCollector::new()?;
+
+    let interval = (interval * 1000.) as u64;
+    let block_time = time::Duration::from_millis(interval);
+    thread::sleep(block_time);
+
+    cpu_percent_last_call.cpu_times_percent_percpu()
 }
