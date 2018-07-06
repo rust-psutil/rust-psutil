@@ -18,8 +18,10 @@ macro_rules! try_parse {
     ($field:expr, $from_str:path) => {
         try!(match $from_str($field) {
             Ok(result) => Ok(result),
-            Err(_) => Err(Error::new(ErrorKind::InvalidInput,
-                format!("Could not parse {:?}", $field)))
+            Err(_) => Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!("Could not parse {:?}", $field)
+            )),
         })
     };
 }

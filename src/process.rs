@@ -1,28 +1,24 @@
 //! Read process-specific information from `/proc`.
 
+use std::collections::HashMap;
 use std::fs::{self, read_dir, read_link};
-use std::os::unix::fs::MetadataExt;
 use std::io::{Error, ErrorKind, Result};
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
-use std::collections::HashMap;
 
-use libc::{_SC_CLK_TCK, _SC_PAGESIZE, SIGKILL};
 use libc::{kill, sysconf};
+use libc::{SIGKILL, _SC_CLK_TCK, _SC_PAGESIZE};
 
-use {PID, UID, GID};
 use pidfile::read_pidfile;
 use utils::read_file;
+use {GID, PID, UID};
 
 lazy_static! {
-    static ref TICKS_PER_SECOND: f64 = {
-        unsafe { sysconf(_SC_CLK_TCK) as f64 }
-    };
-    static ref PAGE_SIZE: u64 = {
-        unsafe { sysconf(_SC_PAGESIZE) as u64 }
-    };
+    static ref TICKS_PER_SECOND: f64 = { unsafe { sysconf(_SC_CLK_TCK) as f64 } };
+    static ref PAGE_SIZE: u64 = { unsafe { sysconf(_SC_PAGESIZE) as u64 } };
 }
 
 /// Return a path to a file in `/proc/[pid]/`.
@@ -37,12 +33,14 @@ fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
 /// Return an `io::Error` value and include the path in the message.
 fn parse_error(message: &str, path: &PathBuf) -> Error {
     let path = path.to_str().unwrap_or("unknown path");
-    Error::new(ErrorKind::InvalidInput,
-               format!("{} (from {})", message, path))
+    Error::new(
+        ErrorKind::InvalidInput,
+        format!("{} (from {})", message, path),
+    )
 }
 
 /// Possible statuses for a process.
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum State {
     Running,
     Sleeping,
@@ -73,8 +71,10 @@ impl State {
             'Z' => Ok(State::Zombie),
             'X' => Ok(State::Dead),
             'I' => Ok(State::Idle),
-            _ => Err(Error::new(ErrorKind::InvalidInput,
-                                format!("Invalid state character: {:?}", state))),
+            _ => Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!("Invalid state character: {:?}", state),
+            )),
         }
     }
 }
@@ -84,8 +84,10 @@ impl FromStr for State {
 
     fn from_str(s: &str) -> Result<Self> {
         if !s.len() == 1 {
-            Err(Error::new(ErrorKind::InvalidInput,
-                           format!("State is not a single character: {:?}", s)))
+            Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!("State is not a single character: {:?}", s),
+            ))
         } else {
             State::from_char(s.chars().nth(0).unwrap())
         }
@@ -111,7 +113,7 @@ impl ToString for State {
 /// Memory usage of a process read from `/proc/[pid]/statm`.
 ///
 /// The `lib` [4, u64] and `dt` [6, u64] fields are ignored.
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Memory {
     /// Total program size (bytes).
     pub size: u64,
@@ -156,9 +158,7 @@ pub struct Fd {
 
     /// Path to resolved fd
     pub path: PathBuf,
-
 }
-
 
 /// Information about a process gathered from `/proc/[pid]/stat`.
 ///
@@ -209,7 +209,7 @@ pub struct Fd {
 /// [array.c:456]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L456
 /// [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
 /// [rfc521]: https://github.com/rust-lang/rfcs/issues/521
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct Process {
     /// PID of the process.
     pub pid: PID,
@@ -403,7 +403,10 @@ impl Process {
 
         // Check we haven't read more or less fields than expected.
         if fields.len() != 52 {
-            return Err(parse_error(&format!("Expected 52 fields, got {}", fields.len()), &path));
+            return Err(parse_error(
+                &format!("Expected 52 fields, got {}", fields.len()),
+                &path,
+            ));
         }
 
         // Read each field into an attribute for a new Process instance
@@ -523,15 +526,17 @@ impl Process {
         for s in file_contents.split_terminator('\0') {
             let vv: Vec<&str> = s.splitn(2, "=").collect();
             if vv.len() != 2 {
-                return Err(Error::new(ErrorKind::InvalidInput,
-                                  format!("Item {} has too few fields", s)));
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Item {} has too few fields", s),
+                ));
             }
             ret.insert(vv[0].to_owned(), vv[1].to_owned());
         }
 
         Ok(ret)
     }
-    
+
     pub fn environ(&self) -> Result<HashMap<String, String>> {
         let path = procfs_path(self.pid, "environ");
         let env = try!(read_file(&path));
@@ -550,9 +555,15 @@ impl Process {
         for entry in entry_set {
             if let Ok(entry) = entry {
                 let path = entry.path();
-                let fd_number =  try!(path.file_name().ok_or(parse_error("Could not read /proc entry", &path)));
+                let fd_number = try!(
+                    path.file_name()
+                        .ok_or(parse_error("Could not read /proc entry", &path))
+                );
                 if let Ok(fd_path) = read_link(&path) {
-                    fds.push(Fd{number: fd_number.to_string_lossy().parse::<i32>().unwrap(), path: fd_path})
+                    fds.push(Fd {
+                        number: fd_number.to_string_lossy().parse::<i32>().unwrap(),
+                        path: fd_path,
+                    })
                 }
             }
         }
@@ -601,7 +612,10 @@ pub fn all() -> Result<Vec<Process>> {
 
     for entry in try!(read_dir(&Path::new("/proc"))) {
         let path = try!(entry).path();
-        let name = try!(path.file_name().ok_or(parse_error("Could not read /proc entry", &path)));
+        let name = try!(
+            path.file_name()
+                .ok_or(parse_error("Could not read /proc entry", &path))
+        );
         if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
             processes.push(try!(Process::new(pid)))
         }
@@ -617,7 +631,8 @@ mod unit_tests {
     #[test]
     fn stat_52_fields() {
         let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
-        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        let p =
+            Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
         assert_eq!(p.pid, 1);
         assert_eq!(p.comm, "init");
         assert_eq!(p.utime, 17.81);
@@ -626,7 +641,8 @@ mod unit_tests {
     #[test]
     fn starttime_in_seconds_and_ticks() {
         let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
-        let p = Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        let p =
+            Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
 
         // This field should be in seconds
         if *TICKS_PER_SECOND == 100.0 {
@@ -635,7 +651,6 @@ mod unit_tests {
             assert_eq!(p.starttime, 0.009);
         }
         assert_eq!((p.starttime * *TICKS_PER_SECOND) as u64, 9);
-
 
         // This field should be in clock ticks, i.e. the raw value from the file
         assert_eq!(p.starttime_ticks, 9);
