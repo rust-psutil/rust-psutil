@@ -1,10 +1,10 @@
 //! Read information about the operating system from `/proc`.
 
-use std::str::FromStr;
-use std::path::Path;
 use std::collections::HashMap;
+use std::path::Path;
+use std::str::FromStr;
 
-use std::io::{Result, ErrorKind, Error};
+use std::io::{Error, ErrorKind, Result};
 
 use PID;
 
@@ -267,22 +267,15 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
 
     // MemAvailable was introduced in kernel 3.14. The original psutil computes it if it's not
     // found, but since 3.14 has already reached EOL, let's assume that it's there.
-    let available = *mem_info.get("MemAvailable:").ok_or(
-        not_found("MemAvailable"),
-    )?;
+    let available = *mem_info
+        .get("MemAvailable:")
+        .ok_or(not_found("MemAvailable"))?;
 
     // Shmem was introduced in 2.6.19
     let shared = *mem_info.get("Shmem:").ok_or(not_found("Shmem"))?;
 
     Ok(VirtualMemory::new(
-        total,
-        available,
-        shared,
-        free,
-        buffers,
-        cached,
-        active,
-        inactive,
+        total, available, shared, free, buffers, cached, active, inactive,
     ))
 }
 
