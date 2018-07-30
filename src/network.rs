@@ -1,11 +1,4 @@
-//! Load disk informations
-//! Author : Adrien Gaillard
-
-#![deny(
-    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
-    unused_qualifications
-)]
+//! Load network informations
 
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Result};
@@ -110,7 +103,8 @@ impl NetIOCountersCollector {
         for line in net_lines {
             let mut net_infos: Vec<&str> = line.split_whitespace().collect();
             let mut net_infos_u64: Vec<u64> = Vec::new();
-            let net_name = String::from(net_infos[0]);
+            let mut net_name = String::from(net_infos[0]);
+            net_name.pop();
             net_infos.remove(0);
             for net_info in net_infos {
                 net_infos_u64.push(match net_info.parse::<u64>() {
