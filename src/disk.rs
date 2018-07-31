@@ -283,6 +283,16 @@ fn line_disk_stats(line: Vec<&str>) -> Result<Vec<u64>> {
     Ok(result)
 }
 
+/// Calculate
+fn nowrap(past_value: u64, current_value: u64, total_value: u64) -> u64 {
+    const MAX_VALUE: u64 = 4_294_967_296;
+    if current_value >= past_value {
+        total_value + current_value - past_value
+    } else {
+        total_value + current_value + MAX_VALUE - past_value
+    }
+}
+
 /// Calculate per disk the new DiskIOCounters after a call of disk_io_counters_perdisk
 fn total_disk_io_counters(
     past_disk_io_counters: &HashMap<String, DiskIOCounters>,
@@ -290,7 +300,6 @@ fn total_disk_io_counters(
     total_disk_io_counters: &HashMap<String, DiskIOCounters>,
 ) -> HashMap<String, DiskIOCounters> {
     let mut final_disk_io_counters: HashMap<String, DiskIOCounters> = HashMap::new();
-    let max_value: u64 = 4_294_967_296;
     for (name, current_counters) in current_disk_io_counters {
         if past_disk_io_counters.contains_key(name) && total_disk_io_counters.contains_key(name) {
             let past_counters = past_disk_io_counters[name];
@@ -298,91 +307,51 @@ fn total_disk_io_counters(
             final_disk_io_counters.insert(
                 name.clone(),
                 DiskIOCounters {
-                    read_count: {
-                        if current_counters.read_count >= past_counters.read_count {
-                            total_counters.read_count + current_counters.read_count
-                                - past_counters.read_count
-                        } else {
-                            total_counters.read_count + current_counters.read_count + max_value
-                                - past_counters.read_count
-                        }
-                    },
-                    write_count: {
-                        if current_counters.write_count >= past_counters.write_count {
-                            total_counters.write_count + current_counters.write_count
-                                - past_counters.write_count
-                        } else {
-                            total_counters.write_count + current_counters.write_count + max_value
-                                - past_counters.write_count
-                        }
-                    },
-                    read_bytes: {
-                        if current_counters.read_bytes >= past_counters.read_bytes {
-                            total_counters.read_bytes + current_counters.read_bytes
-                                - past_counters.read_bytes
-                        } else {
-                            total_counters.read_bytes + current_counters.read_bytes + max_value
-                                - past_counters.read_bytes
-                        }
-                    },
-                    write_bytes: {
-                        if current_counters.write_bytes >= past_counters.write_bytes {
-                            total_counters.write_bytes + current_counters.write_bytes
-                                - past_counters.write_bytes
-                        } else {
-                            total_counters.write_bytes + current_counters.write_bytes + max_value
-                                - past_counters.write_bytes
-                        }
-                    },
-                    read_time: {
-                        if current_counters.read_time >= past_counters.read_time {
-                            total_counters.read_time + current_counters.read_time
-                                - past_counters.read_time
-                        } else {
-                            total_counters.read_time + current_counters.read_time + max_value
-                                - past_counters.read_time
-                        }
-                    },
-                    write_time: {
-                        if current_counters.write_time >= past_counters.write_time {
-                            total_counters.write_time + current_counters.write_time
-                                - past_counters.write_time
-                        } else {
-                            total_counters.write_time + current_counters.write_time + max_value
-                                - past_counters.write_time
-                        }
-                    },
-                    read_merged_count: {
-                        if current_counters.read_merged_count >= past_counters.read_merged_count {
-                            total_counters.read_merged_count + current_counters.read_merged_count
-                                - past_counters.read_merged_count
-                        } else {
-                            total_counters.read_merged_count
-                                + current_counters.read_merged_count
-                                + max_value
-                                - past_counters.read_merged_count
-                        }
-                    },
-                    write_merged_count: {
-                        if current_counters.write_merged_count >= past_counters.write_merged_count {
-                            total_counters.write_merged_count + current_counters.write_merged_count
-                                - past_counters.write_merged_count
-                        } else {
-                            total_counters.write_merged_count
-                                + current_counters.write_merged_count
-                                + max_value
-                                - past_counters.write_merged_count
-                        }
-                    },
-                    busy_time: {
-                        if current_counters.busy_time >= past_counters.busy_time {
-                            total_counters.busy_time + current_counters.busy_time
-                                - past_counters.busy_time
-                        } else {
-                            total_counters.busy_time + current_counters.busy_time + max_value
-                                - past_counters.busy_time
-                        }
-                    },
+                    read_count: nowrap(
+                        past_counters.read_count,
+                        current_counters.read_count,
+                        total_counters.read_count,
+                    ),
+                    write_count: nowrap(
+                        past_counters.write_count,
+                        current_counters.write_count,
+                        total_counters.write_count,
+                    ),
+                    read_bytes: nowrap(
+                        past_counters.read_bytes,
+                        current_counters.read_bytes,
+                        total_counters.read_bytes,
+                    ),
+                    write_bytes: nowrap(
+                        past_counters.write_bytes,
+                        current_counters.write_bytes,
+                        total_counters.write_bytes,
+                    ),
+                    read_time: nowrap(
+                        past_counters.read_time,
+                        current_counters.read_time,
+                        total_counters.read_time,
+                    ),
+                    write_time: nowrap(
+                        past_counters.write_time,
+                        current_counters.write_time,
+                        total_counters.write_time,
+                    ),
+                    read_merged_count: nowrap(
+                        past_counters.read_merged_count,
+                        current_counters.read_merged_count,
+                        total_counters.read_merged_count,
+                    ),
+                    write_merged_count: nowrap(
+                        past_counters.write_merged_count,
+                        current_counters.write_merged_count,
+                        total_counters.write_merged_count,
+                    ),
+                    busy_time: nowrap(
+                        past_counters.busy_time,
+                        current_counters.busy_time,
+                        total_counters.busy_time,
+                    ),
                 },
             );
         } else {
