@@ -660,7 +660,7 @@ fn info_cpu_line(cpu_line: &str) -> Result<Vec<u64>> {
     if fields.len() < 10 {
         return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Wrong format of /proc/stat line : {}, Maybe the kernel version is too older (Linux 2.6.33)", cpu_line),
+                format!("Wrong format of /proc/stat line : {}, Maybe the kernel version is too old (Linux 2.6.33)", cpu_line),
         ));
     }
     // The first element of the line contains "cpux", we remove it.
