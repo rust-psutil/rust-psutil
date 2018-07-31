@@ -154,6 +154,16 @@ impl NetIOCountersCollector {
     }
 }
 
+/// Calculate nowrap for NetIOCounters field
+fn nowrap(past_value: u64, current_value: u64, total_value: u64) -> u64 {
+    const MAX_VALUE: u64 = 4_294_967_296;
+    if current_value >= past_value {
+        total_value + current_value - past_value
+    } else {
+        total_value + current_value + MAX_VALUE - past_value
+    }
+}
+
 /// Calculate per interface the new NetIOCounters after a call of net_io_counters_pernic
 fn total_net_io_counters(
     past_net_io_counters: &HashMap<String, NetIOCounters>,
@@ -161,7 +171,6 @@ fn total_net_io_counters(
     total_net_io_counters: &HashMap<String, NetIOCounters>,
 ) -> HashMap<String, NetIOCounters> {
     let mut final_net_io_counters: HashMap<String, NetIOCounters> = HashMap::new();
-    let max_value: u64 = 4_294_967_296;
     for (name, current_counters) in current_net_io_counters {
         if past_net_io_counters.contains_key(name) && total_net_io_counters.contains_key(name) {
             let past_counters = past_net_io_counters[name];
@@ -169,82 +178,46 @@ fn total_net_io_counters(
             final_net_io_counters.insert(
                 name.clone(),
                 NetIOCounters {
-                    bytes_send: {
-                        if current_counters.bytes_send >= past_counters.bytes_send {
-                            total_counters.bytes_send + current_counters.bytes_send
-                                - past_counters.bytes_send
-                        } else {
-                            total_counters.bytes_send + current_counters.bytes_send + max_value
-                                - past_counters.bytes_send
-                        }
-                    },
-
-                    bytes_recv: {
-                        if current_counters.bytes_recv >= past_counters.bytes_recv {
-                            total_counters.bytes_recv + current_counters.bytes_recv
-                                - past_counters.bytes_recv
-                        } else {
-                            total_counters.bytes_recv + current_counters.bytes_recv + max_value
-                                - past_counters.bytes_recv
-                        }
-                    },
-
-                    packets_send: {
-                        if current_counters.packets_send >= past_counters.packets_send {
-                            total_counters.packets_send + current_counters.packets_send
-                                - past_counters.packets_send
-                        } else {
-                            total_counters.packets_send + current_counters.packets_send + max_value
-                                - past_counters.packets_send
-                        }
-                    },
-
-                    packets_recv: {
-                        if current_counters.packets_recv >= past_counters.packets_recv {
-                            total_counters.packets_recv + current_counters.packets_recv
-                                - past_counters.packets_recv
-                        } else {
-                            total_counters.packets_recv + current_counters.packets_recv + max_value
-                                - past_counters.packets_recv
-                        }
-                    },
-
-                    errin: {
-                        if current_counters.errin >= past_counters.errin {
-                            total_counters.errin + current_counters.errin - past_counters.errin
-                        } else {
-                            total_counters.errin + current_counters.errin + max_value
-                                - past_counters.errin
-                        }
-                    },
-
-                    errout: {
-                        if current_counters.errout >= past_counters.errout {
-                            total_counters.errout + current_counters.errout - past_counters.errout
-                        } else {
-                            total_counters.errout + current_counters.errout + max_value
-                                - past_counters.errout
-                        }
-                    },
-
-                    dropin: {
-                        if current_counters.dropin >= past_counters.dropin {
-                            total_counters.dropin + current_counters.dropin - past_counters.dropin
-                        } else {
-                            total_counters.dropin + current_counters.dropin + max_value
-                                - past_counters.dropin
-                        }
-                    },
-
-                    dropout: {
-                        if current_counters.dropout >= past_counters.dropout {
-                            total_counters.dropout + current_counters.dropout
-                                - past_counters.dropout
-                        } else {
-                            total_counters.dropout + current_counters.dropout + max_value
-                                - past_counters.dropout
-                        }
-                    },
+                    bytes_send: nowrap(
+                        past_counters.bytes_send,
+                        current_counters.bytes_send,
+                        total_counters.bytes_send,
+                    ),
+                    bytes_recv: nowrap(
+                        past_counters.bytes_recv,
+                        current_counters.bytes_recv,
+                        total_counters.bytes_recv,
+                    ),
+                    packets_send: nowrap(
+                        past_counters.packets_send,
+                        current_counters.packets_send,
+                        total_counters.packets_send,
+                    ),
+                    packets_recv: nowrap(
+                        past_counters.packets_recv,
+                        current_counters.packets_recv,
+                        total_counters.packets_recv,
+                    ),
+                    errin: nowrap(
+                        past_counters.errin,
+                        current_counters.errin,
+                        total_counters.errin,
+                    ),
+                    errout: nowrap(
+                        past_counters.errout,
+                        current_counters.errout,
+                        total_counters.errout,
+                    ),
+                    dropin: nowrap(
+                        past_counters.dropin,
+                        current_counters.dropin,
+                        total_counters.dropin,
+                    ),
+                    dropout: nowrap(
+                        past_counters.dropout,
+                        current_counters.dropout,
+                        total_counters.dropout,
+                    ),
                 },
             );
         } else {
