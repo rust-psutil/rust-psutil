@@ -6,7 +6,7 @@ use std::io::Write;
 
 use tempdir::TempDir;
 
-use psutil::pidfile::{read_pidfile,write_pidfile};
+use psutil::pidfile::{read_pidfile, write_pidfile};
 
 #[test]
 fn read_write_pidfile() {
