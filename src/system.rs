@@ -169,33 +169,6 @@ pub struct CpuTimes {
 }
 
 impl CpuTimes {
-    /// Initialize CpuTimes struct
-    pub fn new(
-        user: u64,
-        nice: u64,
-        system: u64,
-        idle: u64,
-        iowait: u64,
-        irq: u64,
-        softirq: u64,
-        steal: u64,
-        guest: u64,
-        guest_nice: u64,
-    ) -> CpuTimes {
-        CpuTimes {
-            user,
-            nice,
-            system,
-            idle,
-            iowait,
-            irq,
-            softirq,
-            steal,
-            guest,
-            guest_nice,
-        }
-    }
-
     /// Calculate the total time of CPU utilization.
     /// guest time and guest_nice time are respectively include
     /// on user and nice times
@@ -215,8 +188,8 @@ impl CpuTimes {
     fn cpu_percent_since(&self, past_cpu_times: &CpuTimes) -> CpuTimesPercent {
         if self.total_time() > past_cpu_times.total_time() {
             let diff_total = (self.total_time() - past_cpu_times.total_time()) as f64;
-            CpuTimesPercent::new(
-                {
+            CpuTimesPercent {
+                user: {
                     if past_cpu_times.user <= self.user {
                         let user = (100. * (self.user - past_cpu_times.user) as f64) / diff_total;
                         if user > 100. {
@@ -228,7 +201,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                nice: {
                     if past_cpu_times.nice <= self.nice {
                         let nice = (100. * (self.nice - past_cpu_times.nice) as f64) / diff_total;
                         if nice > 100. {
@@ -240,7 +213,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                system: {
                     if past_cpu_times.system <= self.system {
                         let system =
                             (100. * (self.system - past_cpu_times.system) as f64) / diff_total;
@@ -253,7 +226,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                idle: {
                     if past_cpu_times.idle <= self.idle {
                         let idle = (100. * (self.idle - past_cpu_times.idle) as f64) / diff_total;
                         if idle > 100. {
@@ -265,7 +238,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                iowait: {
                     if past_cpu_times.iowait <= self.iowait {
                         let iowait =
                             (100. * (self.iowait - past_cpu_times.iowait) as f64) / diff_total;
@@ -278,7 +251,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                irq: {
                     if past_cpu_times.irq <= self.irq {
                         let irq = (100. * (self.irq - past_cpu_times.irq) as f64) / diff_total;
                         if irq > 100. {
@@ -290,7 +263,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                softirq: {
                     if past_cpu_times.softirq <= self.softirq {
                         let softirq =
                             (100. * (self.softirq - past_cpu_times.softirq) as f64) / diff_total;
@@ -303,7 +276,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                steal: {
                     if past_cpu_times.steal <= self.steal {
                         let steal =
                             (100. * (self.steal - past_cpu_times.steal) as f64) / diff_total;
@@ -316,7 +289,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                guest: {
                     if past_cpu_times.guest <= self.guest {
                         let guest =
                             (100. * (self.guest - past_cpu_times.guest) as f64) / diff_total;
@@ -329,7 +302,7 @@ impl CpuTimes {
                         0.
                     }
                 },
-                {
+                guest_nice: {
                     if past_cpu_times.guest_nice <= self.guest_nice {
                         let guest_nice = (100.
                             * (self.guest_nice - past_cpu_times.guest_nice) as f64)
@@ -343,9 +316,20 @@ impl CpuTimes {
                         0.
                     }
                 },
-            )
+            }
         } else {
-            CpuTimesPercent::new(0., 0., 0., 0., 0., 0., 0., 0., 0., 0.)
+            CpuTimesPercent {
+                user: 0.,
+                nice: 0.,
+                system: 0.,
+                idle: 0.,
+                iowait: 0.,
+                irq: 0.,
+                softirq: 0.,
+                steal: 0.,
+                guest: 0.,
+                guest_nice: 0.,
+            }
         }
     }
 }
@@ -395,33 +379,6 @@ pub struct CpuTimesPercent {
 }
 
 impl CpuTimesPercent {
-    /// Initialize the CpuTimesPercent struct
-    pub fn new(
-        user: f64,
-        nice: f64,
-        system: f64,
-        idle: f64,
-        iowait: f64,
-        irq: f64,
-        softirq: f64,
-        steal: f64,
-        guest: f64,
-        guest_nice: f64,
-    ) -> CpuTimesPercent {
-        CpuTimesPercent {
-            user,
-            nice,
-            system,
-            idle,
-            iowait,
-            irq,
-            softirq,
-            steal,
-            guest,
-            guest_nice,
-        }
-    }
-
     /// Caculculate the busy time in percent of a CPU
     /// Guest and guest_nice are count in user and nice.
     /// We ignore the CPU time in idle and iowait.
@@ -822,9 +779,18 @@ fn cpu_line_to_cpu_times(cpu_info: &[u64]) -> CpuTimes {
     let guest = cpu_info[8];
     let guest_nice = cpu_info[9];
 
-    CpuTimes::new(
-        user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice,
-    )
+    CpuTimes {
+        user,
+        nice,
+        system,
+        idle,
+        iowait,
+        irq,
+        softirq,
+        steal,
+        guest,
+        guest_nice,
+    }
 }
 
 /// Returns information about cpu times usage.
