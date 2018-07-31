@@ -189,133 +189,20 @@ impl CpuTimes {
         if self.total_time() > past_cpu_times.total_time() {
             let diff_total = (self.total_time() - past_cpu_times.total_time()) as f64;
             CpuTimesPercent {
-                user: {
-                    if past_cpu_times.user <= self.user {
-                        let user = (100. * (self.user - past_cpu_times.user) as f64) / diff_total;
-                        if user > 100. {
-                            100.
-                        } else {
-                            user
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                nice: {
-                    if past_cpu_times.nice <= self.nice {
-                        let nice = (100. * (self.nice - past_cpu_times.nice) as f64) / diff_total;
-                        if nice > 100. {
-                            100.
-                        } else {
-                            nice
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                system: {
-                    if past_cpu_times.system <= self.system {
-                        let system =
-                            (100. * (self.system - past_cpu_times.system) as f64) / diff_total;
-                        if system > 100. {
-                            100.
-                        } else {
-                            system
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                idle: {
-                    if past_cpu_times.idle <= self.idle {
-                        let idle = (100. * (self.idle - past_cpu_times.idle) as f64) / diff_total;
-                        if idle > 100. {
-                            100.
-                        } else {
-                            idle
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                iowait: {
-                    if past_cpu_times.iowait <= self.iowait {
-                        let iowait =
-                            (100. * (self.iowait - past_cpu_times.iowait) as f64) / diff_total;
-                        if iowait > 100. {
-                            100.
-                        } else {
-                            iowait
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                irq: {
-                    if past_cpu_times.irq <= self.irq {
-                        let irq = (100. * (self.irq - past_cpu_times.irq) as f64) / diff_total;
-                        if irq > 100. {
-                            100.
-                        } else {
-                            irq
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                softirq: {
-                    if past_cpu_times.softirq <= self.softirq {
-                        let softirq =
-                            (100. * (self.softirq - past_cpu_times.softirq) as f64) / diff_total;
-                        if softirq > 100. {
-                            100.
-                        } else {
-                            softirq
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                steal: {
-                    if past_cpu_times.steal <= self.steal {
-                        let steal =
-                            (100. * (self.steal - past_cpu_times.steal) as f64) / diff_total;
-                        if steal > 100. {
-                            100.
-                        } else {
-                            steal
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                guest: {
-                    if past_cpu_times.guest <= self.guest {
-                        let guest =
-                            (100. * (self.guest - past_cpu_times.guest) as f64) / diff_total;
-                        if guest > 100. {
-                            100.
-                        } else {
-                            guest
-                        }
-                    } else {
-                        0.
-                    }
-                },
-                guest_nice: {
-                    if past_cpu_times.guest_nice <= self.guest_nice {
-                        let guest_nice = (100.
-                            * (self.guest_nice - past_cpu_times.guest_nice) as f64)
-                            / diff_total;
-                        if guest_nice > 100. {
-                            100.
-                        } else {
-                            guest_nice
-                        }
-                    } else {
-                        0.
-                    }
-                },
+                user: delta_percentage(self.user, past_cpu_times.user, diff_total),
+                nice: delta_percentage(self.nice, past_cpu_times.nice, diff_total),
+                system: delta_percentage(self.system, past_cpu_times.system, diff_total),
+                idle: delta_percentage(self.idle, past_cpu_times.idle, diff_total),
+                iowait: delta_percentage(self.iowait, past_cpu_times.iowait, diff_total),
+                irq: delta_percentage(self.irq, past_cpu_times.irq, diff_total),
+                softirq: delta_percentage(self.softirq, past_cpu_times.softirq, diff_total),
+                steal: delta_percentage(self.steal, past_cpu_times.steal, diff_total),
+                guest: delta_percentage(self.guest, past_cpu_times.guest, diff_total),
+                guest_nice: delta_percentage(
+                    self.guest_nice,
+                    past_cpu_times.guest_nice,
+                    diff_total,
+                ),
             }
         } else {
             CpuTimesPercent {
@@ -733,6 +620,34 @@ fn make_map(data: &str) -> Result<HashMap<&str, u64>> {
     Ok(map)
 }
 
+/// Calculate a percentage from two values and a diff_total
+///
+/// Use in cpu_percent_since method
+fn delta_percentage(current_value: u64, past_value: u64, total_diff: f64) -> f64 {
+    if past_value <= current_value {
+        let percentage = (100. * (current_value - past_value) as f64) / total_diff;
+        if percentage > 100. {
+            100.
+        } else {
+            percentage
+        }
+    } else {
+        0.
+    }
+}
+
+/// Test interval value validity
+fn test_interval(interval: f64) -> Result<f64> {
+    if interval <= 0. {
+        Err(Error::new(
+            ErrorKind::InvalidData,
+            format!("Interval must be greater than 0 : {}", interval),
+        ))
+    } else {
+        Ok(interval)
+    }
+}
+
 /// Convert a cpu line from /proc/stat into a Vec<u64>.
 fn info_cpu_line(cpu_line: &str) -> Result<Vec<u64>> {
     let mut fields: Vec<&str> = cpu_line.split_whitespace().collect();
@@ -871,15 +786,9 @@ pub fn cpu_percent_percpu(interval: f64) -> Result<Vec<f64>> {
 ///
 /// Use informations contains in '/proc/stat'
 pub fn cpu_times_percent(interval: f64) -> Result<CpuTimesPercent> {
-    if interval <= 0. {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            format!("Interval must be greater than 0 : {}", interval),
-        ));
-    }
     let mut cpu_percent_last_call = CpuPercentCollector::new()?;
 
-    let interval = (interval * 1000.) as u64;
+    let interval = (test_interval(interval)? * 1000.) as u64;
     let block_time = time::Duration::from_millis(interval);
     thread::sleep(block_time);
 
@@ -896,15 +805,9 @@ pub fn cpu_times_percent(interval: f64) -> Result<CpuTimesPercent> {
 ///
 /// Use informations contains in '/proc/stat'
 pub fn cpu_times_percent_percpu(interval: f64) -> Result<Vec<CpuTimesPercent>> {
-    if interval <= 0. {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            format!("Interval must be greater than 0 : {}", interval),
-        ));
-    }
     let mut cpu_percent_last_call = CpuPercentCollector::new()?;
 
-    let interval = (interval * 1000.) as u64;
+    let interval = (test_interval(interval)? * 1000.) as u64;
     let block_time = time::Duration::from_millis(interval);
     thread::sleep(block_time);
 
