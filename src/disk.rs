@@ -40,6 +40,15 @@ pub struct DiskUsage {
 
     /// Percentage of used disk
     pub percent: f64,
+
+    /// Number of inodes available
+    pub disk_inodes_free: u64,
+
+    /// Number of inodes for this filesystem
+    pub disk_inodes_total: u64,
+
+    /// Number of used inodes
+    pub disk_inodes_used: u64,
 }
 
 /// Disk counter struct
@@ -387,11 +396,21 @@ pub fn disk_usage(path: &str) -> Result<DiskUsage> {
     } else {
         0.
     };
+    let disk_inodes_free = buf.f_ffree;
+    let disk_inodes_total = buf.f_files;
+    let disk_inodes_used = if disk_inodes_total >= disk_inodes_free {
+        disk_inodes_total - disk_inodes_free
+    } else {
+        100
+    };
     Ok(DiskUsage {
         total,
         used,
         free,
         percent,
+        disk_inodes_free,
+        disk_inodes_total,
+        disk_inodes_used,
     })
 }
 
