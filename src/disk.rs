@@ -90,39 +90,6 @@ impl DiskIOCountersCollector {
         self.disk_io_counters_last_call = HashMap::new();
     }
 
-    /// Return system-wide disk I/O statistics as a DiskIOCounters structs
-    ///
-    /// If nowrap is true psutil will detect and adjust those numbers across
-    /// function calls and add “old value” to “new value” so that the returned
-    /// numbers will always be increasing or remain the same, but never decrease.
-    /// <DiskIOCountersCollector>.cache_clear() can be used to invalidate the nowrap cache.
-    pub fn disk_io_counters(&mut self, nowrap: bool) -> Result<DiskIOCounters> {
-        let disk_io_counters_hashmap = self.disk_io_counters_perdisk(nowrap)?;
-        let mut disk_io_counters_total = DiskIOCounters {
-            read_count: 0,
-            write_count: 0,
-            read_bytes: 0,
-            write_bytes: 0,
-            read_time: 0,
-            write_time: 0,
-            read_merged_count: 0,
-            write_merged_count: 0,
-            busy_time: 0,
-        };
-        for (_name, disk_io_counters) in disk_io_counters_hashmap {
-            disk_io_counters_total.read_count += disk_io_counters.read_count;
-            disk_io_counters_total.write_count += disk_io_counters.write_count;
-            disk_io_counters_total.read_bytes += disk_io_counters.read_bytes;
-            disk_io_counters_total.write_bytes += disk_io_counters.write_bytes;
-            disk_io_counters_total.read_time += disk_io_counters.read_time;
-            disk_io_counters_total.write_time += disk_io_counters.write_time;
-            disk_io_counters_total.read_merged_count += disk_io_counters.read_merged_count;
-            disk_io_counters_total.write_merged_count += disk_io_counters.write_merged_count;
-            disk_io_counters_total.busy_time += disk_io_counters.busy_time;
-        }
-        Ok(disk_io_counters_total)
-    }
-
     /// Return system-wide disk I/O statistics per disk as a vector of a DiskIOCounters structs
     ///
     /// If nowrap is true psutil will detect and adjust those numbers across
