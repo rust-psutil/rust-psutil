@@ -187,28 +187,15 @@ fn get_partitions(data: &str) -> Result<Vec<&str>> {
         lines.remove(0);
     }
     let mut partitions: Vec<&str> = Vec::new();
-    for line in lines.iter().rev() {
+    for line in lines.iter() {
         let fields: Vec<&str> = line.split_whitespace().collect();
-        if fields.len() == 4 && (fields[3].chars().last().unwrap().is_digit(10)) {
-            // we're dealing with a partition (e.g. 'sda1'); 'sda' will
-            // also be around but we want to omit it
+        if fields.len() == 4 {
             partitions.push(fields[3]);
         } else {
-            if fields.len() == 4
-                && (partitions.is_empty()
-                    || !partitions[partitions.len() - 1].starts_with(fields[3]))
-            {
-                // we're dealing with a disk entity for which no
-                // partitions have been defined (e.g. 'sda' but
-                // 'sda1' was not around)
-                partitions.push(fields[3]);
-            }
-            if fields.len() != 4 {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "failed to load partition information on /proc/partitions".to_string(),
-                ));
-            }
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "failed to load partition information on /proc/partitions".to_string(),
+            ));
         }
     }
     Ok(partitions)
@@ -441,7 +428,8 @@ mod unit_test {
  253        3    7811072 dm-3
 ";
         let espected: Vec<&str> = vec![
-            "dm-3", "dm-2", "dm-1", "dm-0", "sda3", "sda2", "sda1", "loop2", "loop1", "loop0",
+            "loop0", "loop1", "loop2", "sda", "sda1", "sda2", "sda3", "dm-0", "dm-1", "dm-2",
+            "dm-3",
         ];
 
         let result = match get_partitions(entry) {
