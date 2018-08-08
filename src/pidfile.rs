@@ -1,8 +1,8 @@
 //! Contains functions to read and write pidfiles.
 
 use std::fs::File;
-use std::io::{Read, Write};
 use std::io::{Error, ErrorKind, Result};
+use std::io::{Read, Write};
 use std::path::Path;
 use std::str::FromStr;
 
@@ -19,8 +19,9 @@ pub fn read_pidfile(path: &Path) -> Result<super::PID> {
 
     match FromStr::from_str(&contents) {
         Ok(pid) => Ok(pid),
-        Err(_) => {
-            Err(Error::new(ErrorKind::Other, "Could not parse pidfile as PID"))
-        }
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "Could not parse pidfile as PID",
+        )),
     }
 }
