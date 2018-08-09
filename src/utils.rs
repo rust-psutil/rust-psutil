@@ -1,7 +1,7 @@
 //! Utility methods, mostly for dealing with IO.
 
 use std::fs;
-use std::io::{Read, Result};
+use std::io::{Read, Result, Error, ErrorKind};
 use std::path::Path;
 
 pub fn read_file(path: &Path) -> Result<String> {
