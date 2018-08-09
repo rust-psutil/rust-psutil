@@ -1,6 +1,6 @@
 //! Utility methods, mostly for dealing with IO.
 
-use std::fs::File;
+use std::fs;
 use std::io::{Read, Result};
 use std::path::Path;
 
@@ -9,7 +9,7 @@ pub fn read_file(path: &Path) -> Result<String> {
     let mut buffer = Vec::with_capacity(metadata.len() as usize);
     let mut file = try!(fs::File::open(path));
     try!(file.read_exact(&mut buffer));
-    Ok(String::from_utf8(buffer))
+    Ok(String::from_utf8(buffer).unwrap())
 }
 
 macro_rules! try_parse {
