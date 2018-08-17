@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::str::FromStr;
 use std::{thread, time};
-
 use std::io::{Error, ErrorKind, Result};
 
 use PID;
