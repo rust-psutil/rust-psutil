@@ -7,6 +7,7 @@ extern crate libc;
 #[macro_use]
 mod utils;
 
+pub mod network;
 pub mod disk;
 pub mod pidfile;
 pub mod process;
