@@ -524,7 +524,7 @@ impl Process {
     fn environ_internal(file_contents: &str) -> Result<HashMap<String, String>> {
         let mut ret = HashMap::new();
         for s in file_contents.split_terminator('\0') {
-            let vv: Vec<&str> = s.splitn(2, "=").collect();
+            let vv: Vec<&str> = s.splitn(2, '=').collect();
             if vv.len() != 2 {
                 return Err(Error::new(
                     ErrorKind::InvalidInput,
@@ -557,7 +557,7 @@ impl Process {
                 let path = entry.path();
                 let fd_number = try!(
                     path.file_name()
-                        .ok_or(parse_error("Could not read /proc entry", &path))
+                        .ok_or_else(|| parse_error("Could not read /proc entry", &path))
                 );
                 if let Ok(fd_path) = read_link(&path) {
                     fds.push(Fd {
@@ -614,7 +614,7 @@ pub fn all() -> Result<Vec<Process>> {
         let path = try!(entry).path();
         let name = try!(
             path.file_name()
-                .ok_or(parse_error("Could not read /proc entry", &path))
+                .ok_or_else(|| parse_error("Could not read /proc entry", &path))
         );
         if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
             processes.push(try!(Process::new(pid)))
