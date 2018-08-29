@@ -1,10 +1,10 @@
 //! Read information about the operating system from `/proc`.
 
 use std::collections::HashMap;
+use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
 use std::str::FromStr;
 use std::{thread, time};
-use std::io::{Error, ErrorKind, Result};
 
 use PID;
 
@@ -538,7 +538,7 @@ fn not_found(key: &str) -> Error {
 pub fn virtual_memory() -> Result<VirtualMemory> {
     let data = read_file(Path::new("/proc/meminfo"))?;
     let mem_info = make_map(&data)?;
-  
+
     let total = *mem_info
         .get("MemTotal:")
         .ok_or_else(|| not_found("MemTotal"))?;
@@ -551,7 +551,7 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
     let cached = *mem_info.get("Cached:").ok_or_else(|| not_found("Cached"))?
         + *mem_info
             .get("SReclaimable:")
-            .ok_or_else(|| not_found("SReclaimable"))? // since kernel 2.6.19
+            .ok_or_else(|| not_found("SReclaimable"))?; // since kernel 2.6.19
     let active = *mem_info.get("Active:").ok_or_else(|| not_found("Active"))?;
     let inactive = *mem_info
         .get("Inactive:")
