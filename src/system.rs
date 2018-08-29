@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::str::FromStr;
 use std::{thread, time};
-
 use std::io::{Error, ErrorKind, Result};
 
 use PID;
@@ -58,15 +57,15 @@ impl VirtualMemory {
         let used = total - free - cached - buffers;
 
         VirtualMemory {
-            total: total,
-            available: available,
-            shared: shared,
-            free: free,
-            buffers: buffers,
-            cached: cached,
-            active: active,
-            inactive: inactive,
-            used: used,
+            total,
+            available,
+            shared,
+            free,
+            buffers,
+            cached,
+            active,
+            inactive,
+            used,
             percent: (total as f32 - available as f32) / total as f32 * 100.,
         }
     }
@@ -99,12 +98,12 @@ impl SwapMemory {
         let percent = (used as f32 / total as f32) * 100.0;
 
         SwapMemory {
-            total: total,
-            used: used,
-            free: free,
-            percent: percent,
-            sin: sin,
-            sout: sout,
+            total,
+            used,
+            free,
+            percent,
+            sin,
+            sout,
         }
     }
 }
@@ -539,25 +538,33 @@ fn not_found(key: &str) -> Error {
 pub fn virtual_memory() -> Result<VirtualMemory> {
     let data = read_file(Path::new("/proc/meminfo"))?;
     let mem_info = make_map(&data)?;
-
-    let total = *mem_info.get("MemTotal:").ok_or(not_found("MemTotal"))?;
-    let free = *mem_info.get("MemFree:").ok_or(not_found("MemFree"))?;
-    let buffers = *mem_info.get("Buffers:").ok_or(not_found("Buffers"))?;
-    let cached = *mem_info.get("Cached:").ok_or(not_found("Cached"))?
+  
+    let total = *mem_info
+        .get("MemTotal:")
+        .ok_or_else(|| not_found("MemTotal"))?;
+    let free = *mem_info
+        .get("MemFree:")
+        .ok_or_else(|| not_found("MemFree"))?;
+    let buffers = *mem_info
+        .get("Buffers:")
+        .ok_or_else(|| not_found("Buffers"))?;
+    let cached = *mem_info.get("Cached:").ok_or_else(|| not_found("Cached"))?
         + *mem_info
             .get("SReclaimable:")
-            .ok_or(not_found("SReclaimable"))?; // since kernel 2.6.19
-    let active = *mem_info.get("Active:").ok_or(not_found("Active"))?;
-    let inactive = *mem_info.get("Inactive:").ok_or(not_found("Inactive"))?;
+            .ok_or_else(|| not_found("SReclaimable"))? // since kernel 2.6.19
+    let active = *mem_info.get("Active:").ok_or_else(|| not_found("Active"))?;
+    let inactive = *mem_info
+        .get("Inactive:")
+        .ok_or_else(|| not_found("Inactive"))?;
 
     // MemAvailable was introduced in kernel 3.14. The original psutil computes it if it's not
     // found, but since 3.14 has already reached EOL, let's assume that it's there.
     let available = *mem_info
         .get("MemAvailable:")
-        .ok_or(not_found("MemAvailable"))?;
+        .ok_or_else(|| not_found("MemAvailable"))?;
 
     // Shmem was introduced in 2.6.19
-    let shared = *mem_info.get("Shmem:").ok_or(not_found("Shmem"))?;
+    let shared = *mem_info.get("Shmem:").ok_or_else(|| not_found("Shmem"))?;
 
     Ok(VirtualMemory::new(
         total, available, shared, free, buffers, cached, active, inactive,
@@ -574,10 +581,18 @@ pub fn swap_memory() -> Result<SwapMemory> {
     let vmstat = read_file(Path::new("/proc/vmstat"))?;
     let vmstat_info = make_map(&vmstat)?;
 
-    let total = *swap_info.get("SwapTotal:").ok_or(not_found("SwapTotal"))?;
-    let free = *swap_info.get("SwapFree:").ok_or(not_found("SwapFree"))?;
-    let sin = *vmstat_info.get("pswpin").ok_or(not_found("pswpin"))?;
-    let sout = *vmstat_info.get("pswpout").ok_or(not_found("pswpout"))?;
+    let total = *swap_info
+        .get("SwapTotal:")
+        .ok_or_else(|| not_found("SwapTotal"))?;
+    let free = *swap_info
+        .get("SwapFree:")
+        .ok_or_else(|| not_found("SwapFree"))?;
+    let sin = *vmstat_info
+        .get("pswpin")
+        .ok_or_else(|| not_found("pswpin"))?;
+    let sout = *vmstat_info
+        .get("pswpout")
+        .ok_or_else(|| not_found("pswpout"))?;
 
     Ok(SwapMemory::new(total, free, sin, sout))
 }
@@ -614,7 +629,7 @@ fn make_map(data: &str) -> Result<HashMap<&str, u64>> {
         };
 
         if let Some(multiplier) = get_multiplier(&mut fields) {
-            value = value * multiplier;
+            value *= multiplier;
         }
 
         map.insert(key, value);
