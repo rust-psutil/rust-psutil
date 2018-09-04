@@ -549,6 +549,10 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
         .get("Buffers:")
         .ok_or_else(|| not_found("Buffers"))?;
     let cached = *mem_info.get("Cached:").ok_or_else(|| not_found("Cached"))?
+        // "free" cmdline utility sums reclaimable to cached.
+        // Older versions of procps used to add slab memory instead.
+        // This got changed in:
+        //  https://gitlab.com/procps-ng/procps/commit/05d751c4f076a2f0118b914c5e51cfbb4762ad8e
         + *mem_info
             .get("SReclaimable:")
             .ok_or_else(|| not_found("SReclaimable"))?; // since kernel 2.6.19
