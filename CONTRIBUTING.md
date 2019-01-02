@@ -7,12 +7,12 @@ Thanks for contributing! Contribution is through standard Github mechanisms:
 
 ## Features needed
 
-psutil should be a fairly easy project to contribute to, as there's already a reference implementation in Python and we still need lots of contributions to get feature-parity with the Rust library.
+psutil should be a fairly easy project to contribute to, as there's already [a reference implementation in Python](https://psutil.readthedocs.io/en/latest/) and we still need lots of contributions to get feature-parity in the Rust library.
 
 If you'd like to make a contribution, try:
 
 - picking an unimplemented function from the list below
-- checking how it's implemented in the Python version of `psutil` (often by reading a file from `proc`)
+- checking how it's implemented in the Python version of `psutil` (often by reading a file from `/proc`)
 - porting that behaviour to this library, along with tests and documentation
 - sending a pull request
 
