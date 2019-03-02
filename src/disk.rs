@@ -386,9 +386,9 @@ pub fn disk_usage(path: &str) -> Result<DiskUsage> {
             "failed to use statvfs : statvfs return an error code".to_string(),
         ));
     }
-    let total = buf.f_blocks * buf.f_frsize;
-    let avail_to_root = buf.f_bfree * buf.f_frsize;
-    let free = buf.f_bavail * buf.f_frsize;
+    let total = buf.f_blocks as u64 * buf.f_frsize;
+    let avail_to_root = buf.f_bfree as u64 * buf.f_frsize;
+    let free = buf.f_bavail as u64 * buf.f_frsize;
     let used = total - avail_to_root;
     let total_user = used + free;
     let percent = if total_user > 0 {
@@ -396,8 +396,8 @@ pub fn disk_usage(path: &str) -> Result<DiskUsage> {
     } else {
         0.
     };
-    let disk_inodes_free = buf.f_ffree;
-    let disk_inodes_total = buf.f_files;
+    let disk_inodes_free = buf.f_ffree as u64;
+    let disk_inodes_total = buf.f_files as u64;
     let disk_inodes_used = if disk_inodes_total >= disk_inodes_free {
         disk_inodes_total - disk_inodes_free
     } else {
