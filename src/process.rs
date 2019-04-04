@@ -135,7 +135,7 @@ impl Memory {
     pub fn new(pid: PID) -> Result<Memory> {
         let path = procfs_path(pid, "statm");
         let statm = try!(read_file(&path));
-        let fields: Vec<&str> = statm.trim_right().split(' ').collect();
+        let fields: Vec<&str> = statm.trim_end().split(' ').collect();
 
         Ok(Memory {
             size: try!(Memory::parse_bytes(fields[0], &path)) * *PAGE_SIZE,
@@ -399,7 +399,7 @@ impl Process {
         let mut fields: Vec<&str> = Vec::new();
         fields.push(pid_);
         fields.push(&comm[2..comm.len() - 2]);
-        fields.extend(rest.trim_right().split(' '));
+        fields.extend(rest.trim_end().split(' '));
 
         // Check we haven't read more or less fields than expected.
         if fields.len() != 52 {
