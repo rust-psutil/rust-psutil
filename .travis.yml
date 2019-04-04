@@ -1,6 +1,15 @@
 language: rust
 sudo: false
 
+matrix:
+  include:
+    - name: Rustfmt
+      rust: stable
+      before_script:
+        - rustup component add rustfmt
+      script:
+        - cargo fmt -- --check
+
 script:
   - cargo build --verbose
   - cargo test --verbose
