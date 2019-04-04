@@ -134,15 +134,15 @@ pub struct Memory {
 impl Memory {
     pub fn new(pid: PID) -> Result<Memory> {
         let path = procfs_path(pid, "statm");
-        let statm = try!(read_file(&path));
+        let statm = read_file(&path)?;
         let fields: Vec<&str> = statm.trim_end().split(' ').collect();
 
         Ok(Memory {
-            size: try!(Memory::parse_bytes(fields[0], &path)) * *PAGE_SIZE,
-            resident: try!(Memory::parse_bytes(fields[1], &path)) * *PAGE_SIZE,
-            share: try!(Memory::parse_bytes(fields[2], &path)) * *PAGE_SIZE,
-            text: try!(Memory::parse_bytes(fields[3], &path)) * *PAGE_SIZE,
-            data: try!(Memory::parse_bytes(fields[5], &path)) * *PAGE_SIZE,
+            size: Memory::parse_bytes(fields[0], &path)? * *PAGE_SIZE,
+            resident: Memory::parse_bytes(fields[1], &path)? * *PAGE_SIZE,
+            share: Memory::parse_bytes(fields[2], &path)? * *PAGE_SIZE,
+            text: Memory::parse_bytes(fields[3], &path)? * *PAGE_SIZE,
+            data: Memory::parse_bytes(fields[5], &path)? * *PAGE_SIZE,
         })
     }
 
@@ -378,8 +378,8 @@ impl Process {
     /// the process UID/GID. The format of `/proc/[pid]/stat` format is defined in proc(5).
     pub fn new(pid: PID) -> Result<Process> {
         let path = procfs_path(pid, "stat");
-        let stat = try!(read_file(&path));
-        let meta = try!(fs::metadata(procfs_path(pid, "")));
+        let stat = read_file(&path)?;
+        let meta = fs::metadata(procfs_path(pid, ""))?;
         Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
     }
 
@@ -478,7 +478,7 @@ impl Process {
 
     /// Create a Process by reading its PID from a pidfile.
     pub fn from_pidfile(path: &Path) -> Result<Process> {
-        Process::new(try!(read_pidfile(&path)))
+        Process::new(read_pidfile(&path)?)
     }
 
     /// Return `true` if the process was alive at the time it was read.
@@ -493,7 +493,7 @@ impl Process {
     ///
     /// Returns `Err` if `/proc/[pid]/cmdline` is empty.
     pub fn cmdline_vec(&self) -> Result<Option<Vec<String>>> {
-        let cmdline = try!(read_file(&procfs_path(self.pid, "cmdline")));
+        let cmdline = read_file(&procfs_path(self.pid, "cmdline"))?;
 
         if cmdline.is_empty() {
             return Ok(None);
@@ -508,7 +508,7 @@ impl Process {
 
     /// Return the result of `cmdline_vec` as a String.
     pub fn cmdline(&self) -> Result<Option<String>> {
-        Ok(try!(self.cmdline_vec()).and_then(|c| Some(c.join(" "))))
+        Ok(self.cmdline_vec()?.and_then(|c| Some(c.join(" "))))
     }
 
     /// Read the path of the process' current working directory.
@@ -539,7 +539,7 @@ impl Process {
 
     pub fn environ(&self) -> Result<HashMap<String, String>> {
         let path = procfs_path(self.pid, "environ");
-        let env = try!(read_file(&path));
+        let env = read_file(&path)?;
         Process::environ_internal(&env)
     }
 
@@ -551,13 +551,13 @@ impl Process {
     /// Reads `/proc/[pid]/fd` directory
     pub fn open_fds(&self) -> Result<Vec<Fd>> {
         let mut fds = Vec::new();
-        let entry_set = try!(read_dir(procfs_path(self.pid, "fd")));
+        let entry_set = read_dir(procfs_path(self.pid, "fd"))?;
         for entry in entry_set {
             if let Ok(entry) = entry {
                 let path = entry.path();
-                let fd_number = try!(path
+                let fd_number = path
                     .file_name()
-                    .ok_or_else(|| parse_error("Could not read /proc entry", &path)));
+                    .ok_or_else(|| parse_error("Could not read /proc entry", &path))?;
                 if let Ok(fd_path) = read_link(&path) {
                     fds.push(Fd {
                         number: fd_number.to_string_lossy().parse::<i32>().unwrap(),
@@ -610,12 +610,12 @@ pub fn all() -> Result<Vec<Process>> {
     let mut processes = Vec::new();
 
     for entry in try!(read_dir(&Path::new("/proc"))) {
-        let path = try!(entry).path();
-        let name = try!(path
+        let path = entry?.path();
+        let name = path
             .file_name()
-            .ok_or_else(|| parse_error("Could not read /proc entry", &path)));
+            .ok_or_else(|| parse_error("Could not read /proc entry", &path))?;
         if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
-            processes.push(try!(Process::new(pid)))
+            processes.push(Process::new(pid)?)
         }
     }
 
