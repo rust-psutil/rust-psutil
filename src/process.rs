@@ -555,10 +555,9 @@ impl Process {
         for entry in entry_set {
             if let Ok(entry) = entry {
                 let path = entry.path();
-                let fd_number = try!(
-                    path.file_name()
-                        .ok_or_else(|| parse_error("Could not read /proc entry", &path))
-                );
+                let fd_number = try!(path
+                    .file_name()
+                    .ok_or_else(|| parse_error("Could not read /proc entry", &path)));
                 if let Ok(fd_path) = read_link(&path) {
                     fds.push(Fd {
                         number: fd_number.to_string_lossy().parse::<i32>().unwrap(),
@@ -612,10 +611,9 @@ pub fn all() -> Result<Vec<Process>> {
 
     for entry in try!(read_dir(&Path::new("/proc"))) {
         let path = try!(entry).path();
-        let name = try!(
-            path.file_name()
-                .ok_or_else(|| parse_error("Could not read /proc entry", &path))
-        );
+        let name = try!(path
+            .file_name()
+            .ok_or_else(|| parse_error("Could not read /proc entry", &path)));
         if let Ok(pid) = PID::from_str(&name.to_string_lossy()) {
             processes.push(try!(Process::new(pid)))
         }

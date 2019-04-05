@@ -116,7 +116,7 @@ impl NetIOCountersCollector {
                                 "Impossible to parse '{}' in u64, error : {}",
                                 net_info, error
                             ),
-                        ))
+                        ));
                     }
                 });
             }

@@ -238,7 +238,7 @@ fn line_disk_stats(line: Vec<&str>) -> Result<Vec<u64>> {
                 return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!("failed to parse {} in get_sector_size", value),
-                ))
+                ));
             }
         });
     }

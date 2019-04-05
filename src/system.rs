@@ -628,7 +628,7 @@ fn make_map(data: &str) -> Result<HashMap<&str, u64>> {
                 return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!("failed to parse {}", key),
-                ))
+                ));
             }
         };
 
@@ -695,7 +695,7 @@ fn info_cpu_line(cpu_line: &str) -> Result<Vec<u64>> {
                 return Err(Error::new(
                     ErrorKind::InvalidData,
                     format!("failed to parse {}", elt),
-                ))
+                ));
             }
         };
         values.push(value);
