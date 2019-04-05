@@ -6,8 +6,8 @@ use std::path::Path;
 
 pub fn read_file(path: &Path) -> Result<String> {
     let mut buffer = String::new();
-    let mut file = try!(File::open(path));
-    try!(file.read_to_string(&mut buffer));
+    let mut file = File::open(path)?;
+    file.read_to_string(&mut buffer)?;
     Ok(buffer)
 }
 

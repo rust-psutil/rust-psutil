@@ -13,9 +13,9 @@ pub fn write_pidfile(path: &Path) -> Result<()> {
 
 /// Reads a PID from a file.
 pub fn read_pidfile(path: &Path) -> Result<super::PID> {
-    let mut file = try!(File::open(path));
+    let mut file = File::open(path)?;
     let mut contents = String::new();
-    try!(file.read_to_string(&mut contents));
+    file.read_to_string(&mut contents)?;
 
     match FromStr::from_str(&contents) {
         Ok(pid) => Ok(pid),
