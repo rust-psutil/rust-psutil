@@ -295,7 +295,7 @@ pub struct Process {
     pub starttime: f64,
 
     /// Time the process was started after system boot (ticks).
-    pub starttime_ticks: u64,
+    pub starttime_ticks: u128,
 
     /// Virtual memory size in bytes.
     pub vsize: u64,
@@ -344,7 +344,7 @@ pub struct Process {
     pub delayacct_blkio: f64,
 
     /// Aggregated block I/O delays (ticks).
-    pub delayacct_blkio_ticks: u64,
+    pub delayacct_blkio_ticks: u128,
 
     /// Guest time of the process (seconds).
     pub guest_time: f64,
