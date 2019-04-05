@@ -175,10 +175,7 @@ pub struct Fd {
 ///
 /// - `%d` / `%u` - 32 bit signed and unsigned integers
 /// - `%ld` / `%lu` - 64 bit signed and unsigned integers
-///
-/// Rust currently has no support for 128 bit integers ([rfc521]) so `%llu` (used by the `starttime`
-/// and `delayacct_blkio_ticks` fields) is is instead represented by a 64 bit integer, with the hope
-/// that doesn't break.
+/// - `%llu` - 128 bit unsigned integers
 ///
 /// ### CPU time fields and clock ticks
 ///
