@@ -8,6 +8,7 @@ use std::ffi::CString;
 use std::fs;
 use std::io::{Error, ErrorKind, Result};
 use std::mem;
+use std::path::Path;
 
 /// Struct that contains informations about mounted partition
 #[derive(Debug, Clone)]
