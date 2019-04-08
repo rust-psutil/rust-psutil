@@ -1,5 +1,7 @@
 //! Utility methods, mostly for dealing with IO.
 
+use std::io::{Error, ErrorKind};
+
 macro_rules! try_parse {
     ($field:expr) => {
         try_parse!($field, FromStr::from_str)
@@ -13,4 +15,8 @@ macro_rules! try_parse {
             )),
         }?
     };
+}
+
+pub fn not_found(key: &str) -> Error {
+    Error::new(ErrorKind::NotFound, format!("{} not found", key))
 }
