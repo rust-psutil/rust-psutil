@@ -32,22 +32,10 @@ fn main() {
             read_bytes:         {} Bytes/s
             write_bytes:        {} Bytes/s
             ",
-            (current_disk_io_counters
-                .get(&String::from("sda"))
-                .unwrap()
-                .read_bytes
-                - past_disk_io_counters
-                    .get(&String::from("sda"))
-                    .unwrap()
-                    .read_bytes),
-            (current_disk_io_counters
-                .get(&String::from("sda"))
-                .unwrap()
-                .write_bytes
-                - past_disk_io_counters
-                    .get(&String::from("sda"))
-                    .unwrap()
-                    .write_bytes),
+            (current_disk_io_counters[&String::from("sda")].read_bytes
+                - past_disk_io_counters[&String::from("sda")].read_bytes),
+            (current_disk_io_counters[&String::from("sda")].write_bytes
+                - past_disk_io_counters[&String::from("sda")].write_bytes),
         );
     }
 }

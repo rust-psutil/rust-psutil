@@ -31,8 +31,11 @@ fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
 }
 
 /// Return an `io::Error` value and include the path in the message.
-fn parse_error(message: &str, path: &PathBuf) -> Error {
-    let path = path.to_str().unwrap_or("unknown path");
+fn parse_error<P>(message: &str, path: P) -> Error
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref().to_str().unwrap_or("unknown path");
     Error::new(
         ErrorKind::InvalidInput,
         format!("{} (from {})", message, path),
@@ -380,16 +383,19 @@ impl Process {
         Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
     }
 
-    fn new_internal(stat: &str, file_uid: UID, file_gid: GID, path: &PathBuf) -> Result<Process> {
+    fn new_internal<P>(stat: &str, file_uid: UID, file_gid: GID, path: P) -> Result<Process>
+    where
+        P: AsRef<Path>,
+    {
         // Read the PID and comm fields separately, as the comm field is delimited by brackets and
         // could contain spaces.
         let (pid_, rest) = match stat.find('(') {
             Some(i) => stat.split_at(i - 1),
-            None => return Err(parse_error("Could not parse comm", &path)),
+            None => return Err(parse_error("Could not parse comm", path)),
         };
         let (comm, rest) = match rest.rfind(')') {
             Some(i) => rest.split_at(i + 2),
-            None => return Err(parse_error("Could not parse comm", &path)),
+            None => return Err(parse_error("Could not parse comm", path)),
         };
 
         // Split the rest of the fields on the space character and read them into a vector.
@@ -402,7 +408,7 @@ impl Process {
         if fields.len() != 52 {
             return Err(parse_error(
                 &format!("Expected 52 fields, got {}", fields.len()),
-                &path,
+                path,
             ));
         }
 
@@ -474,7 +480,10 @@ impl Process {
     }
 
     /// Create a Process by reading its PID from a pidfile.
-    pub fn from_pidfile(path: &Path) -> Result<Process> {
+    pub fn from_pidfile<P>(path: P) -> Result<Process>
+    where
+        P: AsRef<Path>,
+    {
         Process::new(read_pidfile(&path)?)
     }
 
@@ -606,7 +615,7 @@ impl PartialEq for Process {
 pub fn all() -> Result<Vec<Process>> {
     let mut processes = Vec::new();
 
-    for entry in try!(read_dir(&Path::new("/proc"))) {
+    for entry in read_dir("/proc")? {
         let path = entry?.path();
         let name = path
             .file_name()

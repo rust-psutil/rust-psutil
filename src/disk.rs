@@ -376,9 +376,12 @@ pub fn disk_partitions(all: bool) -> Result<Vec<MountedPartition>> {
 /// total and used disk space whereas "free" and "percent" represent
 /// the "free" and "used percent" user disk space.
 #[allow(unsafe_code)]
-pub fn disk_usage(path: &str) -> Result<DiskUsage> {
+pub fn disk_usage<P>(path: P) -> Result<DiskUsage>
+where
+    P: AsRef<Path>,
+{
     let mut buf: libc::statvfs = unsafe { mem::uninitialized() };
-    let path = CString::new(path).unwrap();
+    let path = CString::new(path.as_ref().to_string_lossy().to_string()).unwrap();
     let result = unsafe { libc::statvfs(path.as_ptr(), &mut buf) };
     if result != 0 {
         return Err(Error::new(
@@ -421,13 +424,13 @@ mod unit_test {
     #[test]
     fn line_disk_stats_test() {
         let entry: Vec<&str> = vec!["15", "8", "5652335", "4682", "645", "96"];
-        let espected: Vec<u64> = vec![15, 8, 5652335, 4682, 645, 96];
+        let expected: Vec<u64> = vec![15, 8, 5_652_335, 4682, 645, 96];
 
         let result = match line_disk_stats(entry) {
             Ok(r) => r,
             Err(e) => panic!("{}", e),
         };
-        assert_eq!(result, espected);
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -446,7 +449,7 @@ mod unit_test {
  253        2   97652736 dm-2
  253        3    7811072 dm-3
 ";
-        let espected: Vec<&str> = vec![
+        let expected: Vec<&str> = vec![
             "loop0", "loop1", "loop2", "sda", "sda1", "sda2", "sda3", "dm-0", "dm-1", "dm-2",
             "dm-3",
         ];
@@ -455,7 +458,7 @@ mod unit_test {
             Ok(r) => r,
             Err(e) => panic!("{}", e),
         };
-        assert_eq!(result, espected);
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -497,11 +500,11 @@ nodev	mqueue
 nodev	autofs
 nodev	overlay
 ";
-        let espected: Vec<&str> = vec![
+        let expected: Vec<&str> = vec![
             "ext3", "ext2", "ext4", "squashfs", "vfat", "fuseblk", "zfs", "btrfs",
         ];
 
         let result = fstype(entry);
-        assert_eq!(result, espected);
+        assert_eq!(result, expected);
     }
 }

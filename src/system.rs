@@ -399,135 +399,6 @@ fn loadavg_internal(data: &str) -> Result<LoadAverage> {
     })
 }
 
-#[cfg(test)]
-mod unit_tests {
-    use super::*;
-
-    #[test]
-    fn uptime_parses() {
-        assert_eq!(uptime_internal("12489513.08 22906637.29\n"), 12489513);
-    }
-
-    #[test]
-    fn loadavg_parses() {
-        let input = "0.49 0.70 0.84 2/519 1454\n";
-        let out = loadavg_internal(input).unwrap();
-        assert_eq!(out.one, 0.49);
-        assert_eq!(out.five, 0.70);
-        assert_eq!(out.fifteen, 0.84);
-        assert_eq!(out.total_runnable, 519);
-        assert_eq!(out.runnable, 2);
-        assert_eq!(out.last_pid, 1454);
-    }
-
-    #[test]
-    fn make_map_spaces() {
-        let input = "field1: 23\nfield2: 45\nfield3: 100\n";
-        let out = make_map(&input).unwrap();
-        assert_eq!(out.get("field1:"), Some(&23));
-        assert_eq!(out.get("field2:"), Some(&45));
-    }
-
-    #[test]
-    fn make_map_tabs() {
-        let input = "field1:\t\t\t45\nfield2:\t\t100\nfield4:\t\t\t\t4\n";
-        let out = make_map(&input).unwrap();
-        assert_eq!(out.get("field1:"), Some(&45));
-        assert_eq!(out.get("field2:"), Some(&100));
-    }
-
-    #[test]
-    fn make_map_with_ext() {
-        let input = "field1: 100 kB\n field2: 200";
-        let out = make_map(&input).unwrap();
-        assert_eq!(out.get("field1:"), Some(&102400));
-        assert_eq!(out.get("field2:"), Some(&200));
-    }
-
-    #[test]
-    fn make_map_error() {
-        let input = "field1: 2\nfield2: four";
-        let out = make_map(&input);
-        assert!(out.is_err())
-    }
-
-    #[test]
-    fn multipler_kb() {
-        assert_eq!(get_multiplier(&mut vec!["100", "kB"]), Some(1024));
-    }
-
-    #[test]
-    fn multiplier_none() {
-        assert_eq!(get_multiplier(&mut vec!["100", "200"]), None);
-    }
-
-    #[test]
-    fn multiplier_last() {
-        assert_eq!(
-            get_multiplier(&mut vec!["100", "200", "400", "700", "kB"]),
-            Some(1024)
-        );
-    }
-
-    #[test]
-    fn info_cpu_line_test() {
-        let input = "cpu0 61286 322 19182 1708940 323 0 322 0 0 0 ";
-        let result = match info_cpu_line(input) {
-            Ok(r) => r,
-            Err(e) => panic!("{}", e),
-        };
-        assert_eq!(
-            result,
-            vec![61286, 322, 19182, 1708940, 323, 0, 322, 0, 0, 0]
-        );
-    }
-
-    #[test]
-    fn cpu_line_to_cpu_times_test() {
-        let input = vec![62972, 178, 18296, 349198, 163, 0, 493, 0, 0, 0];
-        let result = cpu_line_to_cpu_times(&input);
-        assert_eq!(result.user, 62972);
-        assert_eq!(result.nice, 178);
-        assert_eq!(result.system, 18296);
-        assert_eq!(result.idle, 349198);
-        assert_eq!(result.iowait, 163);
-        assert_eq!(result.irq, 0);
-        assert_eq!(result.softirq, 493);
-        assert_eq!(result.steal, 0);
-        assert_eq!(result.guest, 0);
-        assert_eq!(result.guest_nice, 0);
-    }
-
-    #[test]
-    fn cpu_time_percent_test() {
-        let input1 = vec![62972, 178, 18296, 349198, 163, 0, 493, 0, 0, 0];
-        let input2 = vec![61286, 322, 19182, 1708940, 323, 0, 322, 0, 0, 0];
-        let result1 = cpu_line_to_cpu_times(&input1);
-        let result2 = cpu_line_to_cpu_times(&input2);
-        let percent = result2.cpu_percent_since(&result1);
-        assert!(percent.user >= 0.);
-        assert!(percent.user <= 100.);
-        assert!(percent.nice >= 0.);
-        assert!(percent.nice <= 100.);
-        assert!(percent.system >= 0.);
-        assert!(percent.system <= 100.);
-        assert!(percent.idle >= 0.);
-        assert!(percent.idle <= 100.);
-        assert!(percent.iowait >= 0.);
-        assert!(percent.iowait <= 100.);
-        assert!(percent.irq >= 0.);
-        assert!(percent.irq <= 100.);
-        assert!(percent.softirq >= 0.);
-        assert!(percent.softirq <= 100.);
-        assert!(percent.guest >= 0.);
-        assert!(percent.guest <= 100.);
-        assert!(percent.guest_nice >= 0.);
-        assert!(percent.guest_nice <= 100.);
-        assert!(percent.steal >= 0.);
-        assert!(percent.steal <= 100.);
-    }
-}
-
 fn not_found(key: &str) -> Error {
     Error::new(ErrorKind::NotFound, format!("{} not found", key))
 }
@@ -834,4 +705,133 @@ pub fn cpu_times_percent_percpu(interval: f64) -> Result<Vec<CpuTimesPercent>> {
     thread::sleep(block_time);
 
     cpu_percent_last_call.cpu_times_percent_percpu()
+}
+
+#[cfg(test)]
+mod unit_tests {
+    use super::*;
+
+    #[test]
+    fn uptime_parses() {
+        assert_eq!(uptime_internal("12489513.08 22906637.29\n"), 12_489_513);
+    }
+
+    #[test]
+    fn loadavg_parses() {
+        let input = "0.49 0.70 0.84 2/519 1454\n";
+        let out = loadavg_internal(input).unwrap();
+        assert_eq!(out.one, 0.49);
+        assert_eq!(out.five, 0.70);
+        assert_eq!(out.fifteen, 0.84);
+        assert_eq!(out.total_runnable, 519);
+        assert_eq!(out.runnable, 2);
+        assert_eq!(out.last_pid, 1454);
+    }
+
+    #[test]
+    fn make_map_spaces() {
+        let input = "field1: 23\nfield2: 45\nfield3: 100\n";
+        let out = make_map(&input).unwrap();
+        assert_eq!(out.get("field1:"), Some(&23));
+        assert_eq!(out.get("field2:"), Some(&45));
+    }
+
+    #[test]
+    fn make_map_tabs() {
+        let input = "field1:\t\t\t45\nfield2:\t\t100\nfield4:\t\t\t\t4\n";
+        let out = make_map(&input).unwrap();
+        assert_eq!(out.get("field1:"), Some(&45));
+        assert_eq!(out.get("field2:"), Some(&100));
+    }
+
+    #[test]
+    fn make_map_with_ext() {
+        let input = "field1: 100 kB\n field2: 200";
+        let out = make_map(&input).unwrap();
+        assert_eq!(out.get("field1:"), Some(&102400));
+        assert_eq!(out.get("field2:"), Some(&200));
+    }
+
+    #[test]
+    fn make_map_error() {
+        let input = "field1: 2\nfield2: four";
+        let out = make_map(&input);
+        assert!(out.is_err())
+    }
+
+    #[test]
+    fn multipler_kb() {
+        assert_eq!(get_multiplier(&mut vec!["100", "kB"]), Some(1024));
+    }
+
+    #[test]
+    fn multiplier_none() {
+        assert_eq!(get_multiplier(&mut vec!["100", "200"]), None);
+    }
+
+    #[test]
+    fn multiplier_last() {
+        assert_eq!(
+            get_multiplier(&mut vec!["100", "200", "400", "700", "kB"]),
+            Some(1024)
+        );
+    }
+
+    #[test]
+    fn info_cpu_line_test() {
+        let input = "cpu0 61286 322 19182 1708940 323 0 322 0 0 0 ";
+        let result = match info_cpu_line(input) {
+            Ok(r) => r,
+            Err(e) => panic!("{}", e),
+        };
+        assert_eq!(
+            result,
+            vec![61286, 322, 19182, 1_708_940, 323, 0, 322, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn cpu_line_to_cpu_times_test() {
+        let input = vec![62972, 178, 18296, 349_198, 163, 0, 493, 0, 0, 0];
+        let result = cpu_line_to_cpu_times(&input);
+        assert_eq!(result.user, 62972);
+        assert_eq!(result.nice, 178);
+        assert_eq!(result.system, 18296);
+        assert_eq!(result.idle, 349_198);
+        assert_eq!(result.iowait, 163);
+        assert_eq!(result.irq, 0);
+        assert_eq!(result.softirq, 493);
+        assert_eq!(result.steal, 0);
+        assert_eq!(result.guest, 0);
+        assert_eq!(result.guest_nice, 0);
+    }
+
+    #[test]
+    fn cpu_time_percent_test() {
+        let input1 = vec![62972, 178, 18296, 349_198, 163, 0, 493, 0, 0, 0];
+        let input2 = vec![61286, 322, 19182, 1_708_940, 323, 0, 322, 0, 0, 0];
+        let result1 = cpu_line_to_cpu_times(&input1);
+        let result2 = cpu_line_to_cpu_times(&input2);
+        let percent = result2.cpu_percent_since(&result1);
+        assert!(percent.user >= 0.);
+        assert!(percent.user <= 100.);
+        assert!(percent.nice >= 0.);
+        assert!(percent.nice <= 100.);
+        assert!(percent.system >= 0.);
+        assert!(percent.system <= 100.);
+        assert!(percent.idle >= 0.);
+        assert!(percent.idle <= 100.);
+        assert!(percent.iowait >= 0.);
+        assert!(percent.iowait <= 100.);
+        assert!(percent.irq >= 0.);
+        assert!(percent.irq <= 100.);
+        assert!(percent.softirq >= 0.);
+        assert!(percent.softirq <= 100.);
+        assert!(percent.guest >= 0.);
+        assert!(percent.guest <= 100.);
+        assert!(percent.guest_nice >= 0.);
+        assert!(percent.guest_nice <= 100.);
+        assert!(percent.steal >= 0.);
+        assert!(percent.steal <= 100.);
+    }
 }

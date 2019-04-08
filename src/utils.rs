@@ -16,12 +16,12 @@ macro_rules! try_parse {
         try_parse!($field, FromStr::from_str)
     };
     ($field:expr, $from_str:path) => {
-        try!(match $from_str($field) {
+        match $from_str($field) {
             Ok(result) => Ok(result),
             Err(_) => Err(Error::new(
                 ErrorKind::InvalidInput,
-                format!("Could not parse {:?}", $field)
+                format!("Could not parse {:?}", $field),
             )),
-        })
+        }?
     };
 }
