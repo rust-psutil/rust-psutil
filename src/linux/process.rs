@@ -21,7 +21,7 @@ lazy_static! {
 }
 
 /// Return a path to a file in `/proc/[pid]/`.
-fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
+fn procfs_path(pid: PID, name: &str) -> PathBuf {
     let mut path = PathBuf::new();
     path.push("/proc");
     path.push(&pid.to_string());

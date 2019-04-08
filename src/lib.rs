@@ -3,13 +3,12 @@
 #[macro_use]
 mod utils;
 
-pub mod cpu;
-pub mod disk;
-pub mod host;
-pub mod memory;
-pub mod network;
 pub mod pidfile;
-pub mod process;
+
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::*;
 
 /// Type for process identifiers.
 ///
