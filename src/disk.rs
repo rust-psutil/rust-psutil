@@ -5,10 +5,9 @@ extern crate libc;
 
 use std::collections::HashMap;
 use std::ffi::CString;
+use std::fs;
 use std::io::{Error, ErrorKind, Result};
 use std::mem;
-use std::path::Path;
-use utils::read_file;
 
 /// Struct that contains informations about mounted partition
 #[derive(Debug, Clone)]
@@ -109,9 +108,9 @@ impl DiskIOCountersCollector {
         &mut self,
         nowrap: bool,
     ) -> Result<HashMap<String, DiskIOCounters>> {
-        let partitions = read_file(Path::new("/proc/partitions"))?;
+        let partitions = fs::read_to_string("/proc/partitions")?;
         let partitions = get_partitions(&partitions)?;
-        let disk_stats = read_file(Path::new("/proc/diskstats"))?;
+        let disk_stats = fs::read_to_string("/proc/diskstats")?;
         let lines: Vec<&str> = disk_stats.lines().collect();
         let mut disks_infos: HashMap<String, DiskIOCounters> = HashMap::new();
 
@@ -213,7 +212,7 @@ fn get_partitions(data: &str) -> Result<Vec<&str>> {
 /// Determine the sector size of the partition name given in parameter
 fn get_sector_size(partition_name: &str) -> Result<u64> {
     let path = format!("/sys/block/{}/queue/hw_sector_size", partition_name);
-    let partition_size = match read_file(Path::new(&path)) {
+    let partition_size = match fs::read_to_string(&path) {
         Ok(r) => r,
         // man iostat states that sectors are equivalent with blocks and
         // have a size of 512 bytes since 2.4 kernels
@@ -332,9 +331,9 @@ fn total_disk_io_counters(
 /// (e.g. hard disks, cd-rom drives, USB keys) and ignore all others
 /// (e.g. memory partitions such as /dev/shm).
 pub fn disk_partitions(all: bool) -> Result<Vec<MountedPartition>> {
-    let fstypes = read_file(Path::new("/proc/filesystems"))?;
+    let fstypes = fs::read_to_string("/proc/filesystems")?;
     let fstypes = fstype(&fstypes);
-    let partitions = read_file(Path::new("/proc/mounts"))?;
+    let partitions = fs::read_to_string("/proc/mounts")?;
     let partitions_lines: Vec<&str> = partitions.lines().collect();
     let mut mounted_partitions: Vec<MountedPartition> = Vec::new();
     for line in partitions_lines {
