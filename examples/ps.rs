@@ -16,7 +16,9 @@ fn main() {
             p.state.to_string(),
             p.utime,
             p.stime,
-            p.cmdline().unwrap().unwrap_or(format!("[{}]", p.comm))
+            p.cmdline()
+                .unwrap()
+                .unwrap_or_else(|| format!("[{}]", p.comm))
         );
     }
 }

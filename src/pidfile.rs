@@ -1,21 +1,25 @@
 //! Contains functions to read and write pidfiles.
 
-use std::fs::File;
+use std::fs::{self, File};
+use std::io::Write;
 use std::io::{Error, ErrorKind, Result};
-use std::io::{Read, Write};
 use std::path::Path;
 use std::str::FromStr;
 
 /// Writes the PID of the current process to a file.
-pub fn write_pidfile(path: &Path) -> Result<()> {
-    return write!(&mut File::create(path).unwrap(), "{}", super::getpid());
+pub fn write_pidfile<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    return write!(&mut File::create(path)?, "{}", super::getpid());
 }
 
 /// Reads a PID from a file.
-pub fn read_pidfile(path: &Path) -> Result<super::PID> {
-    let mut file = File::open(path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
+pub fn read_pidfile<P>(path: P) -> Result<super::PID>
+where
+    P: AsRef<Path>,
+{
+    let contents = fs::read_to_string(&path)?;
 
     match FromStr::from_str(&contents) {
         Ok(pid) => Ok(pid),
