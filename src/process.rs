@@ -13,7 +13,6 @@ use libc::{kill, sysconf};
 use libc::{SIGKILL, _SC_CLK_TCK, _SC_PAGESIZE};
 
 use pidfile::read_pidfile;
-use utils::read_file;
 use {GID, PID, UID};
 
 lazy_static! {
@@ -134,7 +133,7 @@ pub struct Memory {
 impl Memory {
     pub fn new(pid: PID) -> Result<Memory> {
         let path = procfs_path(pid, "statm");
-        let statm = read_file(&path)?;
+        let statm = fs::read_to_string(&path)?;
         let fields: Vec<&str> = statm.trim_end().split(' ').collect();
 
         Ok(Memory {
@@ -375,7 +374,7 @@ impl Process {
     /// the process UID/GID. The format of `/proc/[pid]/stat` format is defined in proc(5).
     pub fn new(pid: PID) -> Result<Process> {
         let path = procfs_path(pid, "stat");
-        let stat = read_file(&path)?;
+        let stat = fs::read_to_string(&path)?;
         let meta = fs::metadata(procfs_path(pid, ""))?;
         Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
     }
@@ -490,7 +489,7 @@ impl Process {
     ///
     /// Returns `Err` if `/proc/[pid]/cmdline` is empty.
     pub fn cmdline_vec(&self) -> Result<Option<Vec<String>>> {
-        let cmdline = read_file(&procfs_path(self.pid, "cmdline"))?;
+        let cmdline = fs::read_to_string(&procfs_path(self.pid, "cmdline"))?;
 
         if cmdline.is_empty() {
             return Ok(None);
@@ -536,7 +535,7 @@ impl Process {
 
     pub fn environ(&self) -> Result<HashMap<String, String>> {
         let path = procfs_path(self.pid, "environ");
-        let env = read_file(&path)?;
+        let env = fs::read_to_string(&path)?;
         Process::environ_internal(&env)
     }
 

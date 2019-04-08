@@ -1,9 +1,8 @@
 //! Load network informations
 
 use std::collections::HashMap;
+use std::fs;
 use std::io::{Error, ErrorKind, Result};
-use std::path::Path;
-use utils::read_file;
 
 /// Struct that contains information about networks
 #[derive(Clone, Copy, Debug)]
@@ -94,7 +93,7 @@ impl NetIOCountersCollector {
         &mut self,
         nowrap: bool,
     ) -> Result<HashMap<String, NetIOCounters>> {
-        let net_dev = read_file(Path::new("/proc/net/dev"))?;
+        let net_dev = fs::read_to_string("/proc/net/dev")?;
         let mut net_lines: Vec<&str> = net_dev.lines().collect();
         // The two first lines contains no usefull informations
         net_lines.remove(1);

@@ -1,14 +1,12 @@
 //! Read information about the operating system from `/proc`.
 
 use std::collections::HashMap;
+use std::fs;
 use std::io::{Error, ErrorKind, Result};
-use std::path::Path;
 use std::str::FromStr;
 use std::{thread, time};
 
 use PID;
-
-use utils::read_file;
 
 #[derive(Debug)]
 pub struct VirtualMemory {
@@ -355,7 +353,7 @@ impl CpuPercentCollector {
 ///
 /// `/proc/uptime` contains the system uptime and idle time.
 pub fn uptime() -> isize {
-    let data = read_file(Path::new("/proc/uptime")).unwrap();
+    let data = fs::read_to_string("/proc/uptime").unwrap();
     uptime_internal(&data)
 }
 
@@ -372,7 +370,7 @@ fn uptime_internal(data: &str) -> isize {
 ///
 /// `/proc/loadavg` contains the system load average
 pub fn loadavg() -> Result<LoadAverage> {
-    let data = read_file(Path::new("/proc/loadavg"))?;
+    let data = fs::read_to_string("/proc/loadavg")?;
     loadavg_internal(&data)
 }
 
@@ -536,7 +534,7 @@ fn not_found(key: &str) -> Error {
 ///
 /// `/proc/meminfo` contains the virtual memory statistics
 pub fn virtual_memory() -> Result<VirtualMemory> {
-    let data = read_file(Path::new("/proc/meminfo"))?;
+    let data = fs::read_to_string("/proc/meminfo")?;
     let mem_info = make_map(&data)?;
 
     let total = *mem_info
@@ -579,10 +577,10 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
 ///
 /// `/proc/meminfo` and `/proc/vmstat` contains the information
 pub fn swap_memory() -> Result<SwapMemory> {
-    let data = read_file(Path::new("/proc/meminfo"))?;
+    let data = fs::read_to_string("/proc/meminfo")?;
     let swap_info = make_map(&data)?;
 
-    let vmstat = read_file(Path::new("/proc/vmstat"))?;
+    let vmstat = fs::read_to_string("/proc/vmstat")?;
     let vmstat_info = make_map(&vmstat)?;
 
     let total = *swap_info
@@ -734,7 +732,7 @@ fn cpu_line_to_cpu_times(cpu_info: &[u64]) -> CpuTimes {
 ///
 /// `/proc/stat` contains the cpu times statistics
 pub fn cpu_times() -> Result<CpuTimes> {
-    let data = read_file(Path::new("/proc/stat"))?;
+    let data = fs::read_to_string("/proc/stat")?;
     let lines: Vec<&str> = data.lines().collect();
     let cpu_info = match info_cpu_line(lines[0]) {
         Ok(cpu_info) => cpu_info,
@@ -748,7 +746,7 @@ pub fn cpu_times() -> Result<CpuTimes> {
 ///
 /// '/proc/stat' contains the cpu times statistics
 pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
-    let data = read_file(Path::new("/proc/stat"))?;
+    let data = fs::read_to_string("/proc/stat")?;
     let mut lines: Vec<&str> = data.lines().collect();
     let mut cpu_times_vector: Vec<CpuTimes> = Vec::new();
     // Remove the first line that contain the total cpu: "cpu"
