@@ -7,13 +7,13 @@ use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string::ToString;
-use std::vec::Vec;
 
+use lazy_static::lazy_static;
 use libc::{kill, sysconf};
 use libc::{SIGKILL, _SC_CLK_TCK, _SC_PAGESIZE};
 
-use pidfile::read_pidfile;
-use {GID, PID, UID};
+use crate::pidfile::read_pidfile;
+use crate::{GID, PID, UID};
 
 lazy_static! {
     static ref TICKS_PER_SECOND: f64 = { unsafe { sysconf(_SC_CLK_TCK) as f64 } };

@@ -6,6 +6,7 @@ description = "Process monitoring library"
 repository = "https://github.com/borntyping/rust-psutil"
 readme = "README.md"
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 libc = ">= 0.1.4"

@@ -1,9 +1,8 @@
 //! Kill a process, reading it's PID from a file.
 
-extern crate psutil;
+use std::path::Path;
 
 use psutil::process::Process;
-use std::path::Path;
 
 #[cfg(not(test))]
 fn main() {

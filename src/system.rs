@@ -6,7 +6,7 @@ use std::io::{Error, ErrorKind, Result};
 use std::str::FromStr;
 use std::{thread, time};
 
-use PID;
+use crate::PID;
 
 #[derive(Debug)]
 pub struct VirtualMemory {
@@ -746,7 +746,7 @@ mod unit_tests {
     fn make_map_with_ext() {
         let input = "field1: 100 kB\n field2: 200";
         let out = make_map(&input).unwrap();
-        assert_eq!(out.get("field1:"), Some(&102400));
+        assert_eq!(out.get("field1:"), Some(&102_400));
         assert_eq!(out.get("field2:"), Some(&200));
     }
 

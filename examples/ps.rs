@@ -1,7 +1,5 @@
 //! Example psutil executable.
 
-extern crate psutil;
-
 #[cfg(not(test))]
 fn main() {
     println!(

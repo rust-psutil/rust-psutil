@@ -1,5 +1,3 @@
-extern crate psutil;
-
 fn get_process() -> psutil::process::Process {
     psutil::process::Process::new(psutil::getpid()).unwrap()
 }
