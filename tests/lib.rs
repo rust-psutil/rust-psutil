@@ -1,5 +1,3 @@
-extern crate psutil;
-
 #[test]
 fn getpid() {
     assert!(psutil::getpid() != 0)

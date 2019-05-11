@@ -1,8 +1,6 @@
 //! Load disk informations
 //! Author : Adrien Gaillard
 
-extern crate libc;
-
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::fs;

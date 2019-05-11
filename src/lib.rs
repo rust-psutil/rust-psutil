@@ -1,17 +1,15 @@
 //! Process monitoring utilities.
 
 #[macro_use]
-extern crate lazy_static;
-extern crate libc;
-
-#[macro_use]
 mod utils;
 
-pub mod disk;
-pub mod network;
 pub mod pidfile;
-pub mod process;
-pub mod system;
+
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::*;
+
 /// Type for process identifiers.
 ///
 /// This should expand to `i32` (signed 32 bit integer).

@@ -1,6 +1,3 @@
-extern crate psutil;
-extern crate tempfile;
-
 use std::fs::File;
 use std::io::Write;
 

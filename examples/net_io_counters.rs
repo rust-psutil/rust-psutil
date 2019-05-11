@@ -1,5 +1,3 @@
-extern crate psutil;
-
 use std::{thread, time};
 
 fn main() {
