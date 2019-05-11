@@ -3,22 +3,20 @@ sudo: false
 
 matrix:
   include:
-    - name: Rustfmt
+    - name: Build
       rust: stable
       before_script:
         - rustup component add rustfmt
       script:
         - cargo fmt -- --check
-
-script:
-  - cargo build --verbose
-  - cargo test --verbose
-  - cargo doc --verbose
+        - cargo build --verbose
+        - cargo test --verbose
+        - cargo doc --verbose
 
 deploy:
   provider: pages
   skip-cleanup: true
-  github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  github-token: $GITHUB_TOKEN
   keep-history: true
   local-dir: target/doc/
   on:
