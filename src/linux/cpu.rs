@@ -150,7 +150,7 @@ impl CpuTimesPercent {
 ///
 /// Example :
 ///
-///     let mut cpu_percent_collector = match psutil::system::CpuPercentCollector::new() {
+///     let mut cpu_percent_collector = match psutil::cpu::CpuPercentCollector::new() {
 ///         Ok(cpu_percent_collector) => cpu_percent_collector,
 ///         Err(_) => {
 ///             println!("Could not initialize cpu_percent_collector");

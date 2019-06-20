@@ -93,5 +93,4 @@ mod unit_tests {
         assert_eq!(out.runnable, 2);
         assert_eq!(out.last_pid, 1454);
     }
-
 }

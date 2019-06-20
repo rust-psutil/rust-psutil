@@ -1,11 +1,11 @@
 #[test]
 fn uptime() {
-    assert!(psutil::system::uptime() > 0);
+    assert!(psutil::host::uptime() > 0);
 }
 
 #[test]
 fn virtual_memory() {
-    let vm = psutil::system::virtual_memory().unwrap();
+    let vm = psutil::memory::virtual_memory().unwrap();
     // simple sanity checking
     assert!(vm.total != 0);
     assert!(vm.free <= vm.total);
@@ -14,7 +14,7 @@ fn virtual_memory() {
 
 #[test]
 fn swap_memory() {
-    let sm = psutil::system::swap_memory().unwrap();
+    let sm = psutil::memory::swap_memory().unwrap();
     // simple sanity checking
     if sm.total != 0 {
         assert!(sm.free <= sm.total);
@@ -24,7 +24,7 @@ fn swap_memory() {
 
 #[test]
 fn loadaverage() {
-    let load = psutil::system::loadavg().unwrap();
+    let load = psutil::host::loadavg().unwrap();
     // shouldn't be negative
     assert!(load.one >= 0.0);
     assert!(load.five >= 0.0);
