@@ -1,5 +1,5 @@
 fn get_process() -> psutil::process::Process {
-    psutil::process::Process::new(psutil::getpid()).unwrap()
+    psutil::process::Process::new(std::process::id() as i32).unwrap()
 }
 
 #[test]

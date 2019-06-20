@@ -12,7 +12,6 @@ use lazy_static::lazy_static;
 use libc::{kill, sysconf};
 use libc::{SIGKILL, _SC_CLK_TCK, _SC_PAGESIZE};
 
-use crate::pidfile::read_pidfile;
 use crate::{GID, PID, UID};
 
 lazy_static! {
@@ -201,7 +200,7 @@ pub struct Fd {
 /// # Examples
 ///
 /// ```
-/// psutil::process::Process::new(psutil::getpid()).unwrap();
+/// psutil::process::Process::new(std::process::id() as i32).unwrap();
 /// ```
 ///
 /// [array.c:361]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L361
@@ -476,14 +475,6 @@ impl Process {
             env_end: try_parse!(fields[50]),
             exit_code: try_parse!(fields[51]),
         })
-    }
-
-    /// Create a Process by reading its PID from a pidfile.
-    pub fn from_pidfile<P>(path: P) -> Result<Process>
-    where
-        P: AsRef<Path>,
-    {
-        Process::new(read_pidfile(&path)?)
     }
 
     /// Return `true` if the process was alive at the time it was read.
