@@ -21,7 +21,7 @@ If you'd like to make a contribution, try:
 - [x] [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times)
 - [x] [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent)
 - [x] [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent)
-- [ ] [cpu_count](https://psutil.readthedocs.io/en/latest/#psutil.cpu_count)
+- [x] [cpu_count](https://psutil.readthedocs.io/en/latest/#psutil.cpu_count)
 - [ ] [cpu_stats](https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats)
 - [ ] [cpu_freq](https://psutil.readthedocs.io/en/latest/#psutil.cpu_freq)
 

@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::{Error, ErrorKind, Result};
 use std::{thread, time};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct CpuTimes {
@@ -328,10 +329,41 @@ pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 /// The function compares system CPU times elapsed before and after
 /// the interval (blocking).
 ///
-/// Use information contains in '/proc/stat'
+/// Use information contained in '/proc/stat'
 pub fn cpu_percent(interval: f64) -> Result<f64> {
     Ok(cpu_times_percent(interval)?.busy_times())
 }
+
+/// Return the number of cores on the system (logical or physical, depending on the 'logical'
+/// parameter).
+///
+/// Use information contained in '/proc/cpuinfo'
+pub fn cpu_count(logical: bool) -> Result<u32> {
+    let data = fs::read_to_string("/proc/cpuinfo")?;
+    let (logical_cores, physical_cores) = cpu_count_inner(&data);
+    if logical { Ok(logical_cores) } else { Ok(physical_cores) }
+}
+
+fn cpu_count_inner(data: &str) -> (u32, u32) {
+    let mut logical_cores = 0;
+    let mut physical_core_ids = HashSet::new();
+
+    for line in data.lines() {
+        if line.starts_with("processor") {
+            logical_cores += 1;
+        } else if line.starts_with("core id") {
+            let fields: Vec<&str> = line.split_whitespace().collect();
+            // Expect 4 tokens - 'core', 'id', ':', and the core ID itself
+            if fields.len() == 4 {
+                physical_core_ids.insert(fields[3]);
+            }
+        }
+    }
+
+    (logical_cores, physical_core_ids.len() as u32)
+}
+
+
 
 /// Return a vector of floats representing the current system-wide
 /// CPU utilization as percentage.
@@ -479,4 +511,76 @@ mod unit_tests {
         assert!(percent.steal >= 0.);
         assert!(percent.steal <= 100.);
     }
+
+    #[test]
+    fn cpu_count_test() {
+        let data = "processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i5-3320M CPU @ 2.60GHz
+stepping	: 9
+microcode	: 0x21
+cpu MHz		: 3133.662
+cache size	: 3072 KB
+physical id	: 0
+siblings	: 4
+core id		: 0
+cpu cores	: 2
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm cpuid_fault epb pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms xsaveopt dtherm ida arat pln pts md_clear flush_l1d
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds
+bogomips	: 5187.82
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i5-3320M CPU @ 2.60GHz
+stepping	: 9
+microcode	: 0x21
+cpu MHz		: 3225.010
+cache size	: 3072 KB
+physical id	: 0
+siblings	: 4
+core id		: 0
+cpu cores	: 2
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm cpuid_fault epb pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms xsaveopt dtherm ida arat pln pts md_clear flush_l1d
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds
+bogomips	: 5187.82
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+";
+        let (logical, physical) = cpu_count_inner(data);
+        assert_eq!(logical, 2);
+        assert_eq!(physical, 1);
+    }
+
+    #[test]
+    fn cpu_count_test_badlines() {
+        let data = "processor|foobar
+core id0
+core id fj jfdsk fdslnfd dslkfj fjfdsj jfkfd
+";
+        // Just make sure it doesn't panic
+        cpu_count_inner(data);
+    }
+
 }
