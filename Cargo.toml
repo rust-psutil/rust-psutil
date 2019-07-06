@@ -14,3 +14,8 @@ lazy_static = "1"
 
 [dev-dependencies]
 tempfile = "3"
+bencher = "*"
+
+[[bench]]
+name = "benchmarking"
+harness = false
