@@ -1,7 +1,7 @@
+use std::collections::HashSet;
 use std::fs;
 use std::io::{Error, ErrorKind, Result};
 use std::{thread, time};
-use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct CpuTimes {
@@ -341,7 +341,11 @@ pub fn cpu_percent(interval: f64) -> Result<f64> {
 pub fn cpu_count(logical: bool) -> Result<u32> {
     let data = fs::read_to_string("/proc/cpuinfo")?;
     let (logical_cores, physical_cores) = cpu_count_inner(&data);
-    if logical { Ok(logical_cores) } else { Ok(physical_cores) }
+    if logical {
+        Ok(logical_cores)
+    } else {
+        Ok(physical_cores)
+    }
 }
 
 fn cpu_count_inner(data: &str) -> (u32, u32) {
@@ -362,8 +366,6 @@ fn cpu_count_inner(data: &str) -> (u32, u32) {
 
     (logical_cores, physical_core_ids.len() as u32)
 }
-
-
 
 /// Return a vector of floats representing the current system-wide
 /// CPU utilization as percentage.
