@@ -267,4 +267,22 @@ mod unit_tests {
         );
     }
 
+    #[test]
+    fn virtual_memory() {
+        let vm = super::virtual_memory().unwrap();
+        // simple sanity checking
+        assert!(vm.total != 0);
+        assert!(vm.free <= vm.total);
+        assert!(vm.percent > 0.0);
+    }
+
+    #[test]
+    fn swap_memory() {
+        let sm = super::swap_memory().unwrap();
+        // simple sanity checking
+        if sm.total != 0 {
+            assert!(sm.free <= sm.total);
+            assert!(sm.percent >= 0.0);
+        }
+    }
 }

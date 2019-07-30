@@ -93,4 +93,18 @@ mod unit_tests {
         assert_eq!(out.runnable, 2);
         assert_eq!(out.last_pid, 1454);
     }
+
+    #[test]
+    fn uptime() {
+        assert!(super::uptime() > 0);
+    }
+
+    #[test]
+    fn loadaverage() {
+        let load = loadavg().unwrap();
+        // shouldn't be negative
+        assert!(load.one >= 0.0);
+        assert!(load.five >= 0.0);
+        assert!(load.fifteen >= 0.0);
+    }
 }
