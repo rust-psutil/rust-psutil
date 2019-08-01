@@ -27,6 +27,14 @@ Authors
 
 Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day], and developed by multiple [contributors].
 
+Related projects
+----------------
+
+`rust-psutil` has no connection to these projects, but you might find them useful.
+
+* [hiem](https://crates.io/crates/heim)
+* [rust-battery](https://github.com/svartalf/rust-battery)
+
 [MIT Licence]: http://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil/
 [Sam Clements]: https://github.com/borntyping
