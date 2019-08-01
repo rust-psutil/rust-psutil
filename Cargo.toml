@@ -11,6 +11,3 @@ edition = "2018"
 [dependencies]
 libc = ">= 0.1.4"
 lazy_static = "1"
-
-[dev-dependencies]
-tempfile = "3"

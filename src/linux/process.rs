@@ -12,7 +12,6 @@ use lazy_static::lazy_static;
 use libc::{kill, sysconf};
 use libc::{SIGKILL, _SC_CLK_TCK, _SC_PAGESIZE};
 
-use crate::pidfile::read_pidfile;
 use crate::{GID, PID, UID};
 
 lazy_static! {
@@ -201,7 +200,7 @@ pub struct Fd {
 /// # Examples
 ///
 /// ```
-/// psutil::process::Process::new(psutil::getpid()).unwrap();
+/// psutil::process::Process::new(std::process::id() as i32).unwrap();
 /// ```
 ///
 /// [array.c:361]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L361
@@ -478,14 +477,6 @@ impl Process {
         })
     }
 
-    /// Create a Process by reading its PID from a pidfile.
-    pub fn from_pidfile<P>(path: P) -> Result<Process>
-    where
-        P: AsRef<Path>,
-    {
-        Process::new(read_pidfile(&path)?)
-    }
-
     /// Return `true` if the process was alive at the time it was read.
     pub fn is_alive(&self) -> bool {
         match self.state {
@@ -666,5 +657,59 @@ mod unit_tests {
         assert_eq!(e["HOME"], "/");
         assert_eq!(e["rootmnt"], "/root");
         assert_eq!(e["recovery"], "");
+    }
+
+    fn get_process() -> Process {
+        Process::new(std::process::id() as i32).unwrap()
+    }
+
+    #[test]
+    fn process_alive() {
+        assert!(get_process().is_alive());
+    }
+
+    #[test]
+    fn process_cpu() {
+        let process = get_process();
+        assert!(process.utime >= 0.0);
+        assert!(process.stime >= 0.0);
+        assert!(process.cutime >= 0.0);
+        assert!(process.cstime >= 0.0);
+    }
+
+    #[test]
+    fn process_cmdline() {
+        assert!(get_process().cmdline().is_ok());
+    }
+
+    #[test]
+    fn process_cwd() {
+        assert!(get_process().cwd().is_ok());
+    }
+
+    #[test]
+    fn process_exe() {
+        assert!(get_process().exe().is_ok());
+    }
+
+    #[test]
+    fn process_memory() {
+        get_process().memory().unwrap();
+    }
+
+    #[test]
+    fn process_equality() {
+        assert_eq!(get_process(), get_process());
+    }
+
+    /// This could fail if you run the tests as PID 1. Please don't do that.
+    #[test]
+    fn process_inequality() {
+        assert!(get_process() != Process::new(1).unwrap());
+    }
+
+    #[test]
+    fn all() {
+        super::all().unwrap();
     }
 }
