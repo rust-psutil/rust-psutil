@@ -25,8 +25,10 @@ Licence
 Authors
 -------
 
-Written by [Sam Clements].
+Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day], and developed by multiple [contributors].
 
 [MIT Licence]: http://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil/
-[Sam Clements]: sam@borntyping.co.uk
+[Sam Clements]: https://github.com/borntyping
+[Rob Day]: https://github.com/rkday
+[contributors]: https://github.com/borntyping/rust-psutil/graphs/contributors
