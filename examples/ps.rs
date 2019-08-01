@@ -1,22 +1,26 @@
-//! Example psutil executable.
+use psutil::process::processes;
 
-#[cfg(not(test))]
+// TODO: update to actually match the output of `ps aux`
+
 fn main() {
     println!(
         "{:>5} {:^5} {:>8} {:>8} {:.100}",
         "PID", "STATE", "UTIME", "STIME", "CMD"
     );
 
-    for p in &psutil::process::all().unwrap() {
+    for p in processes().unwrap() {
+        let p = p.unwrap();
+        let cpu_times = p.cpu_times().unwrap();
+
         println!(
-            "{:>5} {:^5} {:>8.2} {:>8.2} {:.100}",
-            p.pid,
-            p.state.to_string(),
-            p.utime,
-            p.stime,
+            "{:>5} {:^5?} {:>8.2?} {:>8.2?} {:.100}",
+            p.pid(),
+            p.status().unwrap(),
+            cpu_times.user(),
+            cpu_times.system(),
             p.cmdline()
                 .unwrap()
-                .unwrap_or_else(|| format!("[{}]", p.comm))
+                .unwrap_or_else(|| format!("[{}]", p.name().unwrap())),
         );
     }
 }
