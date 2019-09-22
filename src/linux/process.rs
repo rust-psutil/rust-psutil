@@ -367,6 +367,12 @@ pub struct Process {
 
     /// The thread's exit status.
     pub exit_code: i32,
+
+    /// Voluntary context switches.
+    pub voluntary_ctxt_switches: u64,
+
+    /// Non-voluntary context switches.
+    pub nonvoluntary_ctxt_switches: u64,
 }
 
 impl Process {
@@ -375,20 +381,31 @@ impl Process {
     /// Some additional metadata is read from the permissions on the `/proc/[pid]/`, which defines
     /// the process UID/GID. The format of `/proc/[pid]/stat` format is defined in proc(5).
     pub fn new(pid: PID) -> Result<Process> {
-        let path = procfs_path(pid, "stat");
-        let stat = fs::read_to_string(&path)?;
+        let stat_path = procfs_path(pid, "stat");
+        let status_path = procfs_path(pid, "status");
+        let stat = fs::read_to_string(&stat_path)?;
+        let status = fs::read_to_string(&status_path)?;
         let meta = fs::metadata(procfs_path(pid, ""))?;
-        Process::new_internal(&stat, meta.uid(), meta.gid(), &path)
+        Process::new_internal(
+            &stat,
+            &status,
+            meta.uid(),
+            meta.gid(),
+            &stat_path,
+            &status_path,
+        )
     }
 
-    fn new_internal<P>(stat: &str, file_uid: UID, file_gid: GID, path: P) -> Result<Process>
+    fn read_stat<P>(data: &str, path: P) -> Result<Vec<&str>>
     where
         P: AsRef<Path>,
     {
+        let mut fields: Vec<&str> = Vec::new();
+
         // Read the PID and comm fields separately, as the comm field is delimited by brackets and
         // could contain spaces.
-        let (pid_, rest) = match stat.find('(') {
-            Some(i) => stat.split_at(i - 1),
+        let (pid_, rest) = match data.find('(') {
+            Some(i) => data.split_at(i - 1),
             None => return Err(parse_error("Could not parse comm", path)),
         };
         let (comm, rest) = match rest.rfind(')') {
@@ -396,17 +413,64 @@ impl Process {
             None => return Err(parse_error("Could not parse comm", path)),
         };
 
-        // Split the rest of the fields on the space character and read them into a vector.
-        let mut fields: Vec<&str> = Vec::new();
         fields.push(pid_);
         fields.push(&comm[2..comm.len() - 2]);
         fields.extend(rest.trim_end().split(' '));
 
+        Ok(fields)
+    }
+
+    fn read_status<P>(data: &str, path: P) -> Result<Vec<&str>>
+    where
+        P: AsRef<Path>,
+    {
+        let mut voluntary_ctxt_switches: Option<&str> = None;
+        let mut nonvoluntary_ctxt_switches: Option<&str> = None;
+
+        for l in data.lines() {
+            if l.contains("voluntary_ctxt_switches") {
+                let split_field = l.split_whitespace().collect::<Vec<&str>>();
+                if split_field.len() != 2 {
+                    return Err(parse_error("Could not parse status", path));
+                }
+
+                if split_field[0].starts_with("non") {
+                    nonvoluntary_ctxt_switches = Some(split_field[1]);
+                } else {
+                    voluntary_ctxt_switches = Some(split_field[1]);
+                }
+
+                match (voluntary_ctxt_switches, nonvoluntary_ctxt_switches) {
+                    (Some(v), Some(n)) => return Ok(vec![v, n]),
+                    _ => (),
+                }
+            }
+        }
+
+        Err(parse_error("Could not parse status", path))
+    }
+
+    fn new_internal<P>(
+        stat: &str,
+        status: &str,
+        file_uid: UID,
+        file_gid: GID,
+        stat_path: P,
+        status_path: P,
+    ) -> Result<Process>
+    where
+        P: AsRef<Path>,
+    {
+        let mut fields: Vec<&str> = Vec::new();
+
+        fields.extend(Process::read_stat(&stat, &stat_path)?);
+        fields.extend(Process::read_status(&status, status_path)?);
+
         // Check we haven't read more or less fields than expected.
-        if fields.len() != 52 {
+        if fields.len() != 54 {
             return Err(parse_error(
-                &format!("Expected 52 fields, got {}", fields.len()),
-                path,
+                &format!("Expected 54 fields, got {}", fields.len()),
+                stat_path,
             ));
         }
 
@@ -474,6 +538,8 @@ impl Process {
             env_start: try_parse!(fields[49]),
             env_end: try_parse!(fields[50]),
             exit_code: try_parse!(fields[51]),
+            voluntary_ctxt_switches: try_parse!(fields[52], u64::from_str),
+            nonvoluntary_ctxt_switches: try_parse!(fields[53], u64::from_str),
         })
     }
 
@@ -623,20 +689,92 @@ mod unit_tests {
     use super::*;
 
     #[test]
-    fn stat_52_fields() {
-        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
-        let p =
-            Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+    fn stat_fields_ok() {
+        let stat_file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let fields =
+            Process::read_stat(&stat_file_contents, &PathBuf::from("/proc/1/stat")).unwrap();
+
+        assert_eq!(fields[0], "1");
+        assert_eq!(fields[1], "init");
+        let expected_fields = stat_file_contents.split_whitespace().collect::<Vec<&str>>();
+        assert_eq!(fields[2..52], expected_fields[2..52]);
+    }
+
+    #[test]
+    fn stat_fields_err() {
+        let path = PathBuf::from("/proc/1/stat");
+        let stat_file_contents = "1 (init S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let fields = Process::read_stat(&stat_file_contents, &path);
+
+        assert!(fields.is_err());
+    }
+
+    #[test]
+    fn status_fields_ok() {
+        let status_file_contents = "Name:   migration/0\nUmask:  0000\nState:  S (sleeping)\nTgid:   10\nNgid:   0\nPid:    10\nPPid:   2\nTracerPid:  0\nUid:    0   0   0   0\nGid:    0   0   0   0\nFDSize: 64\nGroups:\nNStgid: 10\nNSpid:  10\nNSpgid: 0\nNSsid:  0\nThreads:    1\nSigQ:   0/126076\nSigPnd: 0000000000000000\nShdPnd: 0000000000000000\nSigBlk: 0000000000000000\nSigIgn: ffffffffffffffff\nSigCgt: 0000000000000000\nCapInh: 0000000000000000\nCapPrm: 0000003fffffffff\nCapEff: 0000003fffffffff\nCapBnd: 0000003fffffffff\nCapAmb: 0000000000000000\nNoNewPrivs: 0\nSeccomp:    0\nSpeculation_Store_Bypass:   thread vulnerable\nCpus_allowed:   01\nCpus_allowed_list:  0\nMems_allowed:   00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:  0\nvoluntary_ctxt_switches:    61384\nnonvoluntary_ctxt_switches: 0";
+        let fields =
+            Process::read_status(&status_file_contents, &PathBuf::from("/proc/10/status")).unwrap();
+
+        assert_eq!(fields[0], "61384");
+        assert_eq!(fields[1], "0");
+    }
+
+    #[test]
+    fn status_fields_err() {
+        // No whitespace between "nonvoluntary_ctxt_switches:" and "0"
+        let status_file_contents = "Name:   migration/0\nUmask:  0000\nState:  S (sleeping)\nTgid:   10\nNgid:   0\nPid:    10\nPPid:   2\nTracerPid:  0\nUid:    0   0   0   0\nGid:    0   0   0   0\nFDSize: 64\nGroups:\nNStgid: 10\nNSpid:  10\nNSpgid: 0\nNSsid:  0\nThreads:    1\nSigQ:   0/126076\nSigPnd: 0000000000000000\nShdPnd: 0000000000000000\nSigBlk: 0000000000000000\nSigIgn: ffffffffffffffff\nSigCgt: 0000000000000000\nCapInh: 0000000000000000\nCapPrm: 0000003fffffffff\nCapEff: 0000003fffffffff\nCapBnd: 0000003fffffffff\nCapAmb: 0000000000000000\nNoNewPrivs: 0\nSeccomp:    0\nSpeculation_Store_Bypass:   thread vulnerable\nCpus_allowed:   01\nCpus_allowed_list:  0\nMems_allowed:   00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:  0\nvoluntary_ctxt_switches:    61384\nnonvoluntary_ctxt_switches:0";
+        let fields = Process::read_status(&status_file_contents, &PathBuf::from("/proc/10/status"));
+
+        assert!(fields.is_err());
+
+        // nonvoluntary_ctxt_switches not appearing
+        let status_file_contents = "Name:   migration/0\nUmask:  0000\nState:  S (sleeping)\nTgid:   10\nNgid:   0\nPid:    10\nPPid:   2\nTracerPid:  0\nUid:    0   0   0   0\nGid:    0   0   0   0\nFDSize: 64\nGroups:\nNStgid: 10\nNSpid:  10\nNSpgid: 0\nNSsid:  0\nThreads:    1\nSigQ:   0/126076\nSigPnd: 0000000000000000\nShdPnd: 0000000000000000\nSigBlk: 0000000000000000\nSigIgn: ffffffffffffffff\nSigCgt: 0000000000000000\nCapInh: 0000000000000000\nCapPrm: 0000003fffffffff\nCapEff: 0000003fffffffff\nCapBnd: 0000003fffffffff\nCapAmb: 0000000000000000\nNoNewPrivs: 0\nSeccomp:    0\nSpeculation_Store_Bypass:   thread vulnerable\nCpus_allowed:   01\nCpus_allowed_list:  0\nMems_allowed:   00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:  0\nvoluntary_ctxt_switches:    61384\nvoluntary_ctxt_switches: 0";
+        let fields = Process::read_status(&status_file_contents, &PathBuf::from("/proc/10/status"));
+
+        assert!(fields.is_err());
+
+        // nonvoluntary_ctxt_switches and voluntary_ctxt_switches not appearing
+        let status_file_contents = "Name:   migration/0\nUmask:  0000\nState:  S (sleeping)\nTgid:   10\nNgid:   0\nPid:    10\nPPid:   2\nTracerPid:  0\nUid:    0   0   0   0\nGid:    0   0   0   0\nFDSize: 64\nGroups:\nNStgid: 10\nNSpid:  10\nNSpgid: 0\nNSsid:  0\nThreads:    1\nSigQ:   0/126076\nSigPnd: 0000000000000000\nShdPnd: 0000000000000000\nSigBlk: 0000000000000000\nSigIgn: ffffffffffffffff\nSigCgt: 0000000000000000\nCapInh: 0000000000000000\nCapPrm: 0000003fffffffff\nCapEff: 0000003fffffffff\nCapBnd: 0000003fffffffff\nCapAmb: 0000000000000000\nNoNewPrivs: 0\nSeccomp:    0\nSpeculation_Store_Bypass:   thread vulnerable\nCpus_allowed:   01\nCpus_allowed_list:  0\nMems_allowed:   00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:  0\n";
+        let fields = Process::read_status(&status_file_contents, &PathBuf::from("/proc/10/status"));
+
+        assert!(fields.is_err());
+    }
+
+    #[test]
+    fn stat_54_fields() {
+        let stat_file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let status_file_contents =
+            "voluntary_ctxt_switches:    61384\nnonvoluntary_ctxt_switches: 0";
+        let p = Process::new_internal(
+            &stat_file_contents,
+            &status_file_contents,
+            0,
+            0,
+            &PathBuf::from("/proc/1/stat"),
+            &PathBuf::from("/proc/10/status"),
+        )
+        .unwrap();
         assert_eq!(p.pid, 1);
         assert_eq!(p.comm, "init");
         assert_eq!(p.utime, 17.81);
+        assert_eq!(p.voluntary_ctxt_switches, 61384);
+        assert_eq!(p.nonvoluntary_ctxt_switches, 0);
     }
 
     #[test]
     fn starttime_in_seconds_and_ticks() {
-        let file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
-        let p =
-            Process::new_internal(&file_contents, 0, 0, &PathBuf::from("/proc/1/stat")).unwrap();
+        let stat_file_contents = "1 (init) S 0 1 1 0 -1 4219136 48162 38210015093 1033 16767427 1781 2205 119189638 18012864 20 0 1 0 9 34451456 504 18446744073709551615 1 1 0 0 0 0 0 4096 536962595 0 0 0 17 0 0 0 189 0 0 0 0 0 0 0 0 0 0\n";
+        let status_file_contents =
+            "voluntary_ctxt_switches:    61384\nnonvoluntary_ctxt_switches: 0";
+        let p = Process::new_internal(
+            &stat_file_contents,
+            &status_file_contents,
+            0,
+            0,
+            &PathBuf::from("/proc/1/stat"),
+            &PathBuf::from("/proc/1/status"),
+        )
+        .unwrap();
 
         // This field should be in seconds
         if *TICKS_PER_SECOND == 100.0 {
