@@ -34,27 +34,7 @@ impl Partition {
     }
 }
 
-/// Determine filesystem we want to look for
-fn fstype(data: &str) -> Vec<&str> {
-    let mut fstypes: Vec<&str> = Vec::new();
-
-    let lines: Vec<&str> = data.lines().collect();
-    for line in lines {
-        let fields: Vec<&str> = line.split_whitespace().collect();
-        if fields[0] != "nodev" {
-            fstypes.push(fields[0]);
-        } else if fields[1] == "zfs" {
-            fstypes.push(fields[1]);
-        }
-    }
-
-    fstypes
-}
-
-fn partitions_internal(all: bool) -> io::Result<Vec<Partition>> {
-    let filesystems = fs::read_to_string("/proc/filesystems")?;
-    let fstypes = fstype(&filesystems);
-
+pub fn partitions() -> io::Result<Vec<Partition>> {
     let mounts = fs::read_to_string("/proc/mounts")?;
     let mounts_lines: Vec<&str> = mounts.lines().collect();
 
@@ -69,23 +49,20 @@ fn partitions_internal(all: bool) -> io::Result<Vec<Partition>> {
             ));
         }
 
-        if all || fstypes.contains(&fields[2]) {
-            partitions.push(Partition {
-                device: String::from(fields[0]),
-                mountpoint: PathBuf::from(fields[1]),
-                filesystem: FileSystem::from_str(fields[2]).unwrap(),
-                mount_options: String::from(fields[3]),
-            });
-        }
+        partitions.push(Partition {
+            device: String::from(fields[0]),
+            mountpoint: PathBuf::from(fields[1]),
+            filesystem: FileSystem::from_str(fields[2]).unwrap(), // infallible unwrap
+            mount_options: String::from(fields[3]),
+        });
     }
 
     Ok(partitions)
 }
 
-pub fn partitions() -> io::Result<Vec<Partition>> {
-    partitions_internal(true)
-}
-
 pub fn partitions_physical() -> io::Result<Vec<Partition>> {
-    partitions_internal(false)
+    Ok(partitions()?
+        .into_iter()
+        .filter(|partition| partition.filesystem.is_physical())
+        .collect())
 }
