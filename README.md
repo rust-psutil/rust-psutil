@@ -1,25 +1,18 @@
-# rust-psutil [![](https://img.shields.io/github/tag/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/tags) [![](https://img.shields.io/github/issues/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/issues)
+# rust-psutil
+
+[![Latest Version](https://img.shields.io/crates/v/psutil.svg)](https://crates.io/crates/psutil)
+[![Latest Version](https://docs.rs/psutil/badge.svg)](https://docs.rs/psutil)
+![Minimum rustc version](https://img.shields.io/badge/rustc-1.39+-green.svg)
 
 A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
-Note that most functionality currently only works on Linux, but support is planned for all major platforms.
+## Platform Support
 
-* [Source on GitHub](https://github.com/borntyping/rust-psutil)
-* [Packages on Crates.io](https://crates.io/crates/psutil)
+Currently, only Linux is supported, but support is planned for all major platforms.
 
-## Run examples
+## License
 
-The examples can be run using `cargo run --example <name>`:
-
-```bash
-cargo run --example status
-cargo run --example ps
-...
-```
-
-## Licence
-
-`rust-psutil` is licenced under the [MIT Licence].
+`rust-psutil` is licensed under the [MIT Licence].
 
 ## Authors
 
