@@ -6,7 +6,7 @@ use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::Percent;
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CpuTimesPercent {
     pub(crate) user: Percent,
     pub(crate) nice: Percent,
@@ -59,6 +59,10 @@ fn delta_percentage(first: Duration, second: Duration, total_diff: Duration) -> 
 
 fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesPercent {
     let total_diff = second.total() - first.total();
+
+    if total_diff == Duration::default() {
+        return CpuTimesPercent::default();
+    }
 
     CpuTimesPercent {
         user: delta_percentage(first.user, second.user, total_diff),
