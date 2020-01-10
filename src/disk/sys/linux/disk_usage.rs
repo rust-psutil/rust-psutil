@@ -52,14 +52,16 @@ pub fn disk_usage<P>(path: P) -> io::Result<DiskUsage>
 where
     P: AsRef<Path>,
 {
-    let mut buf: libc::statvfs = unsafe { mem::uninitialized() };
+    let mut buf = mem::MaybeUninit::<libc::statvfs>::uninit();
     let path = CString::new(path.as_ref().to_string_lossy().to_string()).unwrap();
-    let result = unsafe { libc::statvfs(path.as_ptr(), &mut buf) };
+    let result = unsafe { libc::statvfs(path.as_ptr(), buf.as_mut_ptr()) };
     if result != 0 {
         return Err(invalid_data(
             "failed to use statvfs: statvfs return an error code",
         ));
     }
+    let buf = unsafe { buf.assume_init() };
+
     let total = buf.f_blocks * buf.f_frsize;
     let avail_to_root = buf.f_bfree * buf.f_frsize;
     let free = buf.f_bavail * buf.f_frsize;
