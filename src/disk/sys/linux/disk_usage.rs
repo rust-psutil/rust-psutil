@@ -1,7 +1,7 @@
-use std::ffi::CString;
 use std::io;
-use std::mem;
 use std::path::Path;
+
+use nix::sys;
 
 use crate::utils::invalid_data;
 use crate::{Bytes, Percent};
@@ -52,19 +52,12 @@ pub fn disk_usage<P>(path: P) -> io::Result<DiskUsage>
 where
     P: AsRef<Path>,
 {
-    let mut buf = mem::MaybeUninit::<libc::statvfs>::uninit();
-    let path = CString::new(path.as_ref().to_string_lossy().to_string()).unwrap();
-    let result = unsafe { libc::statvfs(path.as_ptr(), buf.as_mut_ptr()) };
-    if result != 0 {
-        return Err(invalid_data(
-            "failed to use statvfs: statvfs return an error code",
-        ));
-    }
-    let buf = unsafe { buf.assume_init() };
+    let statvfs = sys::statvfs::statvfs(path.as_ref())
+        .map_err(|_| invalid_data("failed to use statvfs: statvfs return an error code"))?;
 
-    let total = buf.f_blocks * buf.f_frsize;
-    let avail_to_root = buf.f_bfree * buf.f_frsize;
-    let free = buf.f_bavail * buf.f_frsize;
+    let total = statvfs.blocks() * statvfs.fragment_size();
+    let avail_to_root = statvfs.blocks_free() * statvfs.fragment_size();
+    let free = statvfs.blocks_available() * statvfs.fragment_size();
     let used = total - avail_to_root;
     let total_user = used + free;
     let percent = if total_user > 0 {
@@ -72,8 +65,8 @@ where
     } else {
         0.0
     } as f32;
-    let disk_inodes_free = buf.f_ffree;
-    let disk_inodes_total = buf.f_files;
+    let disk_inodes_free = statvfs.files_free();
+    let disk_inodes_total = statvfs.files();
     let disk_inodes_used = if disk_inodes_total >= disk_inodes_free {
         disk_inodes_total - disk_inodes_free
     } else {

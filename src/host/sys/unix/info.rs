@@ -1,10 +1,9 @@
 // https://github.com/heim-rs/heim/blob/master/heim-host/src/platform.rs
 // Not found in python psutil.
 
-use std::ffi::CStr;
-use std::io;
-use std::mem;
 use std::str::FromStr;
+
+use nix::sys;
 
 use platforms::target::{Arch, OS};
 
@@ -39,41 +38,20 @@ impl Info {
     }
 }
 
-pub fn info() -> io::Result<Info> {
-    unsafe {
-        let mut uts = mem::MaybeUninit::<libc::utsname>::uninit();
-        let result = libc::uname(uts.as_mut_ptr());
+pub fn info() -> Info {
+    let utsname = sys::utsname::uname();
 
-        if result != 0 {
-            Err(io::Error::last_os_error())
-        } else {
-            let uts = uts.assume_init();
+    let operating_system = OS::from_str(utsname.sysname()).unwrap_or(OS::Unknown);
+    let release = utsname.release().to_string();
+    let version = utsname.version().to_string();
+    let hostname = utsname.nodename().to_string();
+    let architecture = Arch::from_str(utsname.machine()).unwrap_or(Arch::Unknown);
 
-            let raw_operating_system = CStr::from_ptr(uts.sysname.as_ptr())
-                .to_string_lossy()
-                .into_owned();
-            let operating_system = OS::from_str(&raw_operating_system).unwrap_or(OS::Unknown);
-
-            let release = CStr::from_ptr(uts.release.as_ptr())
-                .to_string_lossy()
-                .into_owned();
-            let version = CStr::from_ptr(uts.version.as_ptr())
-                .to_string_lossy()
-                .into_owned();
-            let hostname = CStr::from_ptr(uts.nodename.as_ptr())
-                .to_string_lossy()
-                .into_owned();
-
-            let raw_architecture = CStr::from_ptr(uts.machine.as_ptr()).to_string_lossy();
-            let architecture = Arch::from_str(&raw_architecture).unwrap_or(Arch::Unknown);
-
-            Ok(Info {
-                operating_system,
-                release,
-                version,
-                hostname,
-                architecture,
-            })
-        }
+    Info {
+        operating_system,
+        release,
+        version,
+        hostname,
+        architecture,
     }
 }

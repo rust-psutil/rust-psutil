@@ -6,12 +6,14 @@ use std::path::PathBuf;
 use std::string::ToString;
 use std::time::Duration;
 
-use signal::Signal;
+use nix::sys::signal::{kill, Signal};
+use nix::unistd;
+use snafu::ResultExt;
 
 use crate::process::os::linux::ProcessExt as _;
 use crate::process::{
-    io_error_to_process_error, pids, stat, OpenFile, ProcessCpuTimes, ProcessError, ProcessResult,
-    Status,
+    errors, io_error_to_process_error, pids, stat, OpenFile, ProcessCpuTimes, ProcessError,
+    ProcessResult, Status,
 };
 use crate::{Count, Pid};
 
@@ -236,18 +238,8 @@ impl Process {
             return Err(ProcessError::NoSuchProcess { pid: self.pid });
         }
 
-        let libc_signal = match signal {
-            Signal::SIGKILL => libc::SIGKILL,
-            _ => todo!(),
-        };
-        match unsafe { libc::kill(self.pid as i32, libc_signal) } {
-            0 => Ok(()),
-            -1 => Err(io_error_to_process_error(
-                io::Error::last_os_error(),
-                self.pid,
-            )),
-            _ => unreachable!(),
-        }
+        kill(unistd::Pid::from_raw(self.pid as i32), signal)
+            .context(errors::NixError { pid: self.pid })
     }
 
     pub fn suspend(&self) {

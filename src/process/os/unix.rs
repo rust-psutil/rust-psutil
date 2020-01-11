@@ -1,11 +1,11 @@
-use libc;
+use nix::unistd;
 
 use crate::process::Process;
 use crate::Count;
 
-pub type Uid = libc::uid_t;
+pub type Uid = unistd::Uid;
 
-pub type Gid = libc::gid_t;
+pub type Gid = unistd::Gid;
 
 pub trait ProcessExt {
     fn uids(&self) -> Vec<Uid>;
