@@ -11,11 +11,16 @@ pub type FloatCount = f64;
 pub type Degrees = FloatCount;
 pub type Mhz = FloatCount;
 
+#[derive(Debug)]
 pub struct Temperature {
     celcius: Degrees,
 }
 
 impl Temperature {
+    pub fn new(celcius: Degrees) -> Temperature {
+        Temperature { celcius }
+    }
+
     pub fn celcius(&self) -> Degrees {
         self.celcius
     }

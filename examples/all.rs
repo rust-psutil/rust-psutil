@@ -39,6 +39,8 @@ fn main() {
     let pids = process::pids().unwrap();
     let processes = process::processes().unwrap();
 
+    let temperatures = sensors::temperatures();
+
     dbg!(cpu_percents_percpu);
     dbg!(cpu_times_percpu);
     dbg!(cpu_times_percent_percpu);
@@ -58,4 +60,6 @@ fn main() {
 
     dbg!(pids);
     dbg!(processes);
+
+    dbg!(temperatures);
 }
