@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::{Rpm, Temperature};
+use crate::Temperature;
 
 pub struct TemperatureReading {
     _label: Option<String>,
@@ -12,14 +12,5 @@ pub struct TemperatureReading {
 }
 
 pub fn temperatures() -> io::Result<HashMap<String, Vec<TemperatureReading>>> {
-    todo!()
-}
-
-pub struct FanReading {
-    _label: String,
-    _current: Rpm,
-}
-
-pub fn fans() -> io::Result<HashMap<String, Vec<FanReading>>> {
     todo!()
 }
