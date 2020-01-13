@@ -35,19 +35,19 @@ impl CpuTimesPercent {
 
     /// Time spent doing nothing.
     pub fn idle(&self) -> Percent {
-        self.idle
+        self.idle + self.iowait()
     }
 
     /// New method, not in Python psutil.
     pub fn busy(&self) -> Percent {
-        // TODO: what about guest and guest_nice?
         self.user()
             + self.system()
             + self.nice()
-            + self.iowait() // TODO: is iowait idle time?
             + self.irq()
             + self.softirq()
             + self.steal()
+            + self.guest()
+            + self.guest_nice()
     }
 }
 
