@@ -1,6 +1,9 @@
 //! Utility methods, mostly for dealing with IO.
 
 use std::io;
+use std::time::Duration;
+
+use crate::Percent;
 
 macro_rules! try_parse {
     ($field:expr) => {
@@ -22,4 +25,11 @@ pub fn not_found(key: &str) -> io::Error {
 
 pub fn invalid_data(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
+}
+
+// TODO: fix casting
+// TODO: use nightly div_duration_f32
+#[allow(clippy::unnecessary_cast)]
+pub fn calculate_cpu_percent(first: Duration, second: Duration, total_diff: Duration) -> Percent {
+    (((second - first).as_nanos() as f64 / total_diff.as_nanos() as f64) * 100.0) as f32
 }

@@ -28,7 +28,7 @@ disk = []
 host = ["platforms"]
 memory = []
 network = []
-process = ["snafu"]
+process = ["snafu", "memory"]
 sensors = ["glob"]
 
 [dev-dependencies]

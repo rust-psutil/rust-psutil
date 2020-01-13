@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use crate::cpu::os::{linux::CpuTimesPercentExt as _, unix::CpuTimesPercentExt as _};
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
+use crate::utils::calculate_cpu_percent;
 use crate::Percent;
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
@@ -50,13 +51,6 @@ impl CpuTimesPercent {
     }
 }
 
-// TODO: fix casting
-// TODO: use nightly div_duration_f32
-#[allow(clippy::unnecessary_cast)]
-fn delta_percentage(first: Duration, second: Duration, total_diff: Duration) -> Percent {
-    (((second - first).as_nanos() as f64 / total_diff.as_nanos() as f64) * 100.0) as f32
-}
-
 fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesPercent {
     let total_diff = second.total() - first.total();
 
@@ -65,16 +59,16 @@ fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesP
     }
 
     CpuTimesPercent {
-        user: delta_percentage(first.user, second.user, total_diff),
-        nice: delta_percentage(first.nice, second.nice, total_diff),
-        system: delta_percentage(first.system, second.system, total_diff),
-        idle: delta_percentage(first.idle, second.idle, total_diff),
-        iowait: delta_percentage(first.iowait, second.iowait, total_diff),
-        irq: delta_percentage(first.irq, second.irq, total_diff),
-        softirq: delta_percentage(first.softirq, second.softirq, total_diff),
-        steal: delta_percentage(first.steal, second.steal, total_diff),
-        guest: delta_percentage(first.guest, second.guest, total_diff),
-        guest_nice: delta_percentage(first.guest_nice, second.guest_nice, total_diff),
+        user: calculate_cpu_percent(first.user, second.user, total_diff),
+        nice: calculate_cpu_percent(first.nice, second.nice, total_diff),
+        system: calculate_cpu_percent(first.system, second.system, total_diff),
+        idle: calculate_cpu_percent(first.idle, second.idle, total_diff),
+        iowait: calculate_cpu_percent(first.iowait, second.iowait, total_diff),
+        irq: calculate_cpu_percent(first.irq, second.irq, total_diff),
+        softirq: calculate_cpu_percent(first.softirq, second.softirq, total_diff),
+        steal: calculate_cpu_percent(first.steal, second.steal, total_diff),
+        guest: calculate_cpu_percent(first.guest, second.guest, total_diff),
+        guest_nice: calculate_cpu_percent(first.guest_nice, second.guest_nice, total_diff),
     }
 }
 

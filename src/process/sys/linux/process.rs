@@ -4,18 +4,20 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use nix::sys::signal::{kill, Signal};
 use nix::unistd;
 use snafu::ResultExt;
 
+use crate::memory;
 use crate::process::os::linux::ProcessExt as _;
 use crate::process::{
     errors, io_error_to_process_error, pids, stat, OpenFile, ProcessCpuTimes, ProcessError,
     ProcessResult, Status,
 };
-use crate::{Count, Pid};
+use crate::utils::calculate_cpu_percent;
+use crate::{Count, Percent, Pid};
 
 /// Returns a path to a file in `/proc/[pid]/`.
 pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
@@ -26,14 +28,23 @@ pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
 pub struct Process {
     pub(crate) pid: Pid,
     pub(crate) create_time: Duration,
+    pub(crate) busy: Duration,
+    pub(crate) instant: Instant,
 }
 
 impl Process {
     pub fn new(pid: Pid) -> ProcessResult<Process> {
         let stat = stat(pid)?;
         let create_time = stat.starttime;
+        let busy = ProcessCpuTimes::from(stat).busy();
+        let instant = Instant::now();
 
-        Ok(Process { pid, create_time })
+        Ok(Process {
+            pid,
+            create_time,
+            busy,
+            instant,
+        })
     }
 
     pub fn current() -> ProcessResult<Process> {
@@ -142,17 +153,20 @@ impl Process {
     pub fn cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
         let stat = self.stat()?;
 
-        Ok(ProcessCpuTimes {
-            user: stat.utime,
-            system: stat.stime,
-            children_user: stat.cutime,
-            children_system: stat.cstime,
-            iowait: Duration::default(), // TODO
-        })
+        Ok(ProcessCpuTimes::from(stat))
     }
 
-    pub fn cpu_percent(&self, _interval: Option<Duration>) {
-        todo!()
+    /// Returns the cpu percent since the process was created or since the last time this method was
+    /// called.
+    /// Differs from Python psutil since there is no interval argument.
+    pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
+        let busy = self.cpu_times()?.busy();
+        let instant = Instant::now();
+        let percent = calculate_cpu_percent(self.busy, busy, instant - self.instant);
+        self.busy = busy;
+        self.instant = instant;
+
+        Ok(percent)
     }
 
     pub fn memory_info(&self) {
@@ -163,8 +177,14 @@ impl Process {
         todo!()
     }
 
-    pub fn memory_percent(&self) {
-        todo!()
+    // TODO: memtype argument
+    pub fn memory_percent(&self) -> ProcessResult<Percent> {
+        let statm = self.statm()?;
+        let virtual_memory =
+            memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
+        let percent = ((statm.size as f64 / virtual_memory.total as f64) * 100.0) as f32;
+
+        Ok(percent)
     }
 
     pub fn chidren(&self) {

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::process::Stat;
+
 #[derive(Clone, Debug)]
 pub struct ProcessCpuTimes {
     pub(crate) user: Duration,
@@ -24,5 +26,22 @@ impl ProcessCpuTimes {
 
     pub fn children_system(&self) -> Duration {
         self.children_system
+    }
+
+    /// New method, not in Python psutil.
+    pub fn busy(&self) -> Duration {
+        self.user() + self.system() + self.children_user() + self.children_system()
+    }
+}
+
+impl From<Stat> for ProcessCpuTimes {
+    fn from(stat: Stat) -> Self {
+        ProcessCpuTimes {
+            user: stat.utime,
+            system: stat.stime,
+            children_user: stat.cutime,
+            children_system: stat.cstime,
+            iowait: Duration::default(), // TODO
+        }
     }
 }
