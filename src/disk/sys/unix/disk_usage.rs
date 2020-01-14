@@ -12,18 +12,6 @@ pub struct DiskUsage {
     pub(crate) used: Bytes,
     pub(crate) free: Bytes,
     pub(crate) percent: Percent,
-
-    // TODO: expose these in an OS extension
-    /// Number of inodes available.
-    pub(crate) disk_inodes_free: Bytes,
-
-    // TODO: expose these in an OS extension
-    /// Number of inodes for this filesystem.
-    pub(crate) disk_inodes_total: Bytes,
-
-    // TODO: expose these in an OS extension
-    /// Number of used inodes.
-    pub(crate) disk_inodes_used: Bytes,
 }
 
 impl DiskUsage {
@@ -56,30 +44,19 @@ where
         .map_err(|_| invalid_data("failed to use statvfs: statvfs return an error code"))?;
 
     let total = statvfs.blocks() * statvfs.fragment_size();
+
     let avail_to_root = statvfs.blocks_free() * statvfs.fragment_size();
-    let free = statvfs.blocks_available() * statvfs.fragment_size();
     let used = total - avail_to_root;
+
+    let free = statvfs.blocks_available() * statvfs.fragment_size();
+
     let total_user = used + free;
-    let percent = if total_user > 0 {
-        (used as f64 / total_user as f64) * 100.0
-    } else {
-        0.0
-    } as f32;
-    let disk_inodes_free = statvfs.files_free();
-    let disk_inodes_total = statvfs.files();
-    let disk_inodes_used = if disk_inodes_total >= disk_inodes_free {
-        disk_inodes_total - disk_inodes_free
-    } else {
-        100
-    };
+    let percent = ((used as f64 / total_user as f64) * 100.0) as f32;
 
     Ok(DiskUsage {
         total,
         used,
         free,
         percent,
-        disk_inodes_free,
-        disk_inodes_total,
-        disk_inodes_used,
     })
 }
