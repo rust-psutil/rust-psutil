@@ -29,9 +29,8 @@ impl ProcessCpuTimes {
     }
 
     /// New method, not in Python psutil.
-    /// TODO: include child times?
     pub fn busy(&self) -> Duration {
-        self.user() + self.system() + self.children_user() + self.children_system()
+        self.user() + self.system()
     }
 }
 
