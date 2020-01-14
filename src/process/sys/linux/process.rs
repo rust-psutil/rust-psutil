@@ -182,7 +182,7 @@ impl Process {
         let statm = self.statm()?;
         let virtual_memory =
             memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
-        let percent = ((statm.size as f64 / virtual_memory.total as f64) * 100.0) as f32;
+        let percent = ((statm.resident as f64 / virtual_memory.total as f64) * 100.0) as f32;
 
         Ok(percent)
     }
