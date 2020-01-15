@@ -10,14 +10,26 @@ use crate::Percent;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CpuTimesPercent {
     pub(crate) user: Percent,
-    pub(crate) nice: Percent,
     pub(crate) system: Percent,
     pub(crate) idle: Percent,
+    pub(crate) nice: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) iowait: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) irq: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) softirq: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) steal: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) guest: Percent,
+
+    #[cfg(target_os = "linux")]
     pub(crate) guest_nice: Percent,
 }
 
@@ -34,11 +46,19 @@ impl CpuTimesPercent {
     }
 
     /// Time spent doing nothing.
+    #[cfg(target_os = "linux")]
     pub fn idle(&self) -> Percent {
         self.idle + self.iowait()
     }
 
+    /// Time spent doing nothing.
+    #[cfg(target_os = "macos")]
+    pub fn idle(&self) -> Percent {
+        self.idle
+    }
+
     /// New method, not in Python psutil.
+    #[cfg(target_os = "linux")]
     pub fn busy(&self) -> Percent {
         self.user()
             + self.system()
@@ -48,6 +68,12 @@ impl CpuTimesPercent {
             + self.steal()
             + self.guest()
             + self.guest_nice()
+    }
+
+    /// New method, not in Python psutil.
+    #[cfg(target_os = "macos")]
+    pub fn busy(&self) -> Percent {
+        self.user() + self.system() + self.nice()
     }
 }
 
@@ -60,9 +86,9 @@ fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesP
 
     CpuTimesPercent {
         user: calculate_cpu_percent(first.user, second.user, total_diff),
-        nice: calculate_cpu_percent(first.nice, second.nice, total_diff),
         system: calculate_cpu_percent(first.system, second.system, total_diff),
         idle: calculate_cpu_percent(first.idle, second.idle, total_diff),
+        nice: calculate_cpu_percent(first.nice, second.nice, total_diff),
         iowait: calculate_cpu_percent(first.iowait, second.iowait, total_diff),
         irq: calculate_cpu_percent(first.irq, second.irq, total_diff),
         softirq: calculate_cpu_percent(first.softirq, second.softirq, total_diff),

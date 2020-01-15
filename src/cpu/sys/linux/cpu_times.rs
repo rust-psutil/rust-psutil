@@ -11,9 +11,9 @@ use crate::{Count, TICKS_PER_SECOND};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CpuTimes {
     pub(crate) user: Duration,
-    pub(crate) nice: Duration,
     pub(crate) system: Duration,
     pub(crate) idle: Duration,
+    pub(crate) nice: Duration,
     pub(crate) iowait: Duration,
     pub(crate) irq: Duration,
     pub(crate) softirq: Duration,
@@ -90,9 +90,9 @@ impl FromStr for CpuTimes {
 
         Ok(CpuTimes {
             user,
-            nice,
             system,
             idle,
+            nice,
             iowait,
             irq,
             softirq,
