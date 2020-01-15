@@ -34,13 +34,11 @@ impl Partition {
     }
 }
 
-pub fn partitions() -> io::Result<Vec<Partition>> {
-    let mounts = fs::read_to_string("/proc/mounts")?;
-    let mounts_lines: Vec<&str> = mounts.lines().collect();
+impl FromStr for Partition {
+    type Err = io::Error;
 
-    let mut partitions: Vec<Partition> = Vec::new();
-
-    for line in mounts_lines {
+    fn from_str(line: &str) -> io::Result<Partition> {
+        // Example: `/dev/sda3 /home ext4 rw,relatime,data=ordered 0 0`
         let fields: Vec<&str> = line.split_whitespace().collect();
 
         if fields.len() < 4 {
@@ -49,15 +47,20 @@ pub fn partitions() -> io::Result<Vec<Partition>> {
             ));
         }
 
-        partitions.push(Partition {
+        Ok(Partition {
             device: String::from(fields[0]),
             mountpoint: PathBuf::from(fields[1]),
             filesystem: FileSystem::from_str(fields[2]).unwrap(), // infallible unwrap
             mount_options: String::from(fields[3]),
-        });
+        })
     }
+}
 
-    Ok(partitions)
+pub fn partitions() -> io::Result<Vec<Partition>> {
+    fs::read_to_string("/proc/mounts")?
+        .lines()
+        .map(|line| Partition::from_str(line))
+        .collect()
 }
 
 pub fn partitions_physical() -> io::Result<Vec<Partition>> {
