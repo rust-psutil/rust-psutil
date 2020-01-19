@@ -147,8 +147,9 @@ pub struct Stat {
     /// Number of threads in the process.
     pub num_threads: i64,
 
-    // Unmaintained field since linux 2.6.17, always 0.
-    // itrealvalue: i64,
+    /// Unmaintained field since linux 2.6.17, always 0.
+    pub itrealvalue: i64,
+
     /// Time the process was started after system boot (seconds).
     pub starttime: Duration,
 
@@ -196,37 +197,37 @@ pub struct Stat {
     pub rt_priority: u32,
 
     /// Scheduling policy.
-    pub policy: u32,
+    pub policy: u64,
 
     /// Aggregated block I/O delays (seconds).
-    pub delayacct_blkio: Duration,
+    pub delayacct_blkio: Option<Duration>,
 
     /// Aggregated block I/O delays (ticks).
-    pub delayacct_blkio_ticks: u128,
+    pub delayacct_blkio_ticks: Option<u128>,
 
     /// Guest time of the process (seconds).
-    pub guest_time: Duration,
+    pub guest_time: Option<Duration>,
 
     /// Guest time of the process (ticks).
-    pub guest_time_ticks: u64,
+    pub guest_time_ticks: Option<u64>,
 
     /// Guest time of the process's children (seconds).
-    pub cguest_time: Duration,
+    pub cguest_time: Option<Duration>,
 
     /// Guest time of the process's children (ticks).
-    pub cguest_time_ticks: i64,
+    pub cguest_time_ticks: Option<i64>,
 
     // More memory addresses.
-    start_data: u64,
-    end_data: u64,
-    start_brk: u64,
-    arg_start: u64,
-    arg_end: u64,
-    env_start: u64,
-    env_end: u64,
+    start_data: Option<u64>,
+    end_data: Option<u64>,
+    start_brk: Option<u64>,
+    arg_start: Option<u64>,
+    arg_end: Option<u64>,
+    env_start: Option<u64>,
+    env_end: Option<u64>,
 
     /// The thread's exit status.
-    pub exit_code: i32,
+    pub exit_code: Option<i32>,
 }
 
 impl FromStr for Stat {
@@ -249,9 +250,9 @@ impl FromStr for Stat {
         fields.push(&comm_field[2..comm_field.len() - 2]);
         fields.extend(leftover.trim_end().split_whitespace());
 
-        if fields.len() != 52 {
+        if fields.len() < 41 {
             return Err(invalid_data(&format!(
-                "Expected 52 fields, got {}",
+                "Expected at least 41 fields, got {}",
                 fields.len()
             )));
         }
@@ -288,7 +289,7 @@ impl FromStr for Stat {
         let priority = try_parse!(fields[17]);
         let nice = try_parse!(fields[18]);
         let num_threads = try_parse!(fields[19]);
-        // let itrealvalue = try_parse!(fields[20]);
+        let itrealvalue = try_parse!(fields[20]);
 
         let starttime_ticks = try_parse!(fields[21]);
         let starttime = Duration::from_secs_f64(starttime_ticks as f64 / *TICKS_PER_SECOND);
@@ -313,24 +314,45 @@ impl FromStr for Stat {
         let rt_priority = try_parse!(fields[39]);
         let policy = try_parse!(fields[40]);
 
-        let delayacct_blkio_ticks = try_parse!(fields[41]);
-        let delayacct_blkio =
-            Duration::from_secs_f64(delayacct_blkio_ticks as f64 / *TICKS_PER_SECOND);
+        let delayacct_blkio_ticks = if fields.len() >= 42 {
+            Some(try_parse!(fields[41]))
+        } else {
+            None
+        };
+        let delayacct_blkio = delayacct_blkio_ticks
+            .map(|val| Duration::from_secs_f64(val as f64 / *TICKS_PER_SECOND));
 
-        let guest_time_ticks = try_parse!(fields[42]);
-        let guest_time = Duration::from_secs_f64(guest_time_ticks as f64 / *TICKS_PER_SECOND);
+        let (guest_time_ticks, cguest_time_ticks) = if fields.len() >= 44 {
+            (Some(try_parse!(fields[42])), Some(try_parse!(fields[43])))
+        } else {
+            (None, None)
+        };
+        let guest_time =
+            guest_time_ticks.map(|val| Duration::from_secs_f64(val as f64 / *TICKS_PER_SECOND));
+        let cguest_time =
+            cguest_time_ticks.map(|val| Duration::from_secs_f64(val as f64 / *TICKS_PER_SECOND));
 
-        let cguest_time_ticks = try_parse!(fields[43]);
-        let cguest_time = Duration::from_secs_f64(cguest_time_ticks as f64 / *TICKS_PER_SECOND);
+        let (start_data, end_data, start_brk) = if fields.len() >= 47 {
+            (
+                Some(try_parse!(fields[44])),
+                Some(try_parse!(fields[45])),
+                Some(try_parse!(fields[46])),
+            )
+        } else {
+            (None, None, None)
+        };
 
-        let start_data = try_parse!(fields[44]);
-        let end_data = try_parse!(fields[45]);
-        let start_brk = try_parse!(fields[46]);
-        let arg_start = try_parse!(fields[47]);
-        let arg_end = try_parse!(fields[48]);
-        let env_start = try_parse!(fields[49]);
-        let env_end = try_parse!(fields[50]);
-        let exit_code = try_parse!(fields[51]);
+        let (arg_start, arg_end, env_start, env_end, exit_code) = if fields.len() >= 52 {
+            (
+                Some(try_parse!(fields[47])),
+                Some(try_parse!(fields[48])),
+                Some(try_parse!(fields[49])),
+                Some(try_parse!(fields[50])),
+                Some(try_parse!(fields[51])),
+            )
+        } else {
+            (None, None, None, None, None)
+        };
 
         Ok(Stat {
             pid,
@@ -357,7 +379,7 @@ impl FromStr for Stat {
             priority,
             nice,
             num_threads,
-            // itrealvalue,
+            itrealvalue,
             starttime,
             starttime_ticks,
             vsize,

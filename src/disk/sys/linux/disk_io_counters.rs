@@ -185,7 +185,7 @@ fn fix_io_counter_overflow(
 }
 
 /// Used to persist data between calls to detect data overflow by the kernel and fix the result.
-/// Requires a minimum kernel version of 2.6 due to the usage of `/proc/diskstats`.
+/// Requires a minimum kernel version of 2.5.69 due to the usage of `/proc/diskstats`.
 #[derive(Clone, Debug, Default)]
 pub struct DiskIoCountersCollector {
     prev_disk_io_counters_perdisk: Option<HashMap<String, DiskIoCounters>>,
