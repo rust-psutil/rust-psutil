@@ -12,11 +12,11 @@ Currently, only Linux is supported, but support is planned for all major platfor
 
 ## License
 
-`rust-psutil` is licensed under the [MIT Licence].
+`rust-psutil` is licensed under the [MIT License].
 
 ## Authors
 
-Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day], and developed by multiple [contributors].
+Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], and [Caleb Bassi], and developed by multiple [contributors].
 
 ## Related projects
 
@@ -25,8 +25,9 @@ Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day]
 * [hiem](https://crates.io/crates/heim)
 * [rust-battery](https://github.com/svartalf/rust-battery)
 
-[MIT Licence]: http://opensource.org/licenses/MIT
-[psutil]: https://github.com/giampaolo/psutil/
+[MIT License]: https://opensource.org/licenses/MIT
+[psutil]: https://github.com/giampaolo/psutil
 [Sam Clements]: https://github.com/borntyping
 [Rob Day]: https://github.com/rkday
+[Caleb Bassi]: https://github.com/cjbassi
 [contributors]: https://github.com/borntyping/rust-psutil/graphs/contributors
