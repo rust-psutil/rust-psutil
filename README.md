@@ -1,34 +1,24 @@
-# rust-psutil [![](https://img.shields.io/github/tag/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/tags) [![](https://img.shields.io/travis/borntyping/rust-psutil.svg)](https://travis-ci.org/borntyping/rust-psutil) [![](https://img.shields.io/github/issues/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/issues)
+# rust-psutil
 
-A process monitoring library for Rust, heavily inspired by the [psutil] module
-for Python.
+[![Latest Version](https://img.shields.io/crates/v/psutil.svg)](https://crates.io/crates/psutil)
+[![Latest Version](https://docs.rs/psutil/badge.svg)](https://docs.rs/psutil)
+![Minimum rustc version](https://img.shields.io/badge/rustc-1.39+-green.svg)
 
-Note that it only works on Linux.
+A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
-* [Source on GitHub](https://github.com/borntyping/rust-psutil)
-* [Packages on Crates.io](https://crates.io/crates/psutil)
-* [Builds on Travis CI](https://travis-ci.org/borntyping/rust-psutil)
+## Platform Support
 
-Run examples
-------------
+Currently, only Linux is supported, but support is planned for all major platforms.
 
-The examples can be run using `cargo run --example <name>`:
+## License
 
-    cargo run --example status
-    cargo run --example ps
+`rust-psutil` is licensed under the [MIT Licence].
 
-Licence
--------
-
-`rust-psutil` is licenced under the [MIT Licence].
-
-Authors
--------
+## Authors
 
 Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day], and developed by multiple [contributors].
 
-Related projects
-----------------
+## Related projects
 
 `rust-psutil` has no connection to these projects, but you might find them useful.
 

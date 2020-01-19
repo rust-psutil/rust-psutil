@@ -2,7 +2,6 @@
 
 use psutil::process::Process;
 
-#[cfg(not(test))]
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let process = Process::new(args[1].parse().unwrap()).unwrap();

@@ -15,9 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Completely overhaul the entire API
+
+## [1.7.0] - 2019-08-01
+
 ### Removed
 
 - Remove `getpid()`, `getppid()`, `Process.from_pidfile()`, `write_pidfile()`, and `read_pidfile()`
 - Remove `psutil::system` and replace with `psutil::{cpu, memory, host}`
 
-[Unreleased]: https://github.com/borntyping/rust-psutil/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/borntyping/rust-psutil/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/borntyping/rust-psutil/compare/v1.6.0...v1.7.0

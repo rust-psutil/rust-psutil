@@ -1,7 +1,9 @@
-//! Example psutil executable.
+use psutil::{host, process};
 
-#[cfg(not(test))]
 fn main() {
-    println!("Processes: {}", psutil::process::all().unwrap().len());
-    println!("System uptime: {} seconds", psutil::host::uptime());
+    println!("Process count: {}", process::pids().unwrap().len());
+    println!(
+        "System uptime: {} seconds",
+        host::uptime().unwrap().as_secs()
+    );
 }
