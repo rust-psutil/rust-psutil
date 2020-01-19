@@ -11,7 +11,7 @@ use crate::Percent;
 /// let mut cpu_percent_collector = psutil::cpu::CpuPercentCollector::new().unwrap();
 ///
 /// let cpu_percent = cpu_percent_collector.cpu_percent().unwrap();
-/// let cpu_percents_percpu = cpu_percent_collector.cpu_percents_percpu().unwrap();
+/// let cpu_percents_percpu = cpu_percent_collector.cpu_percent_percpu().unwrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct CpuPercentCollector {
