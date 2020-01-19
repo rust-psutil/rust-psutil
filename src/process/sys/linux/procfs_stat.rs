@@ -74,7 +74,7 @@ impl ToString for Status {
 }
 
 #[derive(Clone, Debug)]
-pub struct Stat {
+pub struct ProcfsStat {
     /// PID of the process.
     pub pid: Pid,
 
@@ -230,7 +230,7 @@ pub struct Stat {
     pub exit_code: Option<i32>,
 }
 
-impl FromStr for Stat {
+impl FromStr for ProcfsStat {
     type Err = std::io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -354,7 +354,7 @@ impl FromStr for Stat {
             (None, None, None, None, None)
         };
 
-        Ok(Stat {
+        Ok(ProcfsStat {
             pid,
             comm,
             state,
@@ -419,9 +419,9 @@ impl FromStr for Stat {
     }
 }
 
-pub fn stat(pid: Pid) -> ProcessResult<Stat> {
+pub fn procfs_stat(pid: Pid) -> ProcessResult<ProcfsStat> {
     let data = fs::read_to_string(procfs_path(pid, "stat"))
         .map_err(|e| io_error_to_process_error(e, pid))?;
 
-    Stat::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+    ProcfsStat::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
 }

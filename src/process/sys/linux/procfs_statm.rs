@@ -9,7 +9,7 @@ use crate::{Pid, PAGE_SIZE};
 ///
 /// The `lib` [4, u64] and `dt` [6, u64] fields are ignored.
 #[derive(Clone, Debug)]
-pub struct StatM {
+pub struct ProcfsStatm {
     /// Total program size (bytes).
     pub size: u64,
 
@@ -26,7 +26,7 @@ pub struct StatM {
     pub data: u64,
 }
 
-impl FromStr for StatM {
+impl FromStr for ProcfsStatm {
     type Err = std::io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -39,7 +39,7 @@ impl FromStr for StatM {
             )));
         }
 
-        Ok(StatM {
+        Ok(ProcfsStatm {
             size: try_parse!(fields[0], u64::from_str) * *PAGE_SIZE,
             resident: try_parse!(fields[1], u64::from_str) * *PAGE_SIZE,
             share: try_parse!(fields[2], u64::from_str) * *PAGE_SIZE,
@@ -49,9 +49,9 @@ impl FromStr for StatM {
     }
 }
 
-pub fn statm(pid: Pid) -> ProcessResult<StatM> {
+pub fn procfs_statm(pid: Pid) -> ProcessResult<ProcfsStatm> {
     let data = fs::read_to_string(procfs_path(pid, "statm"))
         .map_err(|e| io_error_to_process_error(e, pid))?;
 
-    StatM::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+    ProcfsStatm::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
 }

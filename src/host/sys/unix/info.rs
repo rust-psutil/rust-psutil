@@ -1,5 +1,4 @@
 // https://github.com/heim-rs/heim/blob/master/heim-host/src/platform.rs
-// Not found in python psutil.
 
 use std::str::FromStr;
 
@@ -7,6 +6,7 @@ use nix::sys;
 
 use platforms::target::{Arch, OS};
 
+/// Not found in Python psutil.
 #[derive(Clone, Debug)]
 pub struct Info {
     operating_system: OS,

@@ -13,7 +13,7 @@ use snafu::ResultExt;
 use crate::memory;
 use crate::process::os::linux::ProcessExt as _;
 use crate::process::{
-    errors, io_error_to_process_error, pids, stat, OpenFile, ProcessCpuTimes, ProcessError,
+    errors, io_error_to_process_error, pids, procfs_stat, OpenFile, ProcessCpuTimes, ProcessError,
     ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;
@@ -34,7 +34,7 @@ pub struct Process {
 
 impl Process {
     pub fn new(pid: Pid) -> ProcessResult<Process> {
-        let stat = stat(pid)?;
+        let stat = procfs_stat(pid)?;
         let create_time = stat.starttime;
         let busy = ProcessCpuTimes::from(stat).busy();
         let instant = Instant::now();
@@ -60,11 +60,11 @@ impl Process {
     }
 
     pub fn ppid(&self) -> ProcessResult<Option<Pid>> {
-        Ok(self.stat()?.ppid)
+        Ok(self.procfs_stat()?.ppid)
     }
 
     pub fn name(&self) -> ProcessResult<String> {
-        Ok(self.stat()?.comm)
+        Ok(self.procfs_stat()?.comm)
     }
 
     pub fn exe(&self) -> ProcessResult<PathBuf> {
@@ -119,7 +119,7 @@ impl Process {
     }
 
     pub fn status(&self) -> ProcessResult<Status> {
-        Ok(self.stat()?.state)
+        Ok(self.procfs_stat()?.state)
     }
 
     pub fn cwd(&self) -> ProcessResult<PathBuf> {
@@ -151,7 +151,7 @@ impl Process {
     }
 
     pub fn cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
-        let stat = self.stat()?;
+        let stat = self.procfs_stat()?;
 
         Ok(ProcessCpuTimes::from(stat))
     }
@@ -179,7 +179,7 @@ impl Process {
 
     // TODO: memtype argument
     pub fn memory_percent(&self) -> ProcessResult<Percent> {
-        let statm = self.statm()?;
+        let statm = self.procfs_statm()?;
         let virtual_memory =
             memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
         let percent = ((statm.resident as f64 / virtual_memory.total as f64) * 100.0) as f32;

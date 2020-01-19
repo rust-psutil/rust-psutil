@@ -3,7 +3,9 @@ use std::fs;
 use std::io;
 use std::time::Duration;
 
-use crate::process::{stat, statm, Process, ProcessCpuTimes, ProcessResult, Stat, StatM};
+use crate::process::{
+    procfs_stat, procfs_statm, Process, ProcessCpuTimes, ProcessResult, ProcfsStat, ProcfsStatm,
+};
 use crate::utils::invalid_data;
 
 fn parse_environ(data: &str) -> io::Result<HashMap<String, String>> {
@@ -47,10 +49,10 @@ pub trait ProcessExt {
     fn memory_maps(&self);
 
     /// New method, not in Python psutil
-    fn stat(&self) -> ProcessResult<Stat>;
+    fn procfs_stat(&self) -> ProcessResult<ProcfsStat>;
 
     /// New method, not in Python psutil
-    fn statm(&self) -> ProcessResult<StatM>;
+    fn procfs_statm(&self) -> ProcessResult<ProcfsStatm>;
 }
 
 impl ProcessExt for Process {
@@ -96,12 +98,12 @@ impl ProcessExt for Process {
         todo!()
     }
 
-    fn stat(&self) -> ProcessResult<Stat> {
-        stat(self.pid)
+    fn procfs_stat(&self) -> ProcessResult<ProcfsStat> {
+        procfs_stat(self.pid)
     }
 
-    fn statm(&self) -> ProcessResult<StatM> {
-        statm(self.pid)
+    fn procfs_statm(&self) -> ProcessResult<ProcfsStatm> {
+        procfs_statm(self.pid)
     }
 }
 

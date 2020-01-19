@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::process::Stat;
+use crate::process::ProcfsStat;
 
 #[derive(Clone, Debug)]
 pub struct ProcessCpuTimes {
@@ -34,8 +34,8 @@ impl ProcessCpuTimes {
     }
 }
 
-impl From<Stat> for ProcessCpuTimes {
-    fn from(stat: Stat) -> Self {
+impl From<ProcfsStat> for ProcessCpuTimes {
+    fn from(stat: ProcfsStat) -> Self {
         ProcessCpuTimes {
             user: stat.utime,
             system: stat.stime,
