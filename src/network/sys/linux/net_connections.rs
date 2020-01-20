@@ -1,4 +1,4 @@
-use crate::common::TcpConnectionStatus;
+use crate::common::{NetConnectionType, TcpConnectionStatus};
 use crate::{Fd, Pid};
 
 pub struct NetConnection {}
@@ -28,7 +28,7 @@ impl NetConnection {
 		todo!()
 	}
 
-	pub fn status(&self) -> TcpConnectionStatus {
+	pub fn status(&self) -> Option<TcpConnectionStatus> {
 		todo!()
 	}
 
@@ -37,20 +37,10 @@ impl NetConnection {
 	}
 }
 
-pub enum ConnectionKind {
-	Inet,
-	Inet4,
-	Inet6,
-	Tcp,
-	Tcp4,
-	Tcp6,
-	Udp,
-	Udp4,
-	Udp6,
-	Unix,
-	All,
+pub fn net_connections() -> Vec<NetConnection> {
+	todo!()
 }
 
-pub fn net_connections(_kind: ConnectionKind) -> Vec<NetConnection> {
+pub fn net_connections_with_type(_type: NetConnectionType) -> Vec<NetConnection> {
 	todo!()
 }

@@ -10,10 +10,11 @@ use nix::sys::signal::{kill, Signal};
 use nix::unistd;
 use snafu::ResultExt;
 
+use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	errors, io_error_to_process_error, pids, OpenFile, ProcessCpuTimes, ProcessError,
+	errors, io_error_to_process_error, pids, MemType, OpenFile, ProcessCpuTimes, ProcessError,
 	ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;
@@ -187,6 +188,10 @@ impl Process {
 		Ok(percent)
 	}
 
+	pub fn memory_percent_with_type(&self, _type: MemType) -> ProcessResult<Percent> {
+		todo!()
+	}
+
 	pub fn chidren(&self) {
 		todo!()
 	}
@@ -219,6 +224,10 @@ impl Process {
 	}
 
 	pub fn connections(&self) {
+		todo!()
+	}
+
+	pub fn connections_with_type(&self, _type: NetConnectionType) {
 		todo!()
 	}
 
