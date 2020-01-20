@@ -19,17 +19,21 @@ macro_rules! try_parse {
 	};
 }
 
-pub fn not_found(key: &str) -> io::Error {
+pub(crate) fn not_found(key: &str) -> io::Error {
 	io::Error::new(io::ErrorKind::NotFound, format!("{} not found", key))
 }
 
-pub fn invalid_data(message: &str) -> io::Error {
+pub(crate) fn invalid_data(message: &str) -> io::Error {
 	io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
 // TODO: fix casting
 // TODO: use nightly div_duration_f32
 #[allow(clippy::unnecessary_cast)]
-pub fn calculate_cpu_percent(first: Duration, second: Duration, total_diff: Duration) -> Percent {
+pub(crate) fn calculate_cpu_percent(
+	first: Duration,
+	second: Duration,
+	total_diff: Duration,
+) -> Percent {
 	(((second - first).as_nanos() as f64 / total_diff.as_nanos() as f64) * 100.0) as f32
 }

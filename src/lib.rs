@@ -25,6 +25,11 @@
 
 #[macro_use]
 mod utils;
+mod other;
+mod types;
+
+pub use other::*;
+pub use types::*;
 
 #[cfg(feature = "cpu")]
 pub mod cpu;
@@ -52,28 +57,3 @@ mod unix;
 
 #[cfg(target_family = "unix")]
 use unix::*;
-
-mod types;
-
-pub use types::*;
-
-pub enum TcpConnectionStatus {
-	Established,
-	SynSent,
-	SynRecv,
-	FinWait1,
-	FinWait2,
-	TimeWait,
-	Close,
-	CloseWait,
-	LastAck,
-	Listen,
-	Closing,
-	None,
-	/// Windows only
-	DeleteTcb,
-	/// Solaris only
-	Idle,
-	/// Solaris only
-	Bound,
-}
