@@ -6,6 +6,22 @@
 
 A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+psutil = "1.7.0"
+```
+
+Or to opt into only a certain submodule:
+
+```toml
+[dependencies]
+psutil = { version = "1.7.0", default-features = false, features = ["process"] }
+```
+
 ## Platform Support
 
 Currently, only Linux is supported, but support is planned for all major platforms.
@@ -28,6 +44,7 @@ Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], a
 - [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
 - [gopsutil](https://github.com/shirou/gopsutil)
 - [psutil]
+- [sys-info-rs](https://github.com/FillZpp/sys-info-rs)
 
 [MIT License]: https://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil
