@@ -15,9 +15,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [cpu][all] implement cpu count
+- [disk][unix] implement disk usage
+- [host][linux] implement boot time
+- [host][unix] implement info
+- [process][linux] implement pids
+- [process][linux] implement pid_exists
+- [process][linux] implement process.cpu_percent
+- [process][linux] implement process.memory_percent
+- [process][linux] implement process.send_signal
+- [process][linux] implement process.is_replaced
+- [process][linux] implement process.replace
+- [process][linux] implement process.parent
+- [sensors][linux] implement temperatures
+
 ### Changed
 
-- Completely overhaul the entire API
+- Overhaul the API
+
+### Removed
+
+- Remove interval duration argument from various cpu percent functions
+- Remove nowrap argument from collectors
+- Remove reset method from collectors
 
 ## [1.7.0] - 2019-08-01
 
