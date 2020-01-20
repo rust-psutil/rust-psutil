@@ -6,13 +6,13 @@ use once_cell::sync::Lazy;
 use crate::{Bytes, FloatCount};
 
 pub(crate) static TICKS_PER_SECOND: Lazy<FloatCount> = Lazy::new(|| {
-    unistd::sysconf(unistd::SysconfVar::CLK_TCK)
-        .unwrap()
-        .unwrap() as FloatCount
+	unistd::sysconf(unistd::SysconfVar::CLK_TCK)
+		.unwrap()
+		.unwrap() as FloatCount
 });
 
 pub(crate) static PAGE_SIZE: Lazy<Bytes> = Lazy::new(|| {
-    unistd::sysconf(unistd::SysconfVar::PAGE_SIZE)
-        .unwrap()
-        .unwrap() as Bytes
+	unistd::sysconf(unistd::SysconfVar::PAGE_SIZE)
+		.unwrap()
+		.unwrap() as Bytes
 });

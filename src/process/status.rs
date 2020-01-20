@@ -1,47 +1,47 @@
 /// Possible statuses for a process.
 #[derive(Clone, Copy, Debug)]
 pub enum Status {
-    /// (R)
-    Running,
+	/// (R)
+	Running,
 
-    /// (S) Sleeping in an interruptible wait
-    Sleeping,
+	/// (S) Sleeping in an interruptible wait
+	Sleeping,
 
-    /// (D) Waiting in uninterruptible disk sleep
-    DiskSleep,
+	/// (D) Waiting in uninterruptible disk sleep
+	DiskSleep,
 
-    /// (T) Stopped (on a signal)
-    ///
-    /// Or before Linux 2.6.33, trace stopped
-    Stopped,
+	/// (T) Stopped (on a signal)
+	///
+	/// Or before Linux 2.6.33, trace stopped
+	Stopped,
 
-    /// (t) (Linux 2.6.33 onward)
-    TracingStop,
+	/// (t) (Linux 2.6.33 onward)
+	TracingStop,
 
-    /// (Z)
-    Zombie,
+	/// (Z)
+	Zombie,
 
-    /// (X)
-    Dead,
+	/// (X)
+	Dead,
 
-    /// (Linux 2.6.33 to 3.13 only)
-    WakeKill,
+	/// (Linux 2.6.33 to 3.13 only)
+	WakeKill,
 
-    /// (Linux 2.6.33 to 3.13 only)
-    Waking,
+	/// (Linux 2.6.33 to 3.13 only)
+	Waking,
 
-    /// (P) (Linux 3.9 to 3.13 only)
-    Parked,
+	/// (P) (Linux 3.9 to 3.13 only)
+	Parked,
 
-    /// (I) (Linux, macOS, FreeBSD)
-    Idle,
+	/// (I) (Linux, macOS, FreeBSD)
+	Idle,
 
-    /// (FreeBSD)
-    Locked,
+	/// (FreeBSD)
+	Locked,
 
-    /// (FreeBSD)
-    Waiting,
+	/// (FreeBSD)
+	Waiting,
 
-    /// (NetBSD)
-    Suspended,
+	/// (NetBSD)
+	Suspended,
 }

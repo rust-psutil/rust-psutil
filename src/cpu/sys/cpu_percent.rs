@@ -15,37 +15,37 @@ use crate::Percent;
 /// ```
 #[derive(Debug, Clone)]
 pub struct CpuPercentCollector {
-    cpu_times_percent_collector: CpuTimesPercentCollector,
+	cpu_times_percent_collector: CpuTimesPercentCollector,
 }
 
 impl CpuPercentCollector {
-    /// Initialize the `CpuPercentCollector` so the method calls are ready to be used.
-    pub fn new() -> io::Result<CpuPercentCollector> {
-        let cpu_times_percent_collector = CpuTimesPercentCollector::new()?;
+	/// Initialize the `CpuPercentCollector` so the method calls are ready to be used.
+	pub fn new() -> io::Result<CpuPercentCollector> {
+		let cpu_times_percent_collector = CpuTimesPercentCollector::new()?;
 
-        Ok(CpuPercentCollector {
-            cpu_times_percent_collector,
-        })
-    }
+		Ok(CpuPercentCollector {
+			cpu_times_percent_collector,
+		})
+	}
 
-    /// Returns a cpu percent since the last time this was called or since
-    /// `CpuPercentCollector::new()` was called.
-    pub fn cpu_percent(&mut self) -> io::Result<Percent> {
-        let percent = self.cpu_times_percent_collector.cpu_times_percent()?.busy();
+	/// Returns a cpu percent since the last time this was called or since
+	/// `CpuPercentCollector::new()` was called.
+	pub fn cpu_percent(&mut self) -> io::Result<Percent> {
+		let percent = self.cpu_times_percent_collector.cpu_times_percent()?.busy();
 
-        Ok(percent)
-    }
+		Ok(percent)
+	}
 
-    /// Returns a cpu percent for each cpu since the last time this was called or since
-    /// `CpuPercentCollector::new()` was called.
-    pub fn cpu_percent_percpu(&mut self) -> io::Result<Vec<Percent>> {
-        let percents = self
-            .cpu_times_percent_collector
-            .cpu_times_percent_percpu()?
-            .into_iter()
-            .map(|cpu_times_percent| cpu_times_percent.busy())
-            .collect();
+	/// Returns a cpu percent for each cpu since the last time this was called or since
+	/// `CpuPercentCollector::new()` was called.
+	pub fn cpu_percent_percpu(&mut self) -> io::Result<Vec<Percent>> {
+		let percents = self
+			.cpu_times_percent_collector
+			.cpu_times_percent_percpu()?
+			.into_iter()
+			.map(|cpu_times_percent| cpu_times_percent.busy())
+			.collect();
 
-        Ok(percents)
-    }
+		Ok(percents)
+	}
 }

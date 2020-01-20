@@ -2,11 +2,11 @@ use crate::memory::VirtualMemory;
 use crate::Bytes;
 
 pub trait VirtualMemoryExt {
-    fn wired(&self) -> Bytes;
+	fn wired(&self) -> Bytes;
 }
 
 impl VirtualMemoryExt for VirtualMemory {
-    fn wired(&self) -> Bytes {
-        todo!()
-    }
+	fn wired(&self) -> Bytes {
+		todo!()
+	}
 }

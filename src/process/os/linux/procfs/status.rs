@@ -9,48 +9,48 @@ use crate::Pid;
 // TODO: rest of the fields
 #[derive(Clone, Debug)]
 pub struct ProcfsStatus {
-    /// Voluntary context switches.
-    pub voluntary_ctxt_switches: u64,
+	/// Voluntary context switches.
+	pub voluntary_ctxt_switches: u64,
 
-    /// Non-voluntary context switches.
-    pub nonvoluntary_ctxt_switches: u64,
+	/// Non-voluntary context switches.
+	pub nonvoluntary_ctxt_switches: u64,
 }
 
 impl FromStr for ProcfsStatus {
-    type Err = io::Error;
+	type Err = io::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let lines = s
-            .lines()
-            .map(|line| {
-                line.split_whitespace()
-                    .collect::<Vec<&str>>()
-                    .get(1)
-                    .copied()
-                    .unwrap_or_default()
-            })
-            .collect::<Vec<&str>>();
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let lines = s
+			.lines()
+			.map(|line| {
+				line.split_whitespace()
+					.collect::<Vec<&str>>()
+					.get(1)
+					.copied()
+					.unwrap_or_default()
+			})
+			.collect::<Vec<&str>>();
 
-        if lines.len() != 55 {
-            return Err(invalid_data(&format!(
-                "Expected 55 lines, got {}",
-                lines.len()
-            )));
-        }
+		if lines.len() != 55 {
+			return Err(invalid_data(&format!(
+				"Expected 55 lines, got {}",
+				lines.len()
+			)));
+		}
 
-        let voluntary_ctxt_switches = try_parse!(lines[53]);
-        let nonvoluntary_ctxt_switches = try_parse!(lines[54]);
+		let voluntary_ctxt_switches = try_parse!(lines[53]);
+		let nonvoluntary_ctxt_switches = try_parse!(lines[54]);
 
-        Ok(ProcfsStatus {
-            voluntary_ctxt_switches,
-            nonvoluntary_ctxt_switches,
-        })
-    }
+		Ok(ProcfsStatus {
+			voluntary_ctxt_switches,
+			nonvoluntary_ctxt_switches,
+		})
+	}
 }
 
 pub fn procfs_status(pid: Pid) -> ProcessResult<ProcfsStatus> {
-    let data = fs::read_to_string(procfs_path(pid, "status"))
-        .map_err(|e| io_error_to_process_error(e, pid))?;
+	let data = fs::read_to_string(procfs_path(pid, "status"))
+		.map_err(|e| io_error_to_process_error(e, pid))?;
 
-    ProcfsStatus::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+	ProcfsStatus::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
 }

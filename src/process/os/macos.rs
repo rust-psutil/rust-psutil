@@ -4,11 +4,11 @@ use std::io;
 use crate::process::Process;
 
 pub trait ProcessExt {
-    fn environ(&self) -> io::Result<HashMap<String, String>>;
+	fn environ(&self) -> io::Result<HashMap<String, String>>;
 }
 
 impl ProcessExt for Process {
-    fn environ(&self) -> io::Result<HashMap<String, String>> {
-        todo!()
-    }
+	fn environ(&self) -> io::Result<HashMap<String, String>> {
+		todo!()
+	}
 }
