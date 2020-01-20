@@ -22,12 +22,12 @@ Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], a
 
 ## Related projects
 
-`rust-psutil` has no connection to these projects, but you might find them useful.
-
 - [hiem](https://github.com/heim-rs/heim)
 - [rust-battery](https://github.com/svartalf/rust-battery)
 - [systemstat](https://github.com/myfreeweb/systemstat)
 - [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
+- [gopsutil](https://github.com/shirou/gopsutil)
+- [psutil]
 
 [MIT License]: https://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil
