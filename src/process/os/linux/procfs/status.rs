@@ -7,6 +7,7 @@ use crate::utils::invalid_data;
 use crate::Pid;
 
 // TODO: rest of the fields
+/// New struct, not in Python psutil
 #[derive(Clone, Debug)]
 pub struct ProcfsStatus {
 	/// Voluntary context switches.
@@ -48,6 +49,7 @@ impl FromStr for ProcfsStatus {
 	}
 }
 
+/// New function, not in Python psutil
 pub fn procfs_status(pid: Pid) -> ProcessResult<ProcfsStatus> {
 	let data = fs::read_to_string(procfs_path(pid, "status"))
 		.map_err(|e| io_error_to_process_error(e, pid))?;

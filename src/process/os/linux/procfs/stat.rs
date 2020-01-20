@@ -7,6 +7,7 @@ use crate::process::{io_error_to_process_error, procfs_path, ProcessResult, Stat
 use crate::utils::invalid_data;
 use crate::{Pid, PAGE_SIZE, TICKS_PER_SECOND};
 
+/// New struct, not in Python psutil
 #[derive(Clone, Debug)]
 pub struct ProcfsStat {
 	/// PID of the process.
@@ -353,6 +354,7 @@ impl FromStr for ProcfsStat {
 	}
 }
 
+/// New function, not in Python psutil
 pub fn procfs_stat(pid: Pid) -> ProcessResult<ProcfsStat> {
 	let data = fs::read_to_string(procfs_path(pid, "stat"))
 		.map_err(|e| io_error_to_process_error(e, pid))?;

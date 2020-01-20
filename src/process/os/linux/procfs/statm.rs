@@ -9,6 +9,7 @@ use crate::{Pid, PAGE_SIZE};
 /// Memory usage of a process read from `/proc/[pid]/statm`.
 ///
 /// The `lib` [4, u64] and `dt` [6, u64] fields are ignored.
+/// New struct, not in Python psutil
 #[derive(Clone, Debug)]
 pub struct ProcfsStatm {
 	/// Total program size (bytes).
@@ -50,6 +51,7 @@ impl FromStr for ProcfsStatm {
 	}
 }
 
+/// New function, not in Python psutil
 pub fn procfs_statm(pid: Pid) -> ProcessResult<ProcfsStatm> {
 	let data = fs::read_to_string(procfs_path(pid, "statm"))
 		.map_err(|e| io_error_to_process_error(e, pid))?;

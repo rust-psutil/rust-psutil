@@ -4,6 +4,7 @@ use std::path::Path;
 
 use crate::Pid;
 
+// TODO: should we return an `io::Result<Vec<io::Result<<Pid>>>` instead?
 pub fn pids() -> io::Result<Vec<Pid>> {
 	let mut pids = Vec::new();
 
