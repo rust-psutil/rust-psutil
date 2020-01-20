@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -164,7 +165,7 @@ pub struct ProcfsStat {
 }
 
 impl FromStr for ProcfsStat {
-    type Err = std::io::Error;
+    type Err = io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // We parse the comm field and everything before it seperately since

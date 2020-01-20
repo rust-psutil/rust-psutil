@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 
-use crate::process::os::linux::{procfs_stat, procfs_statm, ProcfsStat, ProcfsStatm};
+use crate::process::os::linux::{
+    procfs_stat, procfs_statm, procfs_status, ProcfsStat, ProcfsStatm, ProcfsStatus,
+};
 use crate::process::{Process, ProcessResult};
 use crate::utils::invalid_data;
 
@@ -51,6 +53,9 @@ pub trait ProcessExt {
 
     /// New method, not in Python psutil
     fn procfs_statm(&self) -> ProcessResult<ProcfsStatm>;
+
+    /// New method, not in Python psutil
+    fn procfs_status(&self) -> ProcessResult<ProcfsStatus>;
 }
 
 impl ProcessExt for Process {
@@ -102,6 +107,10 @@ impl ProcessExt for Process {
 
     fn procfs_statm(&self) -> ProcessResult<ProcfsStatm> {
         procfs_statm(self.pid)
+    }
+
+    fn procfs_status(&self) -> ProcessResult<ProcfsStatus> {
+        procfs_status(self.pid)
     }
 }
 

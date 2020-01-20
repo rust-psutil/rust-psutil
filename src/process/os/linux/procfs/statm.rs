@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::str::FromStr;
 
 use crate::process::{io_error_to_process_error, procfs_path, ProcessResult};
@@ -27,7 +28,7 @@ pub struct ProcfsStatm {
 }
 
 impl FromStr for ProcfsStatm {
-    type Err = std::io::Error;
+    type Err = io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let fields: Vec<&str> = s.trim_end().split_whitespace().collect();
