@@ -51,12 +51,12 @@ impl Process {
 		Process::new(std::process::id())
 	}
 
-	pub fn pid(&self) -> Pid {
-		self.pid
-	}
-
 	pub(crate) fn procfs_path(&self, name: &str) -> PathBuf {
 		procfs_path(self.pid, name)
+	}
+
+	pub fn pid(&self) -> Pid {
+		self.pid
 	}
 
 	pub fn ppid(&self) -> ProcessResult<Option<Pid>> {
