@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::process::ProcfsStat;
+use crate::process::os::linux::ProcfsStat;
 
 #[derive(Clone, Debug)]
 pub struct ProcessCpuTimes {

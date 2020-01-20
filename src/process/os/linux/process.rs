@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io;
-use std::time::Duration;
 
-use crate::process::{
-    procfs_stat, procfs_statm, Process, ProcessCpuTimes, ProcessResult, ProcfsStat, ProcfsStatm,
-};
+use crate::process::os::linux::{procfs_stat, procfs_statm, ProcfsStat, ProcfsStatm};
+use crate::process::{Process, ProcessResult};
 use crate::utils::invalid_data;
 
 fn parse_environ(data: &str) -> io::Result<HashMap<String, String>> {
@@ -104,16 +102,6 @@ impl ProcessExt for Process {
 
     fn procfs_statm(&self) -> ProcessResult<ProcfsStatm> {
         procfs_statm(self.pid)
-    }
-}
-
-pub trait ProcessCpuTimesExt {
-    fn iowait(&self) -> Duration;
-}
-
-impl ProcessCpuTimesExt for ProcessCpuTimes {
-    fn iowait(&self) -> Duration {
-        self.iowait
     }
 }
 

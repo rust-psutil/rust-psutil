@@ -11,9 +11,9 @@ use nix::unistd;
 use snafu::ResultExt;
 
 use crate::memory;
-use crate::process::os::linux::ProcessExt as _;
+use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-    errors, io_error_to_process_error, pids, procfs_stat, OpenFile, ProcessCpuTimes, ProcessError,
+    errors, io_error_to_process_error, pids, OpenFile, ProcessCpuTimes, ProcessError,
     ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;

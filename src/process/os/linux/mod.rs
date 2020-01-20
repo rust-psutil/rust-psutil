@@ -1,9 +1,7 @@
 mod cpu_times;
-mod pids;
 mod process;
-mod status;
+mod procfs;
 
 pub use cpu_times::*;
-pub use pids::*;
 pub use process::*;
-pub use status::*;
+pub use procfs::*;
