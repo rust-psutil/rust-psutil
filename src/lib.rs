@@ -25,10 +25,9 @@
 
 #[macro_use]
 mod utils;
-mod other;
+pub mod common;
 mod types;
 
-pub use other::*;
 pub use types::*;
 
 #[cfg(feature = "cpu")]

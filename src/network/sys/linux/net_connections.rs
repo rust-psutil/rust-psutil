@@ -1,4 +1,5 @@
-use crate::{Fd, Pid, TcpConnectionStatus};
+use crate::common::TcpConnectionStatus;
+use crate::{Fd, Pid};
 
 pub struct NetConnection {}
 
