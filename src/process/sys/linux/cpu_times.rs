@@ -35,12 +35,12 @@ impl ProcessCpuTimes {
 }
 
 impl From<ProcfsStat> for ProcessCpuTimes {
-	fn from(stat: ProcfsStat) -> Self {
+	fn from(procfs_stat: ProcfsStat) -> Self {
 		ProcessCpuTimes {
-			user: stat.utime,
-			system: stat.stime,
-			children_user: stat.cutime,
-			children_system: stat.cstime,
+			user: procfs_stat.utime,
+			system: procfs_stat.stime,
+			children_user: procfs_stat.cutime,
+			children_system: procfs_stat.cstime,
 			iowait: Duration::default(), // TODO
 		}
 	}

@@ -1,16 +1,46 @@
-use nix::unistd;
-
-use crate::process::Process;
+use crate::process::os::linux::{ProcessExt as _, ProcfsStatus};
+use crate::process::{Process, ProcessResult};
 use crate::Count;
 
-pub type Uid = unistd::Uid;
+pub type Uid = u32;
+pub type Gid = u32;
 
-pub type Gid = unistd::Gid;
+pub struct Uids {
+	pub real: Uid,
+	pub effective: Uid,
+	pub saved: Uid,
+}
+
+pub struct Gids {
+	pub real: Gid,
+	pub effective: Gid,
+	pub saved: Gid,
+}
+
+impl From<ProcfsStatus> for Uids {
+	fn from(procfs_status: ProcfsStatus) -> Self {
+		Uids {
+			real: procfs_status.uid[0],
+			effective: procfs_status.uid[1],
+			saved: procfs_status.uid[2],
+		}
+	}
+}
+
+impl From<ProcfsStatus> for Gids {
+	fn from(procfs_status: ProcfsStatus) -> Self {
+		Gids {
+			real: procfs_status.gid[0],
+			effective: procfs_status.gid[1],
+			saved: procfs_status.gid[2],
+		}
+	}
+}
 
 pub trait ProcessExt {
-	fn uids(&self) -> Vec<Uid>;
+	fn uids(&self) -> ProcessResult<Uids>;
 
-	fn gids(&self) -> Vec<Gid>;
+	fn gids(&self) -> ProcessResult<Gids>;
 
 	fn terminal(&self) -> Option<String>;
 
@@ -18,12 +48,18 @@ pub trait ProcessExt {
 }
 
 impl ProcessExt for Process {
-	fn uids(&self) -> Vec<Uid> {
-		todo!()
+	#[cfg(target_os = "linux")]
+	fn uids(&self) -> ProcessResult<Uids> {
+		let procfs_status = self.procfs_status()?;
+
+		Ok(Uids::from(procfs_status))
 	}
 
-	fn gids(&self) -> Vec<Gid> {
-		todo!()
+	#[cfg(target_os = "linux")]
+	fn gids(&self) -> ProcessResult<Gids> {
+		let procfs_status = self.procfs_status()?;
+
+		Ok(Gids::from(procfs_status))
 	}
 
 	fn terminal(&self) -> Option<String> {

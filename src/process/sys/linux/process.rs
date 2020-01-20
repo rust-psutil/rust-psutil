@@ -34,9 +34,9 @@ pub struct Process {
 
 impl Process {
 	pub fn new(pid: Pid) -> ProcessResult<Process> {
-		let stat = procfs_stat(pid)?;
-		let create_time = stat.starttime;
-		let busy = ProcessCpuTimes::from(stat).busy();
+		let procfs_stat = procfs_stat(pid)?;
+		let create_time = procfs_stat.starttime;
+		let busy = ProcessCpuTimes::from(procfs_stat).busy();
 		let instant = Instant::now();
 
 		Ok(Process {

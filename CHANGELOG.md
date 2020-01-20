@@ -17,29 +17,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- [cpu][all] implement cpu count
-- [disk][unix] implement disk usage
-- [host][linux] implement boot time
-- [host][unix] implement info
+- [cpu][all] implement cpu_count and cpu_count_physical
+- [disk][unix] implement disk_usage
+- [host][linux] implement boot_time
+- [host] add Info
+- [host][unix] implement Info
+- [process] add ProcessCollector
+- [process][linux] implement ProcessCollector
 - [process][linux] implement pids
 - [process][linux] implement pid_exists
-- [process][linux] implement process.cpu_percent
-- [process][linux] implement process.memory_percent
-- [process][linux] implement process.send_signal
-- [process][linux] implement process.is_replaced
-- [process][linux] implement process.replace
-- [process][linux] implement process.parent
+- [process][linux] implement Process.cpu_percent
+- [process][linux] implement Process.cpu_times
+- [process][linux] implement Process.memory_percent
+- [process][linux] implement Process.uids
+- [process][linux] implement Process.gids
+- [process][linux] implement Process.send_signal
+- [process][linux] implement Process.is_replaced
+- [process][linux] implement Process.replace
+- [process][linux] implement Process.parent
 - [sensors][linux] implement temperatures
 
 ### Changed
 
 - Overhaul the API
+- Replace cpu_percent functions with CpuPercentCollector
 
 ### Removed
 
 - Remove interval duration argument from various cpu percent functions
 - Remove nowrap argument from collectors
 - Remove reset method from collectors
+- Remove inodes from DiskUsage
+- Remove standalone CpuTimesPercent functions in favor of CpuTimesPercentCollector
 
 ## [1.7.0] - 2019-08-01
 

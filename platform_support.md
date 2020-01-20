@@ -67,8 +67,8 @@
 | [status](https://psutil.readthedocs.io/en/latest/#psutil.Process.status)                     | :heavy_check_mark: |       |         |
 | [cwd](https://psutil.readthedocs.io/en/latest/#psutil.Process.cwd)                           | :heavy_check_mark: |       |         |
 | [username](https://psutil.readthedocs.io/en/latest/#psutil.Process.username)                 |                    |       |         |
-| [uids](https://psutil.readthedocs.io/en/latest/#psutil.Process.uids)                         |                    |       |         |
-| [gids](https://psutil.readthedocs.io/en/latest/#psutil.Process.gids)                         |                    |       |         |
+| [uids](https://psutil.readthedocs.io/en/latest/#psutil.Process.uids)                         | :heavy_check_mark: |       |         |
+| [gids](https://psutil.readthedocs.io/en/latest/#psutil.Process.gids)                         | :heavy_check_mark: |       |         |
 | [terminal](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminal)                 |                    |       |         |
 | [nice](https://psutil.readthedocs.io/en/latest/#psutil.Process.nice)                         |                    |       |         |
 | [ionice](https://psutil.readthedocs.io/en/latest/#psutil.Process.ionice)                     |                    |       |         |
