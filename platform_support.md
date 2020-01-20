@@ -1,91 +1,105 @@
-## Linux
+## CPU
 
-### CPU
+|                                                                                        | Linux              | macOS              | Windows            |
+|----------------------------------------------------------------------------------------|--------------------|--------------------|--------------------|
+| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times)                 | :heavy_check_mark: |                    |                    |
+| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent)             | :heavy_check_mark: |                    |                    |
+| [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) | :heavy_check_mark: |                    |                    |
+| [cpu_count](https://psutil.readthedocs.io/en/latest/#psutil.cpu_count)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| [cpu_stats](https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats)                 |                    |                    |                    |
+| [cpu_freq](https://psutil.readthedocs.io/en/latest/#psutil.cpu_freq)                   |                    |                    |                    |
 
-- [x] [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times)
-- [x] [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent)
-- [x] [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent)
-- [x] [cpu_count](https://psutil.readthedocs.io/en/latest/#psutil.cpu_count)
-- [ ] [cpu_stats](https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats)
-- [ ] [cpu_freq](https://psutil.readthedocs.io/en/latest/#psutil.cpu_freq)
+## Disk
 
-### Disk
+|                                                                                      | Linux              | macOS              | Windows |
+|--------------------------------------------------------------------------------------|--------------------|--------------------|---------|
+| [disk_partitions](https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions)   | :heavy_check_mark: |                    |         |
+| [disk_usage](https://psutil.readthedocs.io/en/latest/#psutil.disk_usage)             | :heavy_check_mark: | :heavy_check_mark: |         |
+| [disk_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters) | :heavy_check_mark: |                    |         |
 
-- [x] [disk_partitions](https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions)
-- [x] [disk_usage](https://psutil.readthedocs.io/en/latest/#psutil.disk_usage)
-- [x] [disk_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters)
+## Host
 
-### Host
+|                                                                                    | Linux              | macOS | Windows |
+|------------------------------------------------------------------------------------|--------------------|-------|---------|
+| [loadavg](https://psutil.readthedocs.io/en/latest/?badge=latest#psutil.getloadavg) | :heavy_check_mark: |       |         |
+| [boot_time](https://psutil.readthedocs.io/en/latest/#psutil.boot_time)             | :heavy_check_mark: |       |         |
+| [users](https://psutil.readthedocs.io/en/latest/#psutil.users)                     |                    |       |         |
 
-- [x] [loadavg](https://psutil.readthedocs.io/en/latest/?badge=latest#psutil.getloadavg)
-- [x] [boot_time](https://psutil.readthedocs.io/en/latest/#psutil.boot_time)
-- [ ] [users](https://psutil.readthedocs.io/en/latest/#psutil.users)
+## Memory
 
-### Memory
+|                                                                                  | Linux              | macOS | Windows |
+|----------------------------------------------------------------------------------|--------------------|-------|---------|
+| [virtual_memory](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) | :heavy_check_mark: |       |         |
+| [swap_memory](https://psutil.readthedocs.io/en/latest/#psutil.swap_memory)       | :heavy_check_mark: |       |         |
 
-- [x] [virtual_memory](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory)
-- [x] [swap_memory](https://psutil.readthedocs.io/en/latest/#psutil.swap_memory)
+## Network
 
-### Network
+|                                                                                    | Linux              | macOS | Windows |
+|------------------------------------------------------------------------------------|--------------------|-------|---------|
+| [net_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters) | :heavy_check_mark: |       |         |
+| [net_connections](https://psutil.readthedocs.io/en/latest/#psutil.net_connections) |                    |       |         |
+| [net_if_addrs](https://psutil.readthedocs.io/en/latest/#psutil.net_if_addrs)       |                    |       |         |
+| [net_if_stats](https://psutil.readthedocs.io/en/latest/#psutil.net_if_stats)       |                    |       |         |
 
-- [x] [net_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters)
-- [ ] [net_connections](https://psutil.readthedocs.io/en/latest/#psutil.net_connections)
-- [ ] [net_if_addrs](https://psutil.readthedocs.io/en/latest/#psutil.net_if_addrs)
-- [ ] [net_if_stats](https://psutil.readthedocs.io/en/latest/#psutil.net_if_stats)
+## Processes
 
-### Processes
-
-- [x] [pids](https://psutil.readthedocs.io/en/latest/#psutil.pids)
-- [x] [process_iter](https://psutil.readthedocs.io/en/latest/#psutil.process_iter)
-- [x] [pid_exists](https://psutil.readthedocs.io/en/latest/#psutil.pid_exists)
-- [ ] [wait_procs](https://psutil.readthedocs.io/en/latest/#psutil.wait_procs)
+|                                                                              | Linux              | macOS | Windows |
+|------------------------------------------------------------------------------|--------------------|-------|---------|
+| [pids](https://psutil.readthedocs.io/en/latest/#psutil.pids)                 | :heavy_check_mark: |       |         |
+| [process_iter](https://psutil.readthedocs.io/en/latest/#psutil.process_iter) | :heavy_check_mark: |       |         |
+| [pid_exists](https://psutil.readthedocs.io/en/latest/#psutil.pid_exists)     | :heavy_check_mark: |       |         |
+| [wait_procs](https://psutil.readthedocs.io/en/latest/#psutil.wait_procs)     |                    |       |         |
 
 ### Per-process
 
-- [x] [pid](https://psutil.readthedocs.io/en/latest/#psutil.Process.pid)
-- [x] [ppid](https://psutil.readthedocs.io/en/latest/#psutil.Process.ppid)
-- [x] [name](https://psutil.readthedocs.io/en/latest/#psutil.Process.name)
-- [x] [exe](https://psutil.readthedocs.io/en/latest/#psutil.Process.exe)
-- [x] [cmdline](https://psutil.readthedocs.io/en/latest/#psutil.Process.cmdline)
-- [x] [environ](https://psutil.readthedocs.io/en/latest/#psutil.Process.environ)
-- [x] [create_time](https://psutil.readthedocs.io/en/latest/#psutil.Process.create_time)
-- [ ] [as_dict](https://psutil.readthedocs.io/en/latest/#psutil.Process.as_dict)
-- [x] [parent](https://psutil.readthedocs.io/en/latest/#psutil.Process.parent)
-- [ ] [parents](https://psutil.readthedocs.io/en/latest/#psutil.Process.parents)
-- [x] [status](https://psutil.readthedocs.io/en/latest/#psutil.Process.status)
-- [x] [cwd](https://psutil.readthedocs.io/en/latest/#psutil.Process.cwd)
-- [ ] [username](https://psutil.readthedocs.io/en/latest/#psutil.Process.username)
-- [ ] [uids](https://psutil.readthedocs.io/en/latest/#psutil.Process.uids)
-- [ ] [gids](https://psutil.readthedocs.io/en/latest/#psutil.Process.gids)
-- [ ] [terminal](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminal)
-- [ ] [nice](https://psutil.readthedocs.io/en/latest/#psutil.Process.nice)
-- [ ] [ionice](https://psutil.readthedocs.io/en/latest/#psutil.Process.ionice)
-- [ ] [rlimit](https://psutil.readthedocs.io/en/latest/#psutil.Process.rlimit)
-- [ ] [io_counters](https://psutil.readthedocs.io/en/latest/#psutil.Process.io_counters)
-- [ ] [num_ctx_switches](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_ctx_switches)
-- [ ] [num_fds](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_fds)
-- [ ] [num_threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_threads)
-- [ ] [threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.threads)
-- [x] [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_times)
-- [x] [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_percent)
-- [ ] [cpu_affinity](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_affinity)
-- [ ] [cpu_num](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_num)
-- [ ] [memory_info](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info)
-- [ ] [memory_info_full](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info_full)
-- [x] [memory_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_percent)
-- [ ] [memory_maps](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_maps)
-- [ ] [children](https://psutil.readthedocs.io/en/latest/#psutil.Process.children)
-- [x] [open_files](https://psutil.readthedocs.io/en/latest/#psutil.Process.open_files)
-- [ ] [connections](https://psutil.readthedocs.io/en/latest/#psutil.Process.connections)
-- [x] [is_running](https://psutil.readthedocs.io/en/latest/#psutil.Process.is_running)
-- [x] [send_signal](https://psutil.readthedocs.io/en/latest/#psutil.Process.send_signal)
-- [ ] [suspend](https://psutil.readthedocs.io/en/latest/#psutil.Process.suspend)
-- [ ] [resume](https://psutil.readthedocs.io/en/latest/#psutil.Process.resume)
-- [ ] [terminate](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminate)
-- [x] [kill](https://psutil.readthedocs.io/en/latest/#psutil.Process.kill)
-- [ ] [wait](https://psutil.readthedocs.io/en/latest/#psutil.Process.wait)
+|                                                                                              | Linux              | macOS | Windows |
+|----------------------------------------------------------------------------------------------|--------------------|-------|---------|
+| [pid](https://psutil.readthedocs.io/en/latest/#psutil.Process.pid)                           | :heavy_check_mark: |       |         |
+| [ppid](https://psutil.readthedocs.io/en/latest/#psutil.Process.ppid)                         | :heavy_check_mark: |       |         |
+| [name](https://psutil.readthedocs.io/en/latest/#psutil.Process.name)                         | :heavy_check_mark: |       |         |
+| [exe](https://psutil.readthedocs.io/en/latest/#psutil.Process.exe)                           | :heavy_check_mark: |       |         |
+| [cmdline](https://psutil.readthedocs.io/en/latest/#psutil.Process.cmdline)                   | :heavy_check_mark: |       |         |
+| [environ](https://psutil.readthedocs.io/en/latest/#psutil.Process.environ)                   | :heavy_check_mark: |       |         |
+| [create_time](https://psutil.readthedocs.io/en/latest/#psutil.Process.create_time)           | :heavy_check_mark: |       |         |
+| [as_dict](https://psutil.readthedocs.io/en/latest/#psutil.Process.as_dict)                   |                    |       |         |
+| [parent](https://psutil.readthedocs.io/en/latest/#psutil.Process.parent)                     | :heavy_check_mark: |       |         |
+| [parents](https://psutil.readthedocs.io/en/latest/#psutil.Process.parents)                   |                    |       |         |
+| [status](https://psutil.readthedocs.io/en/latest/#psutil.Process.status)                     | :heavy_check_mark: |       |         |
+| [cwd](https://psutil.readthedocs.io/en/latest/#psutil.Process.cwd)                           | :heavy_check_mark: |       |         |
+| [username](https://psutil.readthedocs.io/en/latest/#psutil.Process.username)                 |                    |       |         |
+| [uids](https://psutil.readthedocs.io/en/latest/#psutil.Process.uids)                         |                    |       |         |
+| [gids](https://psutil.readthedocs.io/en/latest/#psutil.Process.gids)                         |                    |       |         |
+| [terminal](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminal)                 |                    |       |         |
+| [nice](https://psutil.readthedocs.io/en/latest/#psutil.Process.nice)                         |                    |       |         |
+| [ionice](https://psutil.readthedocs.io/en/latest/#psutil.Process.ionice)                     |                    |       |         |
+| [rlimit](https://psutil.readthedocs.io/en/latest/#psutil.Process.rlimit)                     |                    |       |         |
+| [io_counters](https://psutil.readthedocs.io/en/latest/#psutil.Process.io_counters)           |                    |       |         |
+| [num_ctx_switches](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_ctx_switches) |                    |       |         |
+| [num_fds](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_fds)                   |                    |       |         |
+| [num_threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_threads)           |                    |       |         |
+| [threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.threads)                   |                    |       |         |
+| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_times)               | :heavy_check_mark: |       |         |
+| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_percent)           | :heavy_check_mark: |       |         |
+| [cpu_affinity](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_affinity)         |                    |       |         |
+| [cpu_num](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_num)                   |                    |       |         |
+| [memory_info](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info)           |                    |       |         |
+| [memory_info_full](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info_full) |                    |       |         |
+| [memory_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_percent)     | :heavy_check_mark: |       |         |
+| [memory_maps](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_maps)           |                    |       |         |
+| [children](https://psutil.readthedocs.io/en/latest/#psutil.Process.children)                 |                    |       |         |
+| [open_files](https://psutil.readthedocs.io/en/latest/#psutil.Process.open_files)             | :heavy_check_mark: |       |         |
+| [connections](https://psutil.readthedocs.io/en/latest/#psutil.Process.connections)           |                    |       |         |
+| [is_running](https://psutil.readthedocs.io/en/latest/#psutil.Process.is_running)             | :heavy_check_mark: |       |         |
+| [send_signal](https://psutil.readthedocs.io/en/latest/#psutil.Process.send_signal)           | :heavy_check_mark: |       |         |
+| [suspend](https://psutil.readthedocs.io/en/latest/#psutil.Process.suspend)                   |                    |       |         |
+| [resume](https://psutil.readthedocs.io/en/latest/#psutil.Process.resume)                     |                    |       |         |
+| [terminate](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminate)               |                    |       |         |
+| [kill](https://psutil.readthedocs.io/en/latest/#psutil.Process.kill)                         | :heavy_check_mark: |       |         |
+| [wait](https://psutil.readthedocs.io/en/latest/#psutil.Process.wait)                         |                    |       |         |
 
-### Sensors
+## Sensors
 
-- [x] [sensors_temperatures](https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures)
-- [ ] [sensors_fans](https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans)
+|                                                                                              | Linux              | macOS | Windows |
+|----------------------------------------------------------------------------------------------|--------------------|-------|---------|
+| [sensors_temperatures](https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures) | :heavy_check_mark: |       |         |
+| [sensors_fans](https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans)                 |                    |       |         |
