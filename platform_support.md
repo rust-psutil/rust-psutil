@@ -1,20 +1,4 @@
-# Contributing to psutil
-
-Thanks for contributing! Contribution is through standard Github mechanisms:
-
-- to report bugs or ask questions (including about the contribution process) raise a Github issue
-- to submit changes, create a [pull request](https://help.github.com/articles/creating-a-pull-request/). We'll try and give feedback on these fairly quickly.
-
-## Features needed
-
-psutil should be a fairly easy project to contribute to, as there's already [a reference implementation in Python](https://psutil.readthedocs.io/en/latest/) and we still need lots of contributions to get feature-parity in the Rust library.
-
-If you'd like to make a contribution, try:
-
-- picking an unimplemented function from the list below
-- checking how it's implemented in the Python version of `psutil` (often by reading a file from `/proc`)
-- porting that behaviour to this library, along with tests and documentation
-- sending a pull request
+## Linux
 
 ### System-wide CPU
 
@@ -104,22 +88,3 @@ If you'd like to make a contribution, try:
 - [ ] [terminate](https://psutil.readthedocs.io/en/latest/#psutil.Process.terminate)
 - [x] [kill](https://psutil.readthedocs.io/en/latest/#psutil.Process.kill)
 - [ ] [wait](https://psutil.readthedocs.io/en/latest/#psutil.Process.wait)
-
-## Infrastructure improvements
-
-Besides adding new features to the code, it would be nice to do the following:
-
-- enhance `.travis.yml` to run `cargo fmt` against each pull request
-- enhance `.travis.yml` to run `cargo clippy` against each pull request
-- enhance `.travis.yml` to run <https://crates.io/crates/cargo-tarpaulin> for code coverage
-- integrate with <coveralls.io> (via <https://github.com/xd009642/coveralls-api>)
-- enhance `.travis.yml` to automatically `cargo publish` a crate when a new tag is pushed
-
-## Releasing
-
-When we're ready to release, a project owner should do the following
-- Determine what the next version is, according to semver
-- Update the version in `Cargo.toml`
-- Tag the commit via `git tag -a v<X>.<Y>.<Z>`
-- `git push upstream master --tag v<X>.<Y>.<Z>`
-- Run `cargo publish` (run `cargo login` first if needed)

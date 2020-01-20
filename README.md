@@ -10,6 +10,8 @@ A process and system monitoring library for Rust, heavily inspired by the [psuti
 
 Currently, only Linux is supported, but support is planned for all major platforms.
 
+[platform_support](./platform_support.md) details the implementation level of each platform.
+
 ## License
 
 `rust-psutil` is licensed under the [MIT License].
@@ -22,8 +24,10 @@ Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], a
 
 `rust-psutil` has no connection to these projects, but you might find them useful.
 
-* [hiem](https://crates.io/crates/heim)
-* [rust-battery](https://github.com/svartalf/rust-battery)
+- [hiem](https://github.com/heim-rs/heim)
+- [rust-battery](https://github.com/svartalf/rust-battery)
+- [systemstat](https://github.com/myfreeweb/systemstat)
+- [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
 
 [MIT License]: https://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil
