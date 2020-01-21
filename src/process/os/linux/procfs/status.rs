@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::str::FromStr;
@@ -16,35 +17,35 @@ pub struct ProcfsStatus {
 	pub gid: [Gid; 4],
 
 	/// Voluntary context switches.
-	pub voluntary_ctxt_switches: u64,
+	pub voluntary_ctxt_switches: Option<u64>,
 
 	/// Non-voluntary context switches.
-	pub nonvoluntary_ctxt_switches: u64,
+	pub nonvoluntary_ctxt_switches: Option<u64>,
 }
 
 impl FromStr for ProcfsStatus {
 	type Err = io::Error;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let lines = s
+		let map = s
 			.lines()
 			.map(|line| {
-				line.splitn(2, '\t')
-					.collect::<Vec<&str>>()
-					.get(1)
-					.copied()
-					.unwrap_or_default()
+				let fields = line.split(':').collect::<Vec<&str>>();
+				if fields.len() != 2 {
+					return Err(invalid_data(&format!(
+						"Expected 2 fields, got {}",
+						fields.len()
+					)));
+				}
+				Ok((fields[0], fields[1].trim()))
 			})
-			.collect::<Vec<&str>>();
+			.collect::<io::Result<HashMap<&str, &str>>>()?;
 
-		if lines.len() != 55 {
-			return Err(invalid_data(&format!(
-				"Expected 55 lines, got {}",
-				lines.len()
-			)));
-		}
-
-		let uid_fields: Vec<&str> = lines[8].split_whitespace().collect();
+		let uid_fields: Vec<&str> = map
+			.get("Uid")
+			.ok_or_else(|| invalid_data("Missing Uid"))?
+			.split_whitespace()
+			.collect();
 		if uid_fields.len() != 4 {
 			return Err(invalid_data(&format!(
 				"Expected 4 fields, got {}",
@@ -58,7 +59,11 @@ impl FromStr for ProcfsStatus {
 			try_parse!(uid_fields[3]),
 		];
 
-		let gid_fields: Vec<&str> = lines[9].split_whitespace().collect();
+		let gid_fields: Vec<&str> = map
+			.get("Gid")
+			.ok_or_else(|| invalid_data("Missing Gid"))?
+			.split_whitespace()
+			.collect();
 		if gid_fields.len() != 4 {
 			return Err(invalid_data(&format!(
 				"Expected 4 fields, got {}",
@@ -72,8 +77,14 @@ impl FromStr for ProcfsStatus {
 			try_parse!(gid_fields[3]),
 		];
 
-		let voluntary_ctxt_switches = try_parse!(lines[53]);
-		let nonvoluntary_ctxt_switches = try_parse!(lines[54]);
+		let voluntary_ctxt_switches = map
+			.get("voluntary_ctxt_switches")
+			.map(|entry| -> io::Result<u64> { Ok(try_parse!(entry)) })
+			.transpose()?;
+		let nonvoluntary_ctxt_switches = map
+			.get("nonvoluntary_ctxt_switches")
+			.map(|entry| -> io::Result<u64> { Ok(try_parse!(entry)) })
+			.transpose()?;
 
 		Ok(ProcfsStatus {
 			uid,
