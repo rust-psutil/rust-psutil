@@ -13,20 +13,20 @@ pub type Mhz = FloatCount;
 
 #[derive(Debug)]
 pub struct Temperature {
-	celcius: Degrees,
+	celsius: Degrees,
 }
 
 impl Temperature {
-	pub fn new(celcius: Degrees) -> Temperature {
-		Temperature { celcius }
+	pub fn new(celsius: Degrees) -> Temperature {
+		Temperature { celsius }
 	}
 
-	pub fn celcius(&self) -> Degrees {
-		self.celcius
+	pub fn celsius(&self) -> Degrees {
+		self.celsius
 	}
 
 	#[allow(clippy::unnecessary_cast)]
 	pub fn fahrenheit(&self) -> Degrees {
-		(self.celcius * (9 as Degrees / 5 as Degrees)) + 32 as Degrees
+		(self.celsius * (9 as Degrees / 5 as Degrees)) + 32 as Degrees
 	}
 }
