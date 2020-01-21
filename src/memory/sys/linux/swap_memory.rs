@@ -37,11 +37,13 @@ impl SwapMemory {
 	}
 
 	/// Amount of memory swapped in from disk.
+	/// Renamed from `sin` in Python psutil.
 	pub fn swapped_in(&self) -> Bytes {
 		self.swapped_in
 	}
 
 	/// Amount of memory swapped to disk.
+	/// Renamed from `sout` in Python psutil.
 	pub fn swapped_out(&self) -> Bytes {
 		self.swapped_out
 	}

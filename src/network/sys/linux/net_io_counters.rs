@@ -40,21 +40,25 @@ impl NetIoCounters {
 	}
 
 	/// Total number of errors while receiving.
+	/// Renamed from `errin` in Python psutil.
 	pub fn err_in(&self) -> Count {
 		self.err_in
 	}
 
 	/// Total number of errors while sending.
+	/// Renamed from `errout` in Python psutil.
 	pub fn err_out(&self) -> Count {
 		self.err_out
 	}
 
 	/// Total number of incoming packets which were dropped.
+	/// Renamed from `dropin` in Python psutil.
 	pub fn drop_in(&self) -> Count {
 		self.drop_in
 	}
 
 	/// Total number of outgoing packets which were dropped (always 0 on macOS and BSD).
+	/// Renamed from `dropout` in Python psutil.
 	pub fn drop_out(&self) -> Count {
 		self.drop_out
 	}
