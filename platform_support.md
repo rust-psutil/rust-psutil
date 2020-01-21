@@ -2,9 +2,9 @@
 
 |                                                                                        | Linux              | macOS              | Windows            |
 |----------------------------------------------------------------------------------------|--------------------|--------------------|--------------------|
-| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times)                 | :heavy_check_mark: |                    |                    |
-| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent)             | :heavy_check_mark: |                    |                    |
-| [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) | :heavy_check_mark: |                    |                    |
+| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times)                 | :heavy_check_mark: | :heavy_check_mark: |                    |
+| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent)             | :heavy_check_mark: | :heavy_check_mark: |                    |
+| [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) | :heavy_check_mark: | :heavy_check_mark: |                    |
 | [cpu_count](https://psutil.readthedocs.io/en/latest/#psutil.cpu_count)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | [cpu_stats](https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats)                 |                    |                    |                    |
 | [cpu_freq](https://psutil.readthedocs.io/en/latest/#psutil.cpu_freq)                   |                    |                    |                    |

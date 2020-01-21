@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - [cpu][all] implement cpu_count and cpu_count_physical
+- [cpu][macos] implement cpu_times, cpu_times_percent, and cpu_percent
 - [disk][unix] implement disk_usage
 - [host][linux] implement boot_time
 - [host] add Info
