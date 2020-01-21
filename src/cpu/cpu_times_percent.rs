@@ -1,10 +1,14 @@
 use std::io;
 use std::time::Duration;
 
-use crate::cpu::os::{linux::CpuTimesPercentExt as _, unix::CpuTimesPercentExt as _};
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::utils::calculate_cpu_percent;
 use crate::Percent;
+
+#[cfg(target_os = "linux")]
+use crate::cpu::os::linux::CpuTimesPercentExt as _;
+#[cfg(target_family = "unix")]
+use crate::cpu::os::unix::CpuTimesPercentExt as _;
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -16,19 +20,14 @@ pub struct CpuTimesPercent {
 
 	#[cfg(target_os = "linux")]
 	pub(crate) iowait: Percent,
-
 	#[cfg(target_os = "linux")]
 	pub(crate) irq: Percent,
-
 	#[cfg(target_os = "linux")]
 	pub(crate) softirq: Percent,
-
 	#[cfg(target_os = "linux")]
 	pub(crate) steal: Percent,
-
 	#[cfg(target_os = "linux")]
 	pub(crate) guest: Percent,
-
 	#[cfg(target_os = "linux")]
 	pub(crate) guest_nice: Percent,
 }
@@ -88,11 +87,17 @@ fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesP
 		system: calculate_cpu_percent(first.system, second.system, total_diff),
 		idle: calculate_cpu_percent(first.idle, second.idle, total_diff),
 		nice: calculate_cpu_percent(first.nice, second.nice, total_diff),
+		#[cfg(target_os = "linux")]
 		iowait: calculate_cpu_percent(first.iowait, second.iowait, total_diff),
+		#[cfg(target_os = "linux")]
 		irq: calculate_cpu_percent(first.irq, second.irq, total_diff),
+		#[cfg(target_os = "linux")]
 		softirq: calculate_cpu_percent(first.softirq, second.softirq, total_diff),
+		#[cfg(target_os = "linux")]
 		steal: calculate_cpu_percent(first.steal, second.steal, total_diff),
+		#[cfg(target_os = "linux")]
 		guest: calculate_cpu_percent(first.guest, second.guest, total_diff),
+		#[cfg(target_os = "linux")]
 		guest_nice: calculate_cpu_percent(first.guest_nice, second.guest_nice, total_diff),
 	}
 }

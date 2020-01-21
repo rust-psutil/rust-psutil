@@ -51,8 +51,9 @@ pub mod process;
 #[cfg(feature = "sensors")]
 pub mod sensors;
 
-#[cfg(target_family = "unix")]
-mod unix;
-
-#[cfg(target_family = "unix")]
-use unix::*;
+cfg_if::cfg_if! {
+	if #[cfg(target_family = "unix")] {
+		mod unix;
+		use unix::*;
+	}
+}

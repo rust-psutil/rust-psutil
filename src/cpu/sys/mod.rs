@@ -1,11 +1,9 @@
-#[cfg(target_os = "linux")]
-mod linux;
-
-#[cfg(target_os = "linux")]
-pub use linux::*;
-
-#[cfg(target_os = "macos")]
-mod macos;
-
-#[cfg(target_os = "macos")]
-pub use macos::*;
+cfg_if::cfg_if! {
+	if #[cfg(target_os = "linux")] {
+		mod linux;
+		pub use linux::*;
+	} else if #[cfg(target_os = "macos")] {
+		mod macos;
+		pub use macos::*;
+	}
+}

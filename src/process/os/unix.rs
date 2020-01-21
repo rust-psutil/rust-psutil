@@ -1,6 +1,8 @@
-use crate::process::os::linux::{ProcessExt as _, ProcfsStatus};
 use crate::process::{Process, ProcessResult};
 use crate::Count;
+
+#[cfg(target_os = "linux")]
+use crate::process::os::linux::{ProcessExt as _, ProcfsStatus};
 
 pub type Uid = u32;
 pub type Gid = u32;
@@ -17,6 +19,7 @@ pub struct Gids {
 	pub saved: Gid,
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStatus> for Uids {
 	fn from(procfs_status: ProcfsStatus) -> Self {
 		Uids {
@@ -27,6 +30,7 @@ impl From<ProcfsStatus> for Uids {
 	}
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStatus> for Gids {
 	fn from(procfs_status: ProcfsStatus) -> Self {
 		Gids {
