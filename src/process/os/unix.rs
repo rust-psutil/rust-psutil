@@ -62,6 +62,16 @@ impl ProcessExt for Process {
 		Ok(Gids::from(procfs_status))
 	}
 
+	#[cfg(not(target_os = "linux"))]
+	fn uids(&self) -> ProcessResult<Uids> {
+		todo!()
+	}
+
+	#[cfg(not(target_os = "linux"))]
+	fn gids(&self) -> ProcessResult<Gids> {
+		todo!()
+	}
+
 	fn terminal(&self) -> Option<String> {
 		todo!()
 	}
