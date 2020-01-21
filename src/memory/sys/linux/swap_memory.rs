@@ -31,7 +31,7 @@ impl SwapMemory {
 		self.free
 	}
 
-	/// Percent of sway memory used.
+	/// Percent of swap memory used.
 	pub fn percent(&self) -> Percent {
 		self.percent
 	}
