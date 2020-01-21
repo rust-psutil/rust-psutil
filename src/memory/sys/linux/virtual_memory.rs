@@ -67,19 +67,16 @@ pub fn virtual_memory() -> io::Result<VirtualMemory> {
         //  https://gitlab.com/procps-ng/procps/commit/05d751c4f076a2f0118b914c5e51cfbb4762ad8e
         + *mem_info
             .get("SReclaimable:")
-            .ok_or_else(|| not_found("SReclaimable"))?; // since kernel 2.6.19
+            .ok_or_else(|| not_found("SReclaimable"))?; // since Linux 2.6.19
 	let active = *mem_info.get("Active:").ok_or_else(|| not_found("Active"))?;
 	let inactive = *mem_info
 		.get("Inactive:")
 		.ok_or_else(|| not_found("Inactive"))?;
-
-	// MemAvailable was introduced in kernel 3.14. The original psutil computes it if it's not
-	// found, but since 3.14 has already reached EOL, let's assume that it's there.
+	// since Linux 3.14
 	let available = *mem_info
 		.get("MemAvailable:")
 		.ok_or_else(|| not_found("MemAvailable"))?;
-
-	// Shmem was introduced in 2.6.19
+	// since Linux 2.6.32
 	let shared = *mem_info.get("Shmem:").ok_or_else(|| not_found("Shmem"))?;
 
 	let used = total - free - cached - buffers;

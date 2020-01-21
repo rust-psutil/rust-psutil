@@ -2,7 +2,7 @@
 //!
 //! # Minimum versions supported
 //!
-//! - Linux: 2.6.0
+//! - Linux: 2.6.0 (2003-12-17)
 //!
 //! # Note about the API
 //!
