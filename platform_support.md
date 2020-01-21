@@ -103,3 +103,10 @@
 |----------------------------------------------------------------------------------------------|--------------------|-------|---------|
 | [sensors_temperatures](https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures) | :heavy_check_mark: |       |         |
 | [sensors_fans](https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans)                 |                    |       |         |
+
+## New functionality
+
+|        | Linux              | macOS              | Windows |
+|--------|--------------------|--------------------|---------|
+| Info   | :heavy_check_mark: | :heavy_check_mark: |         |
+| uptime | :heavy_check_mark: |                    |         |

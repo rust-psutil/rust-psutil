@@ -19,6 +19,7 @@ fn parse_uptime(data: &str) -> io::Result<Duration> {
 	Ok(uptime)
 }
 
+/// New function, not in Python psutil.
 pub fn uptime() -> io::Result<Duration> {
 	let data = fs::read_to_string("/proc/uptime")?;
 
