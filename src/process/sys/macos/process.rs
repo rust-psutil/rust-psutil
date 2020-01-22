@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use nix::sys::signal::Signal;
-
 use crate::common::NetConnectionType;
 use crate::process::{MemType, OpenFile, Process, ProcessCpuTimes, ProcessResult, Status};
 use crate::{Count, Percent, Pid};
@@ -108,26 +106,6 @@ impl Process {
 	}
 
 	pub(crate) fn sys_connections_with_type(&self, _type: NetConnectionType) {
-		todo!()
-	}
-
-	pub(crate) fn sys_send_signal(&self, signal: Signal) -> ProcessResult<()> {
-		todo!()
-	}
-
-	pub(crate) fn sys_suspend(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_resume(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_terminate(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_kill(&self) -> ProcessResult<()> {
 		todo!()
 	}
 

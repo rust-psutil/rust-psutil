@@ -5,10 +5,14 @@ use std::mem;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use nix::sys::signal::Signal;
+use nix::sys::signal::{kill, Signal};
+use nix::unistd;
+use snafu::ResultExt;
 
 use crate::common::NetConnectionType;
-use crate::process::{pids, MemType, OpenFile, ProcessCpuTimes, ProcessResult, Status};
+use crate::process::{
+	errors, pids, MemType, OpenFile, ProcessCpuTimes, ProcessError, ProcessResult, Status,
+};
 use crate::{Count, Percent, Pid};
 
 #[derive(Clone, Debug)]
@@ -181,24 +185,67 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
-		self.sys_send_signal(signal)
+		if !self.is_running() {
+			return Err(ProcessError::NoSuchProcess { pid: self.pid });
+		}
+
+		#[cfg(target_family = "unix")]
+		{
+			kill(unistd::Pid::from_raw(self.pid as i32), signal)
+				.context(errors::NixError { pid: self.pid })
+		}
+		#[cfg(not(any(target_family = "unix")))]
+		{
+			todo!()
+		}
 	}
 
-	pub fn suspend(&self) {
-		self.sys_suspend()
+	/// Preemptively checks if the process is still alive.
+	pub fn suspend(&self) -> ProcessResult<()> {
+		#[cfg(target_family = "unix")]
+		{
+			self.send_signal(Signal::SIGSTOP)
+		}
+		#[cfg(not(any(target_family = "unix")))]
+		{
+			todo!()
+		}
 	}
 
-	pub fn resume(&self) {
-		self.sys_resume()
+	/// Preemptively checks if the process is still alive.
+	pub fn resume(&self) -> ProcessResult<()> {
+		#[cfg(target_family = "unix")]
+		{
+			self.send_signal(Signal::SIGCONT)
+		}
+		#[cfg(not(any(target_family = "unix")))]
+		{
+			todo!()
+		}
 	}
 
-	pub fn terminate(&self) {
-		self.sys_terminate()
+	/// Preemptively checks if the process is still alive.
+	pub fn terminate(&self) -> ProcessResult<()> {
+		#[cfg(target_family = "unix")]
+		{
+			self.send_signal(Signal::SIGTERM)
+		}
+		#[cfg(not(any(target_family = "unix")))]
+		{
+			todo!()
+		}
 	}
 
 	/// Preemptively checks if the process is still alive.
 	pub fn kill(&self) -> ProcessResult<()> {
-		self.sys_kill()
+		#[cfg(target_family = "unix")]
+		{
+			self.send_signal(Signal::SIGKILL)
+		}
+		#[cfg(not(any(target_family = "unix")))]
+		{
+			todo!()
+		}
 	}
 
 	pub fn wait(&self) {

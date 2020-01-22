@@ -3,15 +3,11 @@ use std::path::PathBuf;
 use std::string::ToString;
 use std::time::Instant;
 
-use nix::sys::signal::{kill, Signal};
-use nix::unistd;
-use snafu::ResultExt;
-
 use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	errors, io_error_to_process_error, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
+	io_error_to_process_error, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
 	ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;
@@ -195,31 +191,6 @@ impl Process {
 
 	pub(crate) fn sys_connections_with_type(&self, _type: NetConnectionType) {
 		todo!()
-	}
-
-	pub(crate) fn sys_send_signal(&self, signal: Signal) -> ProcessResult<()> {
-		if !self.is_running() {
-			return Err(ProcessError::NoSuchProcess { pid: self.pid });
-		}
-
-		kill(unistd::Pid::from_raw(self.pid as i32), signal)
-			.context(errors::NixError { pid: self.pid })
-	}
-
-	pub(crate) fn sys_suspend(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_resume(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_terminate(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_kill(&self) -> ProcessResult<()> {
-		self.send_signal(Signal::SIGKILL)
 	}
 
 	pub(crate) fn sys_wait(&self) {
