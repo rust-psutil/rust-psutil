@@ -1,5 +1,6 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/bindings/process.rs
 
+use std::convert::TryFrom;
 use std::io;
 
 use nix::libc;
