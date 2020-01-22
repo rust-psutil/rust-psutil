@@ -23,7 +23,7 @@ pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
 }
 
 impl Process {
-	pub fn new(pid: Pid) -> ProcessResult<Process> {
+	pub(crate) fn sys_new(pid: Pid) -> ProcessResult<Process> {
 		let procfs_stat = procfs_stat(pid)?;
 		let create_time = procfs_stat.starttime;
 		let busy = ProcessCpuTimes::from(procfs_stat).busy();
@@ -41,27 +41,23 @@ impl Process {
 		procfs_path(self.pid, name)
 	}
 
-	pub fn ppid(&self) -> ProcessResult<Option<Pid>> {
+	pub(crate) fn sys_ppid(&self) -> ProcessResult<Option<Pid>> {
 		Ok(self.procfs_stat()?.ppid)
 	}
 
-	pub fn name(&self) -> ProcessResult<String> {
+	pub(crate) fn sys_name(&self) -> ProcessResult<String> {
 		Ok(self.procfs_stat()?.comm)
 	}
 
-	pub fn exe(&self) -> ProcessResult<PathBuf> {
+	pub(crate) fn sys_exe(&self) -> ProcessResult<PathBuf> {
 		fs::read_link(self.procfs_path("exe")).map_err(|e| io_error_to_process_error(e, self.pid))
 	}
 
-	/// On Linux, an `Ok(None)` is usually due to the process being a kernel thread.
-	/// The return value is different from Python psutil.
-	pub fn cmdline(&self) -> ProcessResult<Option<String>> {
+	pub(crate) fn sys_cmdline(&self) -> ProcessResult<Option<String>> {
 		Ok(self.cmdline_vec()?.map(|c| c.join(" ")))
 	}
 
-	/// New method, not in Python psutil.
-	/// On Linux, an `Ok(None)` is usually due to the process being a kernel thread.
-	pub fn cmdline_vec(&self) -> ProcessResult<Option<Vec<String>>> {
+	pub(crate) fn sys_cmdline_vec(&self) -> ProcessResult<Option<Vec<String>>> {
 		let cmdline = fs::read_to_string(&self.procfs_path("cmdline"))
 			.map_err(|e| io_error_to_process_error(e, self.pid))?;
 
@@ -77,8 +73,7 @@ impl Process {
 		Ok(Some(split))
 	}
 
-	/// Preemptively checks if the process is still alive.
-	pub fn parent(&self) -> ProcessResult<Option<Process>> {
+	pub(crate) fn sys_parent(&self) -> ProcessResult<Option<Process>> {
 		if !self.is_running() {
 			return Err(ProcessError::NoSuchProcess { pid: self.pid });
 		}
@@ -90,52 +85,49 @@ impl Process {
 		}
 	}
 
-	pub fn parents(&self) -> Option<Vec<Process>> {
+	pub(crate) fn sys_parents(&self) -> Option<Vec<Process>> {
 		todo!()
 	}
 
-	pub fn status(&self) -> ProcessResult<Status> {
+	pub(crate) fn sys_status(&self) -> ProcessResult<Status> {
 		Ok(self.procfs_stat()?.state)
 	}
 
-	pub fn cwd(&self) -> ProcessResult<PathBuf> {
+	pub(crate) fn sys_cwd(&self) -> ProcessResult<PathBuf> {
 		fs::read_link(self.procfs_path("cwd")).map_err(|e| io_error_to_process_error(e, self.pid))
 	}
 
-	pub fn username(&self) -> String {
+	pub(crate) fn sys_username(&self) -> String {
 		todo!()
 	}
 
-	pub fn get_nice(&self) -> i32 {
+	pub(crate) fn sys_get_nice(&self) -> i32 {
 		todo!()
 	}
 
-	pub fn set_nice(&self, _nice: i32) {
+	pub(crate) fn sys_set_nice(&self, _nice: i32) {
 		todo!()
 	}
 
-	pub fn num_ctx_switches(&self) -> Count {
+	pub(crate) fn sys_num_ctx_switches(&self) -> Count {
 		todo!()
 	}
 
-	pub fn num_threads(&self) -> Count {
+	pub(crate) fn sys_num_threads(&self) -> Count {
 		todo!()
 	}
 
-	pub fn threads(&self) {
+	pub(crate) fn sys_threads(&self) {
 		todo!()
 	}
 
-	pub fn cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
+	pub(crate) fn sys_cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
 		let stat = self.procfs_stat()?;
 
 		Ok(ProcessCpuTimes::from(stat))
 	}
 
-	/// Returns the cpu percent since the process was created, replaced, or since the last time this
-	/// method was called.
-	/// Differs from Python psutil since there is no interval argument.
-	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
+	pub(crate) fn sys_cpu_percent(&mut self) -> ProcessResult<Percent> {
 		let busy = self.cpu_times()?.busy();
 		let instant = Instant::now();
 		let percent = calculate_cpu_percent(self.busy, busy, instant - self.instant);
@@ -145,16 +137,15 @@ impl Process {
 		Ok(percent)
 	}
 
-	pub fn memory_info(&self) {
+	pub(crate) fn sys_memory_info(&self) {
 		todo!()
 	}
 
-	pub fn memory_full_info(&self) {
+	pub(crate) fn sys_memory_full_info(&self) {
 		todo!()
 	}
 
-	// TODO: memtype argument
-	pub fn memory_percent(&self) -> ProcessResult<Percent> {
+	pub(crate) fn sys_memory_percent(&self) -> ProcessResult<Percent> {
 		let statm = self.procfs_statm()?;
 		let virtual_memory =
 			memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
@@ -163,15 +154,15 @@ impl Process {
 		Ok(percent)
 	}
 
-	pub fn memory_percent_with_type(&self, _type: MemType) -> ProcessResult<Percent> {
+	pub(crate) fn sys_memory_percent_with_type(&self, _type: MemType) -> ProcessResult<Percent> {
 		todo!()
 	}
 
-	pub fn chidren(&self) {
+	pub(crate) fn sys_chidren(&self) {
 		todo!()
 	}
 
-	pub fn open_files(&self) -> ProcessResult<Vec<OpenFile>> {
+	pub(crate) fn sys_open_files(&self) -> ProcessResult<Vec<OpenFile>> {
 		let mut open_files = Vec::new();
 
 		for entry in fs::read_dir(self.procfs_path("fd"))
@@ -198,16 +189,15 @@ impl Process {
 		Ok(open_files)
 	}
 
-	pub fn connections(&self) {
+	pub(crate) fn sys_connections(&self) {
 		todo!()
 	}
 
-	pub fn connections_with_type(&self, _type: NetConnectionType) {
+	pub(crate) fn sys_connections_with_type(&self, _type: NetConnectionType) {
 		todo!()
 	}
 
-	/// Preemptively checks if the process is still alive.
-	pub fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
+	pub(crate) fn sys_send_signal(&self, signal: Signal) -> ProcessResult<()> {
 		if !self.is_running() {
 			return Err(ProcessError::NoSuchProcess { pid: self.pid });
 		}
@@ -216,24 +206,23 @@ impl Process {
 			.context(errors::NixError { pid: self.pid })
 	}
 
-	pub fn suspend(&self) {
+	pub(crate) fn sys_suspend(&self) {
 		todo!()
 	}
 
-	pub fn resume(&self) {
+	pub(crate) fn sys_resume(&self) {
 		todo!()
 	}
 
-	pub fn terminate(&self) {
+	pub(crate) fn sys_terminate(&self) {
 		todo!()
 	}
 
-	/// Preemptively checks if the process is still alive.
-	pub fn kill(&self) -> ProcessResult<()> {
+	pub(crate) fn sys_kill(&self) -> ProcessResult<()> {
 		self.send_signal(Signal::SIGKILL)
 	}
 
-	pub fn wait(&self) {
+	pub(crate) fn sys_wait(&self) {
 		todo!()
 	}
 }
