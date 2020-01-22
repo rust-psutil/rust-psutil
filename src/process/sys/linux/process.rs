@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
 use std::time::Instant;
@@ -7,7 +8,7 @@ use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	io_error_to_process_error, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
+	io_error_to_process_error, pids, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
 	ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;
@@ -67,18 +68,6 @@ impl Process {
 			.collect();
 
 		Ok(Some(split))
-	}
-
-	pub(crate) fn sys_parent(&self) -> ProcessResult<Option<Process>> {
-		if !self.is_running() {
-			return Err(ProcessError::NoSuchProcess { pid: self.pid });
-		}
-
-		let ppid = self.ppid()?;
-		match ppid {
-			Some(ppid) => Ok(Some(Process::new(ppid)?)),
-			None => Ok(None),
-		}
 	}
 
 	pub(crate) fn sys_parents(&self) -> Option<Vec<Process>> {
@@ -196,4 +185,10 @@ impl Process {
 	pub(crate) fn sys_wait(&self) {
 		todo!()
 	}
+}
+
+pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
+	let processes = pids()?.into_iter().map(Process::new).collect();
+
+	Ok(processes)
 }

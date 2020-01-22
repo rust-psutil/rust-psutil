@@ -1,3 +1,4 @@
+use std::io;
 use std::path::PathBuf;
 
 use crate::common::NetConnectionType;
@@ -26,10 +27,6 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cmdline_vec(&self) -> ProcessResult<Option<Vec<String>>> {
-		todo!()
-	}
-
-	pub(crate) fn sys_parent(&self) -> ProcessResult<Option<Process>> {
 		todo!()
 	}
 
@@ -112,4 +109,8 @@ impl Process {
 	pub(crate) fn sys_wait(&self) {
 		todo!()
 	}
+}
+
+pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
+	todo!()
 }

@@ -1,6 +1,5 @@
 use std::cmp;
 use std::hash::{Hash, Hasher};
-use std::io;
 use std::mem;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -11,7 +10,7 @@ use snafu::ResultExt;
 
 use crate::common::NetConnectionType;
 use crate::process::{
-	errors, pids, MemType, OpenFile, ProcessCpuTimes, ProcessError, ProcessResult, Status,
+	errors, MemType, OpenFile, ProcessCpuTimes, ProcessError, ProcessResult, Status,
 };
 use crate::{Count, Percent, Pid};
 
@@ -71,7 +70,15 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn parent(&self) -> ProcessResult<Option<Process>> {
-		self.sys_parent()
+		if !self.is_running() {
+			return Err(ProcessError::NoSuchProcess { pid: self.pid });
+		}
+
+		let ppid = self.ppid()?;
+		match ppid {
+			Some(ppid) => Ok(Some(Process::new(ppid)?)),
+			None => Ok(None),
+		}
 	}
 
 	pub fn parents(&self) -> Option<Vec<Process>> {
@@ -269,15 +276,10 @@ impl Hash for Process {
 	}
 }
 
-pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
-	let processes = pids()?.into_iter().map(Process::new).collect();
-
-	Ok(processes)
-}
-
 #[cfg(test)]
 mod unit_tests {
 	use super::*;
+	use crate::process::processes;
 
 	#[test]
 	fn test_process_exe() {
