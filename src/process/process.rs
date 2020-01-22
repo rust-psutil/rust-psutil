@@ -1,6 +1,7 @@
 use std::cmp;
 use std::hash::{Hash, Hasher};
 use std::io;
+use std::mem;
 use std::time::{Duration, Instant};
 
 use crate::process::{pids, ProcessResult};
@@ -43,6 +44,21 @@ impl Process {
 	pub fn is_replaced(&self) -> bool {
 		match Process::new(self.pid) {
 			Ok(p) => p != *self,
+			Err(_) => false,
+		}
+	}
+
+	/// New method, not in Python psutil.
+	pub fn replace(&mut self) -> bool {
+		match Process::new(self.pid) {
+			Ok(p) => {
+				if p == *self {
+					false
+				} else {
+					mem::replace(self, p);
+					true
+				}
+			}
 			Err(_) => false,
 		}
 	}

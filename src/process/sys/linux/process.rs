@@ -132,8 +132,8 @@ impl Process {
 		Ok(ProcessCpuTimes::from(stat))
 	}
 
-	/// Returns the cpu percent since the process was created or since the last time this method was
-	/// called.
+	/// Returns the cpu percent since the process was created, replaced, or since the last time this
+	/// method was called.
 	/// Differs from Python psutil since there is no interval argument.
 	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
 		let busy = self.cpu_times()?.busy();
@@ -204,24 +204,6 @@ impl Process {
 
 	pub fn connections_with_type(&self, _type: NetConnectionType) {
 		todo!()
-	}
-
-	/// New method, not in Python psutil.
-	pub fn replace(&mut self) -> bool {
-		match Process::new(self.pid) {
-			Ok(p) => {
-				if p == *self {
-					false
-				} else {
-					// TODO: how to swap structs instead of modifying each field?
-					self.create_time = p.create_time;
-					self.busy = p.busy;
-					self.instant = p.instant;
-					true
-				}
-			}
-			Err(_) => false,
-		}
 	}
 
 	/// Preemptively checks if the process is still alive.
