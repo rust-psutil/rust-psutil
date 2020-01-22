@@ -28,6 +28,6 @@ impl VirtualMemoryExt for VirtualMemory {
 	}
 
 	fn slab(&self) -> Bytes {
-		todo!()
+		self.slab
 	}
 }

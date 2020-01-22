@@ -43,28 +43,23 @@ pub fn virtual_memory() -> io::Result<VirtualMemory> {
 	let page_size = *PAGE_SIZE;
 
 	let available = u64::from(vm_stats.active_count + vm_stats.free_count) * page_size;
-	let shared = 0; // TODO
+	let used = u64::from(vm_stats.active_count + vm_stats.wire_count) * page_size;
 	let free = u64::from(vm_stats.free_count - vm_stats.speculative_count) * page_size;
-	let buffers = 0; // TODO
-	let cached = 0; // TODO
 	let active = u64::from(vm_stats.active_count) * page_size;
 	let inactive = u64::from(vm_stats.inactive_count) * page_size;
-	let used = u64::from(vm_stats.active_count + vm_stats.wire_count) * page_size;
+
+	let wired = u64::from(vm_stats.wire_count) * page_size;
 
 	let percent = (((total as f64 - available as f64) / total as f64) * 100.0) as f32;
-
-	let wire = u64::from(vm_stats.wire_count) * page_size;
 
 	Ok(VirtualMemory {
 		total,
 		available,
-		shared,
+		used,
 		free,
-		buffers,
-		cached,
+		percent,
 		active,
 		inactive,
-		used,
-		percent,
+		wired,
 	})
 }

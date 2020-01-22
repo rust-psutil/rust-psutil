@@ -4,14 +4,26 @@ use crate::{Bytes, Percent};
 pub struct VirtualMemory {
 	pub(crate) total: Bytes,
 	pub(crate) available: Bytes,
-	pub(crate) percent: Percent,
 	pub(crate) used: Bytes,
 	pub(crate) free: Bytes,
+	pub(crate) percent: Percent,
+
+	#[cfg(target_family = "unix")]
 	pub(crate) active: Bytes,
+	#[cfg(target_family = "unix")]
 	pub(crate) inactive: Bytes,
+
+	#[cfg(target_os = "linux")]
 	pub(crate) buffers: Bytes,
+	#[cfg(target_os = "linux")]
 	pub(crate) cached: Bytes,
+	#[cfg(target_os = "linux")]
 	pub(crate) shared: Bytes,
+	#[cfg(target_os = "linux")]
+	pub(crate) slab: Bytes,
+
+	#[cfg(target_os = "macos")]
+	pub(crate) wired: Bytes,
 }
 
 impl VirtualMemory {

@@ -40,16 +40,19 @@ pub fn virtual_memory() -> io::Result<VirtualMemory> {
 	let used = total - free - cached - buffers;
 	let percent = (((total as f64 - available as f64) / total as f64) * 100.0) as f32;
 
+	let slab = 0; // TODO
+
 	Ok(VirtualMemory {
 		total,
 		available,
-		shared,
+		used,
 		free,
-		buffers,
-		cached,
+		percent,
 		active,
 		inactive,
-		used,
-		percent,
+		buffers,
+		cached,
+		shared,
+		slab,
 	})
 }
