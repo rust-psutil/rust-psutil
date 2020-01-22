@@ -8,8 +8,8 @@ use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	io_error_to_process_error, pids, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
-	ProcessResult, Status,
+	io_error_to_process_error, pids, MemType, OpenFile, Process, ProcessCpuTimes, ProcessResult,
+	Status,
 };
 use crate::utils::calculate_cpu_percent;
 use crate::{Count, Percent, Pid};
