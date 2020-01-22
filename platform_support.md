@@ -34,12 +34,12 @@
 
 ## Network
 
-|                                                                                    | Linux              | macOS | Windows |
-|------------------------------------------------------------------------------------|--------------------|-------|---------|
-| [net_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters) | :heavy_check_mark: |       |         |
-| [net_connections](https://psutil.readthedocs.io/en/latest/#psutil.net_connections) |                    |       |         |
-| [net_if_addrs](https://psutil.readthedocs.io/en/latest/#psutil.net_if_addrs)       |                    |       |         |
-| [net_if_stats](https://psutil.readthedocs.io/en/latest/#psutil.net_if_stats)       |                    |       |         |
+|                                                                                    | Linux              | macOS              | Windows |
+|------------------------------------------------------------------------------------|--------------------|--------------------|---------|
+| [net_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters) | :heavy_check_mark: | :heavy_check_mark: |         |
+| [net_connections](https://psutil.readthedocs.io/en/latest/#psutil.net_connections) |                    |                    |         |
+| [net_if_addrs](https://psutil.readthedocs.io/en/latest/#psutil.net_if_addrs)       |                    |                    |         |
+| [net_if_stats](https://psutil.readthedocs.io/en/latest/#psutil.net_if_stats)       |                    |                    |         |
 
 ## Processes
 
