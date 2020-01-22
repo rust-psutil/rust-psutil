@@ -1,10 +1,7 @@
-use std::cmp;
 use std::fs;
-use std::hash::{Hash, Hasher};
-use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use nix::sys::signal::{kill, Signal};
 use nix::unistd;
@@ -14,7 +11,7 @@ use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	errors, io_error_to_process_error, pids, MemType, OpenFile, ProcessCpuTimes, ProcessError,
+	errors, io_error_to_process_error, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
 	ProcessResult, Status,
 };
 use crate::utils::calculate_cpu_percent;
@@ -23,14 +20,6 @@ use crate::{Count, Percent, Pid};
 /// Returns a path to a file in `/proc/[pid]/`.
 pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
 	PathBuf::from("/proc").join(pid.to_string()).join(&name)
-}
-
-#[derive(Clone, Debug)]
-pub struct Process {
-	pub(crate) pid: Pid,
-	pub(crate) create_time: Duration,
-	pub(crate) busy: Duration,
-	pub(crate) instant: Instant,
 }
 
 impl Process {
@@ -48,16 +37,8 @@ impl Process {
 		})
 	}
 
-	pub fn current() -> ProcessResult<Process> {
-		Process::new(std::process::id())
-	}
-
 	pub(crate) fn procfs_path(&self, name: &str) -> PathBuf {
 		procfs_path(self.pid, name)
-	}
-
-	pub fn pid(&self) -> Pid {
-		self.pid
 	}
 
 	pub fn ppid(&self) -> ProcessResult<Option<Pid>> {
@@ -94,12 +75,6 @@ impl Process {
 			.collect();
 
 		Ok(Some(split))
-	}
-
-	/// The process creation time as a `Duration` since the boot time.
-	/// The return value is different from Python psutil.
-	pub fn create_time(&self) -> Duration {
-		self.create_time
 	}
 
 	/// Preemptively checks if the process is still alive.
@@ -231,21 +206,6 @@ impl Process {
 		todo!()
 	}
 
-	pub fn is_running(&self) -> bool {
-		match Process::new(self.pid) {
-			Ok(p) => p == *self,
-			Err(_) => false,
-		}
-	}
-
-	/// New method, not in Python psutil.
-	pub fn is_replaced(&self) -> bool {
-		match Process::new(self.pid) {
-			Ok(p) => p != *self,
-			Err(_) => false,
-		}
-	}
-
 	/// New method, not in Python psutil.
 	pub fn replace(&mut self) -> bool {
 		match Process::new(self.pid) {
@@ -290,63 +250,5 @@ impl Process {
 
 	pub fn wait(&self) {
 		todo!()
-	}
-}
-
-impl PartialEq for Process {
-	// Compares processes using their pid and create_time as a unique identifier.
-	fn eq(&self, other: &Process) -> bool {
-		(self.pid == other.pid) && (self.create_time == other.create_time)
-	}
-}
-
-impl cmp::Eq for Process {}
-
-impl Hash for Process {
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		self.pid.hash(state);
-		self.create_time.hash(state);
-	}
-}
-
-pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
-	let processes = pids()?.into_iter().map(Process::new).collect();
-
-	Ok(processes)
-}
-
-#[cfg(test)]
-mod unit_tests {
-	use super::*;
-
-	#[test]
-	fn test_process_exe() {
-		assert!(Process::current().unwrap().exe().is_ok());
-	}
-
-	#[test]
-	fn test_process_cmdline() {
-		assert!(Process::current().unwrap().cmdline().is_ok());
-	}
-
-	#[test]
-	fn test_process_cwd() {
-		assert!(Process::current().unwrap().cwd().is_ok());
-	}
-
-	#[test]
-	fn test_process_equality() {
-		assert_eq!(Process::current().unwrap(), Process::current().unwrap());
-	}
-
-	/// This could fail if you run the tests as PID 1. Please don't do that.
-	#[test]
-	fn test_process_inequality() {
-		assert_ne!(Process::current().unwrap(), Process::new(1).unwrap());
-	}
-
-	#[test]
-	fn test_processes() {
-		processes().unwrap();
 	}
 }

@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+#[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStat;
 
 #[derive(Clone, Debug)]
@@ -8,6 +9,8 @@ pub struct ProcessCpuTimes {
 	pub(crate) system: Duration,
 	pub(crate) children_user: Duration,
 	pub(crate) children_system: Duration,
+
+	#[cfg(target_os = "linux")]
 	pub(crate) iowait: Duration,
 }
 
@@ -34,6 +37,7 @@ impl ProcessCpuTimes {
 	}
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStat> for ProcessCpuTimes {
 	fn from(procfs_stat: ProcfsStat) -> Self {
 		ProcessCpuTimes {

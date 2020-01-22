@@ -16,45 +16,8 @@ use mach::traps::mach_task_self;
 use mach::vm_types::{integer_t, natural_t, vm_address_t, vm_map_t, vm_size_t};
 use nix::libc;
 
-use crate::cpu::os::unix::CpuTimesExt as _;
+use crate::cpu::CpuTimes;
 use crate::TICKS_PER_SECOND;
-
-/// Every attribute represents the seconds the CPU has spent in the given mode.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CpuTimes {
-	pub(crate) user: Duration,
-	pub(crate) system: Duration,
-	pub(crate) idle: Duration,
-	pub(crate) nice: Duration,
-}
-
-impl CpuTimes {
-	/// Time spent by normal processes executing in user mode;
-	/// on Linux this also includes guest time.
-	pub fn user(&self) -> Duration {
-		self.user
-	}
-
-	/// Time spent by processes executing in kernel mode.
-	pub fn system(&self) -> Duration {
-		self.system
-	}
-
-	/// Time spent doing nothing.
-	pub fn idle(&self) -> Duration {
-		self.idle
-	}
-
-	/// New method, not in Python psutil.
-	pub fn busy(&self) -> Duration {
-		self.user() + self.system() + self.nice()
-	}
-
-	/// New method, not in Python psutil.
-	pub fn total(&self) -> Duration {
-		self.busy() + self.idle()
-	}
-}
 
 const PROCESSOR_CPU_LOAD_INFO: libc::c_int = 2;
 const HOST_CPU_LOAD_INFO: libc::c_int = 3;
