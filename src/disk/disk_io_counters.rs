@@ -11,11 +11,19 @@ pub struct DiskIoCounters {
 	pub(crate) write_count: Count,
 	pub(crate) read_bytes: Bytes,
 	pub(crate) write_bytes: Bytes,
+
+	#[cfg(not(any(target_os = "netbsd", target_os = "openbsd")))]
 	pub(crate) read_time: Duration,
+	#[cfg(not(any(target_os = "netbsd", target_os = "openbsd")))]
 	pub(crate) write_time: Duration,
-	pub(crate) read_merged_count: Count,
-	pub(crate) write_merged_count: Count,
+
+	#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 	pub(crate) busy_time: Duration,
+
+	#[cfg(target_os = "linux")]
+	pub(crate) read_merged_count: Count,
+	#[cfg(target_os = "linux")]
+	pub(crate) write_merged_count: Count,
 }
 
 impl DiskIoCounters {
@@ -58,31 +66,39 @@ fn nowrap_struct(
 		write_count: nowrap(prev.write_count, current.write_count, corrected.write_count),
 		read_bytes: nowrap(prev.read_bytes, current.read_bytes, corrected.read_bytes),
 		write_bytes: nowrap(prev.write_bytes, current.write_bytes, corrected.write_bytes),
+
+		#[cfg(not(any(target_os = "netbsd", target_os = "openbsd")))]
 		read_time: Duration::from_millis(nowrap(
 			prev.read_time.as_millis() as u64,
 			current.read_time.as_millis() as u64,
 			corrected.read_time.as_millis() as u64,
 		)),
+		#[cfg(not(any(target_os = "netbsd", target_os = "openbsd")))]
 		write_time: Duration::from_millis(nowrap(
 			prev.write_time.as_millis() as u64,
 			current.write_time.as_millis() as u64,
 			corrected.write_time.as_millis() as u64,
 		)),
-		read_merged_count: nowrap(
-			prev.read_merged_count,
-			current.read_merged_count,
-			corrected.read_merged_count,
-		),
-		write_merged_count: nowrap(
-			prev.write_merged_count,
-			current.write_merged_count,
-			corrected.write_merged_count,
-		),
+
+		#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 		busy_time: Duration::from_millis(nowrap(
 			prev.busy_time.as_millis() as u64,
 			current.busy_time.as_millis() as u64,
 			corrected.busy_time.as_millis() as u64,
 		)),
+
+		#[cfg(target_os = "linux")]
+		read_merged_count: nowrap(
+			prev.read_merged_count,
+			current.read_merged_count,
+			corrected.read_merged_count,
+		),
+		#[cfg(target_os = "linux")]
+		write_merged_count: nowrap(
+			prev.write_merged_count,
+			current.write_merged_count,
+			corrected.write_merged_count,
+		),
 	}
 }
 

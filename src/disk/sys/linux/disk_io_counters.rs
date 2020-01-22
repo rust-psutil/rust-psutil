@@ -45,9 +45,9 @@ impl FromStr for DiskIoCounters {
 			write_bytes: try_parse!(fields[9], u64::from_str) * DISK_SECTOR_SIZE,
 			read_time: Duration::from_millis(try_parse!(fields[6])),
 			write_time: Duration::from_millis(try_parse!(fields[10])),
+			busy_time: Duration::from_millis(try_parse!(fields[12])),
 			read_merged_count: try_parse!(fields[4]),
 			write_merged_count: try_parse!(fields[8]),
-			busy_time: Duration::from_millis(try_parse!(fields[12])),
 		})
 	}
 }
