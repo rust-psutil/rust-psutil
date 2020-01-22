@@ -2,9 +2,12 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/utils.rs
 
 use std::convert::{From, TryFrom};
+use std::ffi::CStr;
 use std::io;
 use std::path::PathBuf;
 use std::time::Duration;
+
+use nix::libc;
 
 use crate::common::NetConnectionType;
 use crate::process::os::macos::{kinfo_proc, kinfo_process, kinfo_processes};
@@ -14,26 +17,27 @@ use crate::process::{
 };
 use crate::{Count, Percent, Pid};
 
-// fn catch_zombie<T: Into<ProcessError>>(e: T, pid: Pid) -> ProcessError {
-// 	match e.into() {
-// 		ProcessError::Load(ref e) if e.raw_os_error() == Some(libc::ESRCH) => {
-// 			let kinfo_proc = match bindings::process(pid) {
-// 				Ok(info) => info,
-// 				Err(e) => return e,
-// 			};
+fn catch_zombie(e: ProcessError) -> ProcessError {
+	match e {
+		ProcessError::IoError { pid, source } if source.raw_os_error() == Some(libc::ESRCH) => {
+			let kinfo_proc = match kinfo_process(pid) {
+				Ok(info) => info,
+				Err(e) => return e,
+			};
 
-// 			match Status::try_from(kinfo_proc.kp_proc.p_stat) {
-// 				Ok(Status::Zombie) => ProcessError::ZombieProcess(pid),
-// 				Ok(_) => ProcessError::AccessDenied(pid),
-// 				Err(e) => e.into(),
-// 			}
-// 		}
-// 		other => other,
-// 	}
-// }
+			match Status::try_from(kinfo_proc.kp_proc.p_stat) {
+				Ok(Status::Zombie) => ProcessError::ZombieProcess { pid },
+				Ok(_) => ProcessError::AccessDenied { pid },
+				Err(e) => io_error_to_process_error(e, pid),
+			}
+		}
+		other => other,
+	}
+}
 
 impl From<kinfo_proc> for Process {
 	fn from(kinfo_proc: kinfo_proc) -> Process {
+		let pid = kinfo_proc.kp_proc.p_pid as u32;
 		let timeval = unsafe {
 			// TODO: How can it be guaranteed that in this case
 			// `p_un.p_starttime` will be filled correctly?
@@ -42,20 +46,15 @@ impl From<kinfo_proc> for Process {
 		let create_time = Duration::from_secs(timeval.tv_sec as u64)
 			+ Duration::from_micros(timeval.tv_usec as u64);
 
-		Process {
-			pid: kinfo_proc.kp_proc.p_pid as u32,
-			create_time,
-		}
+		Process { pid, create_time }
 	}
 }
 
 impl Process {
 	pub(crate) fn sys_new(pid: Pid) -> ProcessResult<Process> {
-		match kinfo_process(pid) {
-			Ok(kinfo_proc) => Ok(kinfo_proc.into()),
-			Err(e) => Err(e),
-			// Err(e) => catch_zombie(io_error_to_process_error(e, pid), pid),
-		}
+		kinfo_process(pid)
+			.map(|kinfo_proc| kinfo_proc.into())
+			.map_err(catch_zombie)
 	}
 
 	pub(crate) fn sys_ppid(&self) -> ProcessResult<Option<Pid>> {
@@ -63,7 +62,14 @@ impl Process {
 	}
 
 	pub(crate) fn sys_name(&self) -> ProcessResult<String> {
-		todo!()
+		kinfo_process(self.pid)
+			.map(|kinfo_proc| {
+				let raw_str = unsafe { CStr::from_ptr(kinfo_proc.kp_proc.p_comm.as_ptr()) };
+				let name = raw_str.to_string_lossy().into_owned();
+
+				name
+			})
+			.map_err(catch_zombie)
 	}
 
 	pub(crate) fn sys_exe(&self) -> ProcessResult<PathBuf> {
