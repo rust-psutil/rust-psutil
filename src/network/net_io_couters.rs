@@ -88,69 +88,52 @@ fn nowrap(prev: u64, current: u64, corrected: u64) -> u64 {
 	}
 }
 
+fn nowrap_struct(
+	prev: &NetIoCounters,
+	current: &NetIoCounters,
+	corrected: &NetIoCounters,
+) -> NetIoCounters {
+	NetIoCounters {
+		bytes_sent: nowrap(prev.bytes_sent, current.bytes_sent, corrected.bytes_sent),
+		bytes_recv: nowrap(prev.bytes_recv, current.bytes_recv, corrected.bytes_recv),
+		packets_sent: nowrap(
+			prev.packets_sent,
+			current.packets_sent,
+			corrected.packets_sent,
+		),
+		packets_recv: nowrap(
+			prev.packets_recv,
+			current.packets_recv,
+			corrected.packets_recv,
+		),
+		err_in: nowrap(prev.err_in, current.err_in, corrected.err_in),
+		err_out: nowrap(prev.err_out, current.err_out, corrected.err_out),
+		drop_in: nowrap(prev.drop_in, current.drop_in, corrected.drop_in),
+		drop_out: nowrap(prev.drop_out, current.drop_out, corrected.drop_out),
+	}
+}
+
 fn fix_io_counter_overflow(
 	prev: &HashMap<String, NetIoCounters>,
 	current: &HashMap<String, NetIoCounters>,
 	corrected: &HashMap<String, NetIoCounters>,
 ) -> HashMap<String, NetIoCounters> {
-	let mut result: HashMap<String, NetIoCounters> = HashMap::new();
+	current
+		.iter()
+		.map(|(name, current_counters)| {
+			if !prev.contains_key(name) || !corrected.contains_key(name) {
+				(name.clone(), current_counters.clone())
+			} else {
+				let prev_counters = &prev[name];
+				let corrected_counters = &corrected[name];
 
-	for (name, current_counters) in current {
-		if !prev.contains_key(name) || !corrected.contains_key(name) {
-			result.insert(name.clone(), current_counters.clone());
-		} else {
-			let prev_counters = &prev[name];
-			let corrected_counters = &corrected[name];
-
-			result.insert(
-				name.clone(),
-				NetIoCounters {
-					bytes_sent: nowrap(
-						prev_counters.bytes_sent,
-						current_counters.bytes_sent,
-						corrected_counters.bytes_sent,
-					),
-					bytes_recv: nowrap(
-						prev_counters.bytes_recv,
-						current_counters.bytes_recv,
-						corrected_counters.bytes_recv,
-					),
-					packets_sent: nowrap(
-						prev_counters.packets_sent,
-						current_counters.packets_sent,
-						corrected_counters.packets_sent,
-					),
-					packets_recv: nowrap(
-						prev_counters.packets_recv,
-						current_counters.packets_recv,
-						corrected_counters.packets_recv,
-					),
-					err_in: nowrap(
-						prev_counters.err_in,
-						current_counters.err_in,
-						corrected_counters.err_in,
-					),
-					err_out: nowrap(
-						prev_counters.err_out,
-						current_counters.err_out,
-						corrected_counters.err_out,
-					),
-					drop_in: nowrap(
-						prev_counters.drop_in,
-						current_counters.drop_in,
-						corrected_counters.drop_in,
-					),
-					drop_out: nowrap(
-						prev_counters.drop_out,
-						current_counters.drop_out,
-						corrected_counters.drop_out,
-					),
-				},
-			);
-		}
-	}
-
-	result
+				(
+					name.clone(),
+					nowrap_struct(prev_counters, current_counters, corrected_counters),
+				)
+			}
+		})
+		.collect()
 }
 
 /// Used to persist data between calls to detect data overflow by the kernel and fix the result.

@@ -78,12 +78,7 @@ pub fn cpu_times_percpu() -> io::Result<Vec<CpuTimes>> {
 		return Err(invalid_data("'/proc/stat' is missing per cpu times"));
 	}
 
-	let mut cpu_times = Vec::new();
-	for line in lines {
-		cpu_times.push(CpuTimes::from_str(&line)?);
-	}
-
-	Ok(cpu_times)
+	lines.into_iter().map(CpuTimes::from_str).collect()
 }
 
 #[cfg(test)]

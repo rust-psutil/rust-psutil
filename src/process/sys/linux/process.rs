@@ -148,30 +148,27 @@ impl Process {
 	}
 
 	pub(crate) fn sys_open_files(&self) -> ProcessResult<Vec<OpenFile>> {
-		let mut open_files = Vec::new();
-
-		for entry in fs::read_dir(self.procfs_path("fd"))
+		fs::read_dir(self.procfs_path("fd"))
 			.map_err(|e| io_error_to_process_error(e, self.pid))?
-		{
-			let path = entry
-				.map_err(|e| io_error_to_process_error(e, self.pid))?
-				.path();
-			let fd = path
-				.file_name()
-				.unwrap()
-				.to_string_lossy()
-				.parse::<u32>()
-				.unwrap();
-			let open_file =
-				fs::read_link(&path).map_err(|e| io_error_to_process_error(e, self.pid))?;
+			.map(|entry| {
+				let path = entry
+					.map_err(|e| io_error_to_process_error(e, self.pid))?
+					.path();
+				let fd = path
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.parse::<u32>()
+					.unwrap();
+				let open_file =
+					fs::read_link(&path).map_err(|e| io_error_to_process_error(e, self.pid))?;
 
-			open_files.push(OpenFile {
-				fd: Some(fd),
-				path: open_file,
+				Ok(OpenFile {
+					fd: Some(fd),
+					path: open_file,
+				})
 			})
-		}
-
-		Ok(open_files)
+			.collect()
 	}
 
 	pub(crate) fn sys_connections(&self) {
