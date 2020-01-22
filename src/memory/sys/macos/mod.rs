@@ -1,3 +1,4 @@
+mod common;
 mod swap_memory;
 mod virtual_memory;
 

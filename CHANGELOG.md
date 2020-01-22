@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [host][linux] implement boot_time
 - [host] add Info
 - [host][unix] implement Info
+- [memory][macos] implement virtual_memory and swap_memory
 - [process] add ProcessCollector
 - [process][linux] implement ProcessCollector
 - [process][linux] implement pids

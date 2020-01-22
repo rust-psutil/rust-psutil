@@ -27,10 +27,10 @@
 
 ## Memory
 
-|                                                                                  | Linux              | macOS | Windows |
-|----------------------------------------------------------------------------------|--------------------|-------|---------|
-| [virtual_memory](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) | :heavy_check_mark: |       |         |
-| [swap_memory](https://psutil.readthedocs.io/en/latest/#psutil.swap_memory)       | :heavy_check_mark: |       |         |
+|                                                                                  | Linux              | macOS              | Windows |
+|----------------------------------------------------------------------------------|--------------------|--------------------|---------|
+| [virtual_memory](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) | :heavy_check_mark: | :heavy_check_mark: |         |
+| [swap_memory](https://psutil.readthedocs.io/en/latest/#psutil.swap_memory)       | :heavy_check_mark: | :heavy_check_mark: |         |
 
 ## Network
 
