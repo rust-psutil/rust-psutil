@@ -53,21 +53,27 @@ pub trait ProcessExt {
 
 impl ProcessExt for Process {
 	fn uids(&self) -> ProcessResult<Uids> {
-		if cfg!(target_os = "linux") {
+		#[cfg(target_os = "linux")]
+		{
 			let procfs_status = self.procfs_status()?;
 
 			Ok(Uids::from(procfs_status))
-		} else {
+		}
+		#[cfg(not(any(target_os = "linux")))]
+		{
 			todo!()
 		}
 	}
 
 	fn gids(&self) -> ProcessResult<Gids> {
-		if cfg!(target_os = "linux") {
+		#[cfg(target_os = "linux")]
+		{
 			let procfs_status = self.procfs_status()?;
 
 			Ok(Gids::from(procfs_status))
-		} else {
+		}
+		#[cfg(not(any(target_os = "linux")))]
+		{
 			todo!()
 		}
 	}

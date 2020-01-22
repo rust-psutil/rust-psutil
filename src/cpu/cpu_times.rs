@@ -41,26 +41,36 @@ impl CpuTimes {
 
 	/// Time spent doing nothing.
 	pub fn idle(&self) -> Duration {
-		if cfg!(target_os = "linux") {
+		#[cfg(target_os = "linux")]
+		{
 			self.idle + self.iowait()
-		} else if cfg!(target_os = "macos") {
+		}
+		#[cfg(target_os = "macos")]
+		{
 			self.idle
-		} else {
+		}
+		#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+		{
 			todo!()
 		}
 	}
 
 	/// New method, not in Python psutil.
 	pub fn busy(&self) -> Duration {
-		if cfg!(target_os = "linux") {
+		#[cfg(target_os = "linux")]
+		{
 			self.user()
 				+ self.system() + self.nice()
 				+ self.irq() + self.softirq()
 				+ self.steal() + self.guest()
 				+ self.guest_nice()
-		} else if cfg!(target_os = "macos") {
+		}
+		#[cfg(target_os = "macos")]
+		{
 			self.user() + self.system() + self.nice()
-		} else {
+		}
+		#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+		{
 			todo!()
 		}
 	}
