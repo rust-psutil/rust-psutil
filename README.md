@@ -37,6 +37,10 @@ Currently, only Linux is supported, but support is planned for all major platfor
 
 Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], and [Caleb Bassi], and developed by multiple [contributors].
 
+## Apps using rust-psutil
+
+- [ytop](https://github.com/cjbassi/ytop)
+
 ## Related projects
 
 - [hiem](https://github.com/heim-rs/heim)
