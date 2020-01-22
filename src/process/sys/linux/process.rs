@@ -213,6 +213,7 @@ impl Process {
 				if p == *self {
 					false
 				} else {
+					// TODO: how to swap structs instead of modifying each field?
 					self.create_time = p.create_time;
 					self.busy = p.busy;
 					self.instant = p.instant;
