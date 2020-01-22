@@ -43,24 +43,24 @@
 
 ## Processes
 
-|                                                                              | Linux              | macOS | Windows |
-|------------------------------------------------------------------------------|--------------------|-------|---------|
-| [pids](https://psutil.readthedocs.io/en/latest/#psutil.pids)                 | :heavy_check_mark: |       |         |
-| [process_iter](https://psutil.readthedocs.io/en/latest/#psutil.process_iter) | :heavy_check_mark: |       |         |
-| [pid_exists](https://psutil.readthedocs.io/en/latest/#psutil.pid_exists)     | :heavy_check_mark: |       |         |
-| [wait_procs](https://psutil.readthedocs.io/en/latest/#psutil.wait_procs)     |                    |       |         |
+|                                                                              | Linux              | macOS              | Windows |
+|------------------------------------------------------------------------------|--------------------|--------------------|---------|
+| [pids](https://psutil.readthedocs.io/en/latest/#psutil.pids)                 | :heavy_check_mark: | :heavy_check_mark: |         |
+| [process_iter](https://psutil.readthedocs.io/en/latest/#psutil.process_iter) | :heavy_check_mark: | :heavy_check_mark: |         |
+| [pid_exists](https://psutil.readthedocs.io/en/latest/#psutil.pid_exists)     | :heavy_check_mark: |                    |         |
+| [wait_procs](https://psutil.readthedocs.io/en/latest/#psutil.wait_procs)     |                    |                    |         |
 
 ### Per-process
 
 |                                                                                              | Linux              | macOS              | Windows |
 |----------------------------------------------------------------------------------------------|--------------------|--------------------|---------|
-| [pid](https://psutil.readthedocs.io/en/latest/#psutil.Process.pid)                           | :heavy_check_mark: |                    |         |
+| [pid](https://psutil.readthedocs.io/en/latest/#psutil.Process.pid)                           | :heavy_check_mark: | :heavy_check_mark: |         |
 | [ppid](https://psutil.readthedocs.io/en/latest/#psutil.Process.ppid)                         | :heavy_check_mark: |                    |         |
-| [name](https://psutil.readthedocs.io/en/latest/#psutil.Process.name)                         | :heavy_check_mark: |                    |         |
+| [name](https://psutil.readthedocs.io/en/latest/#psutil.Process.name)                         | :heavy_check_mark: | :heavy_check_mark: |         |
 | [exe](https://psutil.readthedocs.io/en/latest/#psutil.Process.exe)                           | :heavy_check_mark: |                    |         |
 | [cmdline](https://psutil.readthedocs.io/en/latest/#psutil.Process.cmdline)                   | :heavy_check_mark: |                    |         |
 | [environ](https://psutil.readthedocs.io/en/latest/#psutil.Process.environ)                   | :heavy_check_mark: |                    |         |
-| [create_time](https://psutil.readthedocs.io/en/latest/#psutil.Process.create_time)           | :heavy_check_mark: |                    |         |
+| [create_time](https://psutil.readthedocs.io/en/latest/#psutil.Process.create_time)           | :heavy_check_mark: | :heavy_check_mark: |         |
 | [as_dict](https://psutil.readthedocs.io/en/latest/#psutil.Process.as_dict)                   |                    |                    |         |
 | [parent](https://psutil.readthedocs.io/en/latest/#psutil.Process.parent)                     | :heavy_check_mark: |                    |         |
 | [parents](https://psutil.readthedocs.io/en/latest/#psutil.Process.parents)                   |                    |                    |         |
@@ -89,7 +89,7 @@
 | [children](https://psutil.readthedocs.io/en/latest/#psutil.Process.children)                 |                    |                    |         |
 | [open_files](https://psutil.readthedocs.io/en/latest/#psutil.Process.open_files)             | :heavy_check_mark: |                    |         |
 | [connections](https://psutil.readthedocs.io/en/latest/#psutil.Process.connections)           |                    |                    |         |
-| [is_running](https://psutil.readthedocs.io/en/latest/#psutil.Process.is_running)             | :heavy_check_mark: |                    |         |
+| [is_running](https://psutil.readthedocs.io/en/latest/#psutil.Process.is_running)             | :heavy_check_mark: | :heavy_check_mark: |         |
 | [send_signal](https://psutil.readthedocs.io/en/latest/#psutil.Process.send_signal)           | :heavy_check_mark: | :heavy_check_mark: |         |
 | [suspend](https://psutil.readthedocs.io/en/latest/#psutil.Process.suspend)                   | :heavy_check_mark: | :heavy_check_mark: |         |
 | [resume](https://psutil.readthedocs.io/en/latest/#psutil.Process.resume)                     | :heavy_check_mark: | :heavy_check_mark: |         |

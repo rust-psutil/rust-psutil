@@ -27,7 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [memory][macos] implement virtual_memory and swap_memory
 - [process] add ProcessCollector
 - [process][unix] implement all signal methods
-- [process][linux] implement ProcessCollector
+- [process][macos] implement Process::new
+- [process][macos] implement process.name
+- [process][macos] implement processes and pids
 - [process][linux] implement pids
 - [process][linux] implement pid_exists
 - [process][linux] implement Process.cpu_percent
