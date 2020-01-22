@@ -214,6 +214,8 @@ impl Process {
 					false
 				} else {
 					self.create_time = p.create_time;
+					self.busy = p.busy;
+					self.instant = p.instant;
 					true
 				}
 			}
