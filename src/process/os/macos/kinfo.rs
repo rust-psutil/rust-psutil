@@ -186,7 +186,12 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 }
 
 pub fn kinfo_process(pid: Pid) -> ProcessResult<kinfo_proc> {
-	let mut name: [i32; 4] = [libc::CTL_KERN, libc::KERN_PROC, libc::KERN_PROC_PID, pid];
+	let mut name: [i32; 4] = [
+		libc::CTL_KERN,
+		libc::KERN_PROC,
+		libc::KERN_PROC_PID,
+		pid as i32,
+	];
 	let mut size: libc::size_t = mem::size_of::<kinfo_proc>();
 	let mut info = mem::MaybeUninit::<kinfo_proc>::uninit();
 

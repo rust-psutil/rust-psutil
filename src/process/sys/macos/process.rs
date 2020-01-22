@@ -43,7 +43,7 @@ impl From<kinfo_proc> for Process {
 			+ Duration::from_micros(timeval.tv_usec as u64);
 
 		Process {
-			pid: kinfo_proc.kp_proc.p_pid,
+			pid: kinfo_proc.kp_proc.p_pid as u32,
 			create_time,
 		}
 	}
