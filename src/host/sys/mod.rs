@@ -6,7 +6,7 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-	if #[cfg(target_os = "unix")] {
+	if #[cfg(target_family = "unix")] {
 		mod unix;
 		pub use unix::*;
 	}

@@ -2,10 +2,10 @@
 //!
 //! For battery information, check out [rust-battery](https://github.com/svartalf/rust-battery).
 
-mod fans;
+mod fan_sensor;
 mod sys;
-mod temperatures;
+mod temperature_sensor;
 
-pub use fans::*;
+pub use fan_sensor::*;
 pub use sys::*;
-pub use temperatures::*;
+pub use temperature_sensor::*;

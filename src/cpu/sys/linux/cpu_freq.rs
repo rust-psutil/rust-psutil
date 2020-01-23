@@ -1,22 +1,6 @@
 use std::io;
 
-use crate::Mhz;
-
-pub struct CpuFreq {}
-
-impl CpuFreq {
-	pub fn current(&self) -> Mhz {
-		todo!()
-	}
-
-	pub fn min(&self) -> Mhz {
-		todo!()
-	}
-
-	pub fn max(&self) -> Mhz {
-		todo!()
-	}
-}
+use crate::cpu::CpuFreq;
 
 pub fn cpu_freq() -> io::Result<CpuFreq> {
 	todo!()
