@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io;
 use std::time::Duration;
 
-use crate::disk::disk_io_counters_perdisk;
+use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count};
 
 #[derive(Clone, Debug)]
@@ -129,8 +129,8 @@ fn fix_io_counter_overflow(
 /// Requires a minimum kernel version of 2.5.69 due to the usage of `/proc/diskstats`.
 #[derive(Clone, Debug, Default)]
 pub struct DiskIoCountersCollector {
-	prev_disk_io_counters_perdisk: Option<HashMap<String, DiskIoCounters>>,
-	corrected_disk_io_counters_perdisk: Option<HashMap<String, DiskIoCounters>>,
+	prev_disk_io_counters_per_partition: Option<HashMap<String, DiskIoCounters>>,
+	corrected_disk_io_counters_per_partition: Option<HashMap<String, DiskIoCounters>>,
 }
 
 impl DiskIoCountersCollector {
@@ -138,12 +138,14 @@ impl DiskIoCountersCollector {
 		todo!()
 	}
 
-	pub fn disk_io_counters_perdisk(&mut self) -> io::Result<HashMap<String, DiskIoCounters>> {
-		let io_counters = disk_io_counters_perdisk()?;
+	pub fn disk_io_counters_per_partition(
+		&mut self,
+	) -> io::Result<HashMap<String, DiskIoCounters>> {
+		let io_counters = disk_io_counters_per_partition()?;
 
 		let corrected_counters = match (
-			&self.prev_disk_io_counters_perdisk,
-			&self.corrected_disk_io_counters_perdisk,
+			&self.prev_disk_io_counters_per_partition,
+			&self.corrected_disk_io_counters_per_partition,
 		) {
 			(Some(prev), Some(corrected)) => {
 				fix_io_counter_overflow(&prev, &io_counters, &corrected)
@@ -151,8 +153,8 @@ impl DiskIoCountersCollector {
 			_ => io_counters.clone(),
 		};
 
-		self.prev_disk_io_counters_perdisk = Some(io_counters);
-		self.corrected_disk_io_counters_perdisk = Some(corrected_counters.clone());
+		self.prev_disk_io_counters_per_partition = Some(io_counters);
+		self.corrected_disk_io_counters_per_partition = Some(corrected_counters.clone());
 
 		Ok(corrected_counters)
 	}

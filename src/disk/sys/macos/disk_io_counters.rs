@@ -3,6 +3,6 @@ use std::io;
 
 use crate::disk::DiskIoCounters;
 
-pub(crate) fn disk_io_counters_perdisk() -> io::Result<HashMap<String, DiskIoCounters>> {
+pub(crate) fn disk_io_counters_per_partition() -> io::Result<HashMap<String, DiskIoCounters>> {
 	todo!()
 }

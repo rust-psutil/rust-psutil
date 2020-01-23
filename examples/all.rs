@@ -21,8 +21,8 @@ fn main() {
 		.cpu_times_percent_percpu()
 		.unwrap();
 
-	let disk_io_counters_perdisk = disk_io_counters_collector
-		.disk_io_counters_perdisk()
+	let disk_io_counters_per_partition = disk_io_counters_collector
+		.disk_io_counters_per_partition()
 		.unwrap();
 	let partitions = disk::partitions_physical().unwrap();
 	let disk_usage = disk::disk_usage("/").unwrap();
@@ -45,7 +45,7 @@ fn main() {
 	dbg!(cpu_times_percpu);
 	dbg!(cpu_times_percent_percpu);
 
-	dbg!(disk_io_counters_perdisk);
+	dbg!(disk_io_counters_per_partition);
 	dbg!(partitions);
 	dbg!(disk_usage);
 

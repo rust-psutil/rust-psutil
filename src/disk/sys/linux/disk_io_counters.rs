@@ -69,7 +69,7 @@ fn get_partitions(data: &str) -> io::Result<Vec<&str>> {
 		.collect()
 }
 
-pub(crate) fn disk_io_counters_perdisk() -> io::Result<HashMap<String, DiskIoCounters>> {
+pub(crate) fn disk_io_counters_per_partition() -> io::Result<HashMap<String, DiskIoCounters>> {
 	let data = fs::read_to_string("/proc/partitions")?;
 	let partitions = get_partitions(&data)?;
 
