@@ -5,6 +5,7 @@ use crate::memory::make_map;
 use crate::memory::SwapMemory;
 use crate::utils::not_found;
 
+// TODO: return an option for when swap is disabled?
 pub fn swap_memory() -> io::Result<SwapMemory> {
 	let data = fs::read_to_string("/proc/meminfo")?;
 	let meminfo = make_map(&data)?;
@@ -23,7 +24,12 @@ pub fn swap_memory() -> io::Result<SwapMemory> {
 	let swapped_out = *vmstat.get("pswpout").ok_or_else(|| not_found("pswpout"))?;
 
 	let used = total - free;
-	let percent = ((used as f64 / total as f64) * 100.0) as f32;
+	// total will be 0 if swap is disabled
+	let percent = if total == 0 {
+		0.0
+	} else {
+		((used as f64 / total as f64) * 100.0) as f32
+	};
 
 	Ok(SwapMemory {
 		total,
