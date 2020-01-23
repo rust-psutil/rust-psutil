@@ -4,6 +4,7 @@ cfg_if::cfg_if! {
 		pub use linux::*;
 	} else if #[cfg(target_os = "macos")] {
 		mod macos;
+		#[allow(unused_imports)]
 		pub use macos::*;
 	}
 }

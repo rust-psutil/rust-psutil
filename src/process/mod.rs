@@ -4,6 +4,7 @@ mod errors;
 mod memory;
 mod open_file;
 pub mod os;
+#[allow(clippy::module_inception)]
 mod process;
 mod status;
 mod sys;

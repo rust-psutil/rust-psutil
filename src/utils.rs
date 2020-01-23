@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use crate::Percent;
 
+#[cfg(target_os = "linux")]
 macro_rules! try_parse {
 	($field:expr) => {
 		try_parse!($field, std::str::FromStr::from_str)
@@ -19,6 +20,7 @@ macro_rules! try_parse {
 	};
 }
 
+#[cfg(target_os = "linux")]
 pub(crate) fn not_found(key: &str) -> io::Error {
 	io::Error::new(io::ErrorKind::NotFound, format!("{} not found", key))
 }

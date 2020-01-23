@@ -1,9 +1,11 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/process/memory.rs
 
-use crate::{Bytes, Count};
+use crate::Bytes;
 
 #[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStatm;
+#[cfg(target_os = "macos")]
+use crate::Count;
 
 pub enum MemType {
 	// TODO
