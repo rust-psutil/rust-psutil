@@ -1,38 +1,10 @@
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 
-use crate::disk::FileSystem;
+use crate::disk::{FileSystem, Partition};
 use crate::utils::invalid_data;
-
-#[derive(Clone, Debug)]
-pub struct Partition {
-	pub(crate) device: String,
-	pub(crate) mountpoint: PathBuf,
-	pub(crate) filesystem: FileSystem,
-	pub(crate) mount_options: String,
-}
-
-impl Partition {
-	pub fn device(&self) -> &str {
-		&self.device
-	}
-
-	pub fn mountpoint(&self) -> &Path {
-		&self.mountpoint
-	}
-
-	/// Renamed from `fstype` in Python psutil.
-	pub fn filesystem(&self) -> &FileSystem {
-		&self.filesystem
-	}
-
-	/// Renamed from `opts` in Python psutil.
-	pub fn mount_options(&self) -> &str {
-		&self.mount_options
-	}
-}
 
 impl FromStr for Partition {
 	type Err = io::Error;

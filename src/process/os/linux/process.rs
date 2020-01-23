@@ -9,20 +9,19 @@ use crate::process::{Process, ProcessResult};
 use crate::utils::invalid_data;
 
 fn parse_environ(data: &str) -> io::Result<HashMap<String, String>> {
-	let mut env = HashMap::new();
+	data.split_terminator('\0')
+		.map(|mapping| {
+			let split: Vec<&str> = mapping.splitn(2, '=').collect();
+			if split.len() != 2 {
+				return Err(invalid_data(&format!(
+					"malformed env mapping: '{}'",
+					mapping
+				)));
+			}
 
-	for mapping in data.split_terminator('\0') {
-		let split: Vec<&str> = mapping.splitn(2, '=').collect();
-		if split.len() != 2 {
-			return Err(invalid_data(&format!(
-				"malformed env mapping: '{}'",
-				mapping
-			)));
-		}
-		env.insert(split[0].to_owned(), split[1].to_owned());
-	}
-
-	Ok(env)
+			Ok((split[0].to_owned(), split[1].to_owned()))
+		})
+		.collect()
 }
 
 pub struct IoCounters {}

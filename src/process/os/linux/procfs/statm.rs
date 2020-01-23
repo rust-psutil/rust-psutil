@@ -19,7 +19,7 @@ pub struct ProcfsStatm {
 	pub resident: u64,
 
 	/// Shared pages (bytes).
-	pub share: u64,
+	pub shared: u64,
 
 	/// Text.
 	pub text: u64,
@@ -44,7 +44,7 @@ impl FromStr for ProcfsStatm {
 		Ok(ProcfsStatm {
 			size: try_parse!(fields[0], u64::from_str) * *PAGE_SIZE,
 			resident: try_parse!(fields[1], u64::from_str) * *PAGE_SIZE,
-			share: try_parse!(fields[2], u64::from_str) * *PAGE_SIZE,
+			shared: try_parse!(fields[2], u64::from_str) * *PAGE_SIZE,
 			text: try_parse!(fields[3], u64::from_str) * *PAGE_SIZE,
 			data: try_parse!(fields[5], u64::from_str) * *PAGE_SIZE,
 		})

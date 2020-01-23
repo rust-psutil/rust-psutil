@@ -1,6 +1,8 @@
-use crate::process::os::linux::{ProcessExt as _, ProcfsStatus};
 use crate::process::{Process, ProcessResult};
 use crate::Count;
+
+#[cfg(target_os = "linux")]
+use crate::process::os::linux::{ProcessExt as _, ProcfsStatus};
 
 pub type Uid = u32;
 pub type Gid = u32;
@@ -17,6 +19,7 @@ pub struct Gids {
 	pub saved: Gid,
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStatus> for Uids {
 	fn from(procfs_status: ProcfsStatus) -> Self {
 		Uids {
@@ -27,6 +30,7 @@ impl From<ProcfsStatus> for Uids {
 	}
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStatus> for Gids {
 	fn from(procfs_status: ProcfsStatus) -> Self {
 		Gids {
@@ -48,28 +52,30 @@ pub trait ProcessExt {
 }
 
 impl ProcessExt for Process {
-	#[cfg(target_os = "linux")]
 	fn uids(&self) -> ProcessResult<Uids> {
-		let procfs_status = self.procfs_status()?;
+		#[cfg(target_os = "linux")]
+		{
+			let procfs_status = self.procfs_status()?;
 
-		Ok(Uids::from(procfs_status))
+			Ok(Uids::from(procfs_status))
+		}
+		#[cfg(not(any(target_os = "linux")))]
+		{
+			todo!()
+		}
 	}
 
-	#[cfg(target_os = "linux")]
 	fn gids(&self) -> ProcessResult<Gids> {
-		let procfs_status = self.procfs_status()?;
+		#[cfg(target_os = "linux")]
+		{
+			let procfs_status = self.procfs_status()?;
 
-		Ok(Gids::from(procfs_status))
-	}
-
-	#[cfg(not(target_os = "linux"))]
-	fn uids(&self) -> ProcessResult<Uids> {
-		todo!()
-	}
-
-	#[cfg(not(target_os = "linux"))]
-	fn gids(&self) -> ProcessResult<Gids> {
-		todo!()
+			Ok(Gids::from(procfs_status))
+		}
+		#[cfg(not(any(target_os = "linux")))]
+		{
+			todo!()
+		}
 	}
 
 	fn terminal(&self) -> Option<String> {

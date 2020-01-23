@@ -1,5 +1,8 @@
+// https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/process/cpu_times.rs
+
 use std::time::Duration;
 
+#[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStat;
 
 #[derive(Clone, Debug)]
@@ -8,6 +11,8 @@ pub struct ProcessCpuTimes {
 	pub(crate) system: Duration,
 	pub(crate) children_user: Duration,
 	pub(crate) children_system: Duration,
+
+	#[cfg(target_os = "linux")]
 	pub(crate) iowait: Duration,
 }
 
@@ -34,6 +39,7 @@ impl ProcessCpuTimes {
 	}
 }
 
+#[cfg(target_os = "linux")]
 impl From<ProcfsStat> for ProcessCpuTimes {
 	fn from(procfs_stat: ProcfsStat) -> Self {
 		ProcessCpuTimes {
@@ -42,6 +48,18 @@ impl From<ProcfsStat> for ProcessCpuTimes {
 			children_user: procfs_stat.cutime,
 			children_system: procfs_stat.cstime,
 			iowait: Duration::default(), // TODO
+		}
+	}
+}
+
+#[cfg(target_os = "macos")]
+impl From<darwin_libproc::proc_taskinfo> for ProcessCpuTimes {
+	fn from(info: darwin_libproc::proc_taskinfo) -> Self {
+		ProcessCpuTimes {
+			user: Duration::from_nanos(info.pti_total_user),
+			system: Duration::from_nanos(info.pti_total_system),
+			children_user: Duration::default(),
+			children_system: Duration::default(),
 		}
 	}
 }

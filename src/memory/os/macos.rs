@@ -7,6 +7,6 @@ pub trait VirtualMemoryExt {
 
 impl VirtualMemoryExt for VirtualMemory {
 	fn wired(&self) -> Bytes {
-		todo!()
+		self.wired
 	}
 }

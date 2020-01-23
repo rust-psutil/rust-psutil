@@ -11,7 +11,7 @@ pub type FloatCount = f64;
 pub type Degrees = FloatCount;
 pub type Mhz = FloatCount;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Temperature {
 	celsius: Degrees,
 }

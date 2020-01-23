@@ -17,18 +17,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- [macos] get macos to compile
 - [cpu][all] implement cpu_count and cpu_count_physical
+- [cpu][macos] implement cpu_times, cpu_times_percent, and cpu_percent
 - [disk][unix] implement disk_usage
 - [host][linux] implement boot_time
 - [host] add Info
 - [host][unix] implement Info
+- [memory][macos] implement virtual_memory and swap_memory
+- [network][macos] implement io counters
 - [process] add ProcessCollector
-- [process][linux] implement ProcessCollector
+- [process][unix] implement all signal methods
+- [process][macos] implement Process::new
+- [process][macos] implement process.name
+- [process][macos] implement processes and pids
+- [process][macos] implement Process.cpu_percent
+- [process][macos] implement Process.cpu_times
+- [process][macos] implement Process.memory_percent
+- [process][macos] implement Process.memory_info
 - [process][linux] implement pids
 - [process][linux] implement pid_exists
 - [process][linux] implement Process.cpu_percent
 - [process][linux] implement Process.cpu_times
 - [process][linux] implement Process.memory_percent
+- [process][linux] implement Process.memory_info
 - [process][linux] implement Process.uids
 - [process][linux] implement Process.gids
 - [process][linux] implement Process.send_signal

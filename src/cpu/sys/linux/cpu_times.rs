@@ -3,58 +3,9 @@ use std::io;
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::cpu::os::{linux::CpuTimesExt as _, unix::CpuTimesExt as _};
+use crate::cpu::CpuTimes;
 use crate::utils::invalid_data;
 use crate::{Count, TICKS_PER_SECOND};
-
-/// Every attribute represents the seconds the CPU has spent in the given mode.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CpuTimes {
-	pub(crate) user: Duration,
-	pub(crate) system: Duration,
-	pub(crate) idle: Duration,
-	pub(crate) nice: Duration,
-	pub(crate) iowait: Duration,
-	pub(crate) irq: Duration,
-	pub(crate) softirq: Duration,
-	pub(crate) steal: Duration,
-	pub(crate) guest: Duration,
-	pub(crate) guest_nice: Duration,
-}
-
-impl CpuTimes {
-	/// Time spent by normal processes executing in user mode;
-	/// on Linux this also includes guest time.
-	pub fn user(&self) -> Duration {
-		self.user
-	}
-
-	/// Time spent by processes executing in kernel mode.
-	pub fn system(&self) -> Duration {
-		self.system
-	}
-
-	/// Time spent doing nothing.
-	pub fn idle(&self) -> Duration {
-		self.idle + self.iowait()
-	}
-
-	/// New method, not in Python psutil.
-	pub fn busy(&self) -> Duration {
-		self.user()
-			+ self.system()
-			+ self.nice()
-			+ self.irq() + self.softirq()
-			+ self.steal()
-			+ self.guest()
-			+ self.guest_nice()
-	}
-
-	/// New method, not in Python psutil.
-	pub fn total(&self) -> Duration {
-		self.busy() + self.idle()
-	}
-}
 
 impl FromStr for CpuTimes {
 	type Err = std::io::Error;
@@ -127,12 +78,7 @@ pub fn cpu_times_percpu() -> io::Result<Vec<CpuTimes>> {
 		return Err(invalid_data("'/proc/stat' is missing per cpu times"));
 	}
 
-	let mut cpu_times = Vec::new();
-	for line in lines {
-		cpu_times.push(CpuTimes::from_str(&line)?);
-	}
-
-	Ok(cpu_times)
+	lines.into_iter().map(CpuTimes::from_str).collect()
 }
 
 #[cfg(test)]
