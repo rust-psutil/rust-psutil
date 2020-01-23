@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct DiskIoCounters {
 	pub(crate) read_count: Count,
 	pub(crate) write_count: Count,
