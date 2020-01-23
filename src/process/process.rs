@@ -9,19 +9,19 @@ use nix::unistd;
 use snafu::ResultExt;
 
 use crate::common::NetConnectionType;
+use crate::memory;
 use crate::process::{
-	errors, MemType, OpenFile, ProcessCpuTimes, ProcessError, ProcessResult, Status,
+	errors, io_error_to_process_error, MemType, MemoryInfo, OpenFile, ProcessCpuTimes,
+	ProcessError, ProcessResult, Status,
 };
+use crate::utils::calculate_cpu_percent;
 use crate::{Count, Percent, Pid};
 
 #[derive(Clone, Debug)]
 pub struct Process {
 	pub(crate) pid: Pid,
 	pub(crate) create_time: Duration,
-
-	#[cfg(target_os = "linux")]
 	pub(crate) busy: Duration,
-	#[cfg(target_os = "linux")]
 	pub(crate) instant: Instant,
 }
 
@@ -125,10 +125,16 @@ impl Process {
 	/// method was called.
 	/// Differs from Python psutil since there is no interval argument.
 	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
-		self.sys_cpu_percent()
+		let busy = self.cpu_times()?.busy();
+		let instant = Instant::now();
+		let percent = calculate_cpu_percent(self.busy, busy, instant - self.instant);
+		self.busy = busy;
+		self.instant = instant;
+
+		Ok(percent)
 	}
 
-	pub fn memory_info(&self) {
+	pub fn memory_info(&self) -> ProcessResult<MemoryInfo> {
 		self.sys_memory_info()
 	}
 
@@ -137,7 +143,12 @@ impl Process {
 	}
 
 	pub fn memory_percent(&self) -> ProcessResult<Percent> {
-		self.sys_memory_percent()
+		let memory_info = self.memory_info()?;
+		let virtual_memory =
+			memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
+		let percent = ((memory_info.rss() as f64 / virtual_memory.total() as f64) * 100.0) as f32;
+
+		Ok(percent)
 	}
 
 	pub fn memory_percent_with_type(&self, r#type: MemType) -> ProcessResult<Percent> {

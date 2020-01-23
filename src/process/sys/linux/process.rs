@@ -5,13 +5,11 @@ use std::string::ToString;
 use std::time::Instant;
 
 use crate::common::NetConnectionType;
-use crate::memory;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	io_error_to_process_error, pids, MemType, OpenFile, Process, ProcessCpuTimes, ProcessResult,
-	Status,
+	io_error_to_process_error, pids, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
+	ProcessResult, Status,
 };
-use crate::utils::calculate_cpu_percent;
 use crate::{Count, Percent, Pid};
 
 /// Returns a path to a file in `/proc/[pid]/`.
@@ -112,31 +110,12 @@ impl Process {
 		Ok(ProcessCpuTimes::from(stat))
 	}
 
-	pub(crate) fn sys_cpu_percent(&mut self) -> ProcessResult<Percent> {
-		let busy = self.cpu_times()?.busy();
-		let instant = Instant::now();
-		let percent = calculate_cpu_percent(self.busy, busy, instant - self.instant);
-		self.busy = busy;
-		self.instant = instant;
-
-		Ok(percent)
-	}
-
-	pub(crate) fn sys_memory_info(&self) {
-		todo!()
+	pub(crate) fn sys_memory_info(&self) -> ProcessResult<MemoryInfo> {
+		Ok(self.procfs_statm()?.into())
 	}
 
 	pub(crate) fn sys_memory_full_info(&self) {
 		todo!()
-	}
-
-	pub(crate) fn sys_memory_percent(&self) -> ProcessResult<Percent> {
-		let statm = self.procfs_statm()?;
-		let virtual_memory =
-			memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
-		let percent = ((statm.resident as f64 / virtual_memory.total as f64) * 100.0) as f32;
-
-		Ok(percent)
 	}
 
 	pub(crate) fn sys_memory_percent_with_type(&self, _type: MemType) -> ProcessResult<Percent> {

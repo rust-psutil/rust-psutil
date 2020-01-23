@@ -31,11 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [process][macos] implement Process::new
 - [process][macos] implement process.name
 - [process][macos] implement processes and pids
+- [process][macos] implement Process.cpu_percent
+- [process][macos] implement Process.cpu_times
+- [process][macos] implement Process.memory_percent
+- [process][macos] implement Process.memory_info
 - [process][linux] implement pids
 - [process][linux] implement pid_exists
 - [process][linux] implement Process.cpu_percent
 - [process][linux] implement Process.cpu_times
 - [process][linux] implement Process.memory_percent
+- [process][linux] implement Process.memory_info
 - [process][linux] implement Process.uids
 - [process][linux] implement Process.gids
 - [process][linux] implement Process.send_signal

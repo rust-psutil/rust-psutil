@@ -78,13 +78,13 @@
 | [num_fds](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_fds)                   |                    |                    |         |
 | [num_threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.num_threads)           |                    |                    |         |
 | [threads](https://psutil.readthedocs.io/en/latest/#psutil.Process.threads)                   |                    |                    |         |
-| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_times)               | :heavy_check_mark: |                    |         |
-| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_percent)           | :heavy_check_mark: |                    |         |
+| [cpu_times](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_times)               | :heavy_check_mark: | :heavy_check_mark: |         |
+| [cpu_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_percent)           | :heavy_check_mark: | :heavy_check_mark: |         |
 | [cpu_affinity](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_affinity)         |                    |                    |         |
 | [cpu_num](https://psutil.readthedocs.io/en/latest/#psutil.Process.cpu_num)                   |                    |                    |         |
-| [memory_info](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info)           |                    |                    |         |
+| [memory_info](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info)           | :heavy_check_mark: | :heavy_check_mark: |         |
 | [memory_info_full](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info_full) |                    |                    |         |
-| [memory_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_percent)     | :heavy_check_mark: |                    |         |
+| [memory_percent](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_percent)     | :heavy_check_mark: | :heavy_check_mark: |         |
 | [memory_maps](https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_maps)           |                    |                    |         |
 | [children](https://psutil.readthedocs.io/en/latest/#psutil.Process.children)                 |                    |                    |         |
 | [open_files](https://psutil.readthedocs.io/en/latest/#psutil.Process.open_files)             | :heavy_check_mark: |                    |         |

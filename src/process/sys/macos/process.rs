@@ -1,19 +1,19 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/process/mod.rs
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/utils.rs
 
-use std::convert::{From, TryFrom};
+use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::io;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use nix::libc;
 
 use crate::common::NetConnectionType;
 use crate::process::os::macos::{kinfo_proc, kinfo_process, kinfo_processes};
 use crate::process::{
-	io_error_to_process_error, MemType, OpenFile, Process, ProcessCpuTimes, ProcessError,
-	ProcessResult, Status,
+	io_error_to_process_error, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
+	ProcessError, ProcessResult, Status,
 };
 use crate::{Count, Percent, Pid};
 
@@ -35,26 +35,43 @@ fn catch_zombie(e: ProcessError) -> ProcessError {
 	}
 }
 
-impl From<kinfo_proc> for Process {
-	fn from(kinfo_proc: kinfo_proc) -> Process {
-		let pid = kinfo_proc.kp_proc.p_pid as u32;
-		let timeval = unsafe {
-			// TODO: How can it be guaranteed that in this case
-			// `p_un.p_starttime` will be filled correctly?
-			kinfo_proc.kp_proc.p_un.p_starttime
-		};
-		let create_time = Duration::from_secs(timeval.tv_sec as u64)
-			+ Duration::from_micros(timeval.tv_usec as u64);
+fn cpu_times(pid: Pid) -> ProcessResult<ProcessCpuTimes> {
+	darwin_libproc::task_info(pid as i32)
+		.map(ProcessCpuTimes::from)
+		.map_err(|e| catch_zombie(io_error_to_process_error(e, pid)))
+}
 
-		Process { pid, create_time }
-	}
+fn process_id(kinfo_proc: kinfo_proc) -> (Pid, Duration) {
+	let pid = kinfo_proc.kp_proc.p_pid as u32;
+	let timeval = unsafe {
+		// TODO: How can it be guaranteed that in this case
+		// `p_un.p_starttime` will be filled correctly?
+		kinfo_proc.kp_proc.p_un.p_starttime
+	};
+	let create_time =
+		Duration::from_secs(timeval.tv_sec as u64) + Duration::from_micros(timeval.tv_usec as u64);
+
+	(pid, create_time)
+}
+
+fn process_new(kinfo_proc: kinfo_proc) -> ProcessResult<Process> {
+	let (pid, create_time) = process_id(kinfo_proc);
+	let busy = cpu_times(pid)?.busy();
+	let instant = Instant::now();
+
+	Ok(Process {
+		pid,
+		create_time,
+		busy,
+		instant,
+	})
 }
 
 impl Process {
 	pub(crate) fn sys_new(pid: Pid) -> ProcessResult<Process> {
-		kinfo_process(pid)
-			.map(|kinfo_proc| kinfo_proc.into())
-			.map_err(catch_zombie)
+		let kinfo_proc = kinfo_process(pid).map_err(catch_zombie)?;
+
+		process_new(kinfo_proc)
 	}
 
 	pub(crate) fn sys_ppid(&self) -> ProcessResult<Option<Pid>> {
@@ -121,22 +138,16 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
-		todo!()
+		cpu_times(self.pid)
 	}
 
-	pub(crate) fn sys_cpu_percent(&mut self) -> ProcessResult<Percent> {
-		todo!()
-	}
-
-	pub(crate) fn sys_memory_info(&self) {
-		todo!()
+	pub(crate) fn sys_memory_info(&self) -> ProcessResult<MemoryInfo> {
+		darwin_libproc::task_info(self.pid as i32)
+			.map(MemoryInfo::from)
+			.map_err(|e| catch_zombie(io_error_to_process_error(e, self.pid)))
 	}
 
 	pub(crate) fn sys_memory_full_info(&self) {
-		todo!()
-	}
-
-	pub(crate) fn sys_memory_percent(&self) -> ProcessResult<Percent> {
 		todo!()
 	}
 
@@ -166,8 +177,5 @@ impl Process {
 }
 
 pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
-	Ok(kinfo_processes()?
-		.into_iter()
-		.map(|proc| Ok(proc.into()))
-		.collect())
+	Ok(kinfo_processes()?.into_iter().map(process_new).collect())
 }
