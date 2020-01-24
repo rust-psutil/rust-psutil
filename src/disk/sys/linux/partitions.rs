@@ -34,10 +34,3 @@ pub fn partitions() -> io::Result<Vec<Partition>> {
 		.map(|line| Partition::from_str(line))
 		.collect()
 }
-
-pub fn partitions_physical() -> io::Result<Vec<Partition>> {
-	Ok(partitions()?
-		.into_iter()
-		.filter(|partition| partition.filesystem.is_physical())
-		.collect())
-}

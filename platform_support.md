@@ -13,7 +13,7 @@
 
 |                                                                                      | Linux              | macOS              | Windows |
 |--------------------------------------------------------------------------------------|--------------------|--------------------|---------|
-| [disk_partitions](https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions)   | :heavy_check_mark: |                    |         |
+| [disk_partitions](https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions)   | :heavy_check_mark: | :heavy_check_mark: |         |
 | [disk_usage](https://psutil.readthedocs.io/en/latest/#psutil.disk_usage)             | :heavy_check_mark: | :heavy_check_mark: |         |
 | [disk_io_counters](https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters) | :heavy_check_mark: |                    |         |
 

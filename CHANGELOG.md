@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [cpu][macos] implement cpu_times, cpu_times_percent, and cpu_percent
 - [disk] rename disk_io_counters_{perdisk,per_partition}
 - [disk][unix] implement disk_usage
+- [disk][unix] implement partitions
 - [host][linux] implement boot_time
 - [host] add Info
 - [host][unix] implement Info

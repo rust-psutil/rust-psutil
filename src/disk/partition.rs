@@ -1,6 +1,7 @@
+use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::disk::FileSystem;
+use crate::disk::{partitions, FileSystem};
 
 #[derive(Clone, Debug)]
 pub struct Partition {
@@ -28,4 +29,11 @@ impl Partition {
 	pub fn mount_options(&self) -> &str {
 		&self.mount_options
 	}
+}
+
+pub fn partitions_physical() -> io::Result<Vec<Partition>> {
+	Ok(partitions()?
+		.into_iter()
+		.filter(|partition| partition.filesystem.is_physical())
+		.collect())
 }
