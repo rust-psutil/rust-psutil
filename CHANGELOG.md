@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [macos] get macos to compile
 - [cpu][all] implement cpu_count and cpu_count_physical
 - [cpu][macos] implement cpu_times, cpu_times_percent, and cpu_percent
-- [disk] rename disk_io_counters_{perdisk,per_partition}
 - [disk][unix] implement disk_usage
 - [disk][unix] implement partitions
 - [host][linux] implement boot_time
@@ -54,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Overhaul the API
-- Replace cpu_percent functions with CpuPercentCollector
+- [cpu] replace cpu_percent functions with CpuPercentCollector
+- [disk] rename disk_io_counters_{perdisk,per_partition}
 
 ### Removed
 
@@ -63,6 +63,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove reset method from collectors
 - Remove inodes from DiskUsage
 - Remove standalone CpuTimesPercent functions in favor of CpuTimesPercentCollector
+
+### Fixed
+
+- [memory][linux] fix swap percent calculation
 
 ## [1.7.0] - 2019-08-01
 
