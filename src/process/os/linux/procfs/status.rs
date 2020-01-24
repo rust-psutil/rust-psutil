@@ -30,7 +30,7 @@ impl FromStr for ProcfsStatus {
 		let map = s
 			.lines()
 			.map(|line| {
-				let fields = line.split(':').collect::<Vec<&str>>();
+				let fields = line.splitn(2, ':').collect::<Vec<&str>>();
 				if fields.len() != 2 {
 					return Err(invalid_data(&format!(
 						"Expected 2 fields, got {}",
