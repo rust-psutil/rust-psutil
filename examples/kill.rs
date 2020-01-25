@@ -2,12 +2,11 @@
 
 use psutil::process::Process;
 
-#[cfg(not(test))]
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    let process = Process::new(args[1].parse().unwrap()).unwrap();
+	let args: Vec<String> = std::env::args().collect();
+	let process = Process::new(args[1].parse().unwrap()).unwrap();
 
-    if let Err(error) = process.kill() {
-        println!("Failed to kill process: {}.", error);
-    };
+	if let Err(error) = process.kill() {
+		println!("Failed to kill process: {}.", error);
+	};
 }

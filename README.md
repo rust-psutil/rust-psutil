@@ -1,42 +1,59 @@
-# rust-psutil [![](https://img.shields.io/github/tag/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/tags) [![](https://img.shields.io/travis/borntyping/rust-psutil.svg)](https://travis-ci.org/borntyping/rust-psutil) [![](https://img.shields.io/github/issues/borntyping/rust-psutil.svg)](https://github.com/borntyping/rust-psutil/issues)
+# rust-psutil
 
-A process monitoring library for Rust, heavily inspired by the [psutil] module
-for Python.
+[![Latest Version](https://img.shields.io/crates/v/psutil.svg)](https://crates.io/crates/psutil)
+[![Latest Version](https://docs.rs/psutil/badge.svg)](https://docs.rs/psutil)
+![Minimum rustc version](https://img.shields.io/badge/rustc-1.39+-green.svg)
+[![Matrix](https://img.shields.io/matrix/rust-psutil:matrix.org)](https://matrix.to/#/#rust-psutil:matrix.org)
 
-Note that it only works on Linux.
+A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
-* [Source on GitHub](https://github.com/borntyping/rust-psutil)
-* [Packages on Crates.io](https://crates.io/crates/psutil)
-* [Builds on Travis CI](https://travis-ci.org/borntyping/rust-psutil)
+## Usage
 
-Run examples
-------------
+Add this to your `Cargo.toml`:
 
-The examples can be run using `cargo run --example <name>`:
+```toml
+[dependencies]
+psutil = "1.7.0"
+```
 
-    cargo run --example status
-    cargo run --example ps
+Or to opt into only a certain submodule:
 
-Licence
--------
+```toml
+[dependencies]
+psutil = { version = "1.7.0", default-features = false, features = ["process"] }
+```
 
-`rust-psutil` is licenced under the [MIT Licence].
+## Platform Support
 
-Authors
--------
+Currently, only Linux and macOS are supported, but support is planned for all major platforms.
 
-Originally written by [Sam Clements], maintained by [Sam Clements] and [Rob Day], and developed by multiple [contributors].
+[platform_support](./platform_support.md) details the implementation level of each platform.
 
-Related projects
-----------------
+## License
 
-`rust-psutil` has no connection to these projects, but you might find them useful.
+`rust-psutil` is licensed under the [MIT License].
 
-* [hiem](https://crates.io/crates/heim)
-* [rust-battery](https://github.com/svartalf/rust-battery)
+## Authors
 
-[MIT Licence]: http://opensource.org/licenses/MIT
-[psutil]: https://github.com/giampaolo/psutil/
+Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], and [Caleb Bassi], and developed by multiple [contributors].
+
+## Apps using rust-psutil
+
+- [ytop](https://github.com/cjbassi/ytop)
+
+## Related projects
+
+- [hiem](https://github.com/heim-rs/heim)
+- [rust-battery](https://github.com/svartalf/rust-battery)
+- [systemstat](https://github.com/myfreeweb/systemstat)
+- [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
+- [gopsutil](https://github.com/shirou/gopsutil)
+- [psutil]
+- [sys-info-rs](https://github.com/FillZpp/sys-info-rs)
+
+[MIT License]: https://opensource.org/licenses/MIT
+[psutil]: https://github.com/giampaolo/psutil
 [Sam Clements]: https://github.com/borntyping
 [Rob Day]: https://github.com/rkday
+[Caleb Bassi]: https://github.com/cjbassi
 [contributors]: https://github.com/borntyping/rust-psutil/graphs/contributors

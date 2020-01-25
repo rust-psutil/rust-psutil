@@ -1,39 +1,27 @@
-use std::{thread, time};
+use std::thread;
+use std::time::Duration;
+
+use psutil::disk;
 
 fn main() {
-    let mut disk_io_counters_collector = psutil::disk::DiskIOCountersCollector::default();
+	let block_time = Duration::from_millis(1000);
+	let mut disk_io_counters_collector = disk::DiskIoCountersCollector::default();
+	let mut prev_disk_io_counters = disk_io_counters_collector.disk_io_counters().unwrap();
 
-    loop {
-        let past_disk_io_counters = match disk_io_counters_collector.disk_io_counters_perdisk(true)
-        {
-            Ok(disk_io_counters) => disk_io_counters,
-            Err(_) => {
-                println!("Could not loading disk informations");
-                continue;
-            }
-        };
+	loop {
+		thread::sleep(block_time);
 
-        let block_time = time::Duration::from_millis(1000);
-        thread::sleep(block_time);
+		let current_disk_io_counters = disk_io_counters_collector.disk_io_counters().unwrap();
 
-        let current_disk_io_counters =
-            match disk_io_counters_collector.disk_io_counters_perdisk(true) {
-                Ok(disk_io_counters) => disk_io_counters,
-                Err(_) => {
-                    println!("Could not loading disk informations");
-                    continue;
-                }
-            };
-
-        println!(
-            "Disk general usage:
+		println!(
+			"Disk general usage:
             read_bytes:         {} Bytes/s
             write_bytes:        {} Bytes/s
             ",
-            (current_disk_io_counters[&String::from("sda")].read_bytes
-                - past_disk_io_counters[&String::from("sda")].read_bytes),
-            (current_disk_io_counters[&String::from("sda")].write_bytes
-                - past_disk_io_counters[&String::from("sda")].write_bytes),
-        );
-    }
+			(current_disk_io_counters.read_bytes() - prev_disk_io_counters.read_bytes()),
+			(current_disk_io_counters.write_bytes() - prev_disk_io_counters.write_bytes()),
+		);
+
+		prev_disk_io_counters = current_disk_io_counters;
+	}
 }
