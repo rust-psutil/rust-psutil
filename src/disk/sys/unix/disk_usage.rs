@@ -43,12 +43,12 @@ where
 	let statvfs = sys::statvfs::statvfs(path.as_ref())
 		.map_err(|_| invalid_data("failed to use statvfs: statvfs return an error code"))?;
 
-	let total = statvfs.blocks() as u64 * statvfs.fragment_size();
+	let total = statvfs.blocks() as u64 * statvfs.fragment_size() as u64;
 
-	let avail_to_root = statvfs.blocks_free() as u64 * statvfs.fragment_size();
+	let avail_to_root = statvfs.blocks_free() as u64 * statvfs.fragment_size() as u64;
 	let used = total - avail_to_root;
 
-	let free = statvfs.blocks_available() as u64 * statvfs.fragment_size();
+	let free = statvfs.blocks_available() as u64 * statvfs.fragment_size() as u64;
 
 	let total_user = used + free;
 	let percent = ((used as f64 / total_user as f64) * 100.0) as f32;
