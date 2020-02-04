@@ -9,10 +9,9 @@ license = "MIT"
 edition = "2018"
 
 [dependencies]
-# nix = "0.16.1"
-nix = { git = "https://github.com/nix-rust/nix", branch = "master" }
-once_cell = "1.2.0"
 cfg-if = "0.1.10"
+nix = "0.17.0"
+once_cell = "1.2.0"
 
 num_cpus = { version = "1.11.1", optional = true }
 platforms = { version = "0.2.1", optional = true }
