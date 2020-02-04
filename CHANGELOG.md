@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [process] make `ProcessCollector` more efficient
+
 ## [v2.0.0] - 2020-02-04
 
 ### Added

@@ -21,11 +21,13 @@ impl ProcessCollector {
 	}
 
 	pub fn update(&mut self) -> io::Result<()> {
-		// remove dead processes
+		let new = ProcessCollector::new()?.processes;
+
+		// remove processes with a PID that is no longer in use
 		let to_remove: Vec<Pid> = self
 			.processes
 			.iter()
-			.filter(|(_pid, process)| process.is_running())
+			.filter(|(pid, _process)| new.contains_key(pid))
 			.map(|(pid, _process)| *pid)
 			.collect();
 		for id in to_remove {
@@ -33,16 +35,11 @@ impl ProcessCollector {
 		}
 
 		// add new processes and replace processes with reused PIDs
-		process::processes()?
-			.into_iter()
-			.filter_map(|process| process.ok())
-			.for_each(|process| {
-				if !self.processes.contains_key(&process.pid())
-					|| self.processes[&process.pid()] != process
-				{
-					self.processes.insert(process.pid(), process);
-				}
-			});
+		new.into_iter().for_each(|(pid, process)| {
+			if !self.processes.contains_key(&pid) || self.processes[&pid] != process {
+				self.processes.insert(pid, process);
+			}
+		});
 
 		Ok(())
 	}
