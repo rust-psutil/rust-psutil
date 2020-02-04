@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v2.0.0] - 2020-02-04
+
 ### Added
 
 - [macos] get macos to compile
@@ -68,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [memory][linux] fix swap percent calculation
 
-## [1.7.0] - 2019-08-01
+## [v1.7.0] - 2019-08-01
 
 ### Changed
 
@@ -78,5 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove `getpid()`, `getppid()`, `Process.from_pidfile()`, `write_pidfile()`, and `read_pidfile()`
 
-[Unreleased]: https://github.com/borntyping/rust-psutil/compare/v1.7.0...HEAD
-[1.7.0]: https://github.com/borntyping/rust-psutil/compare/v1.6.0...v1.7.0
+[Unreleased]: https://github.com/borntyping/rust-psutil/compare/v2.0.0...HEAD
+[v2.0.0]: https://github.com/borntyping/rust-psutil/compare/v1.7.0...v2.0.0
+[v1.7.0]: https://github.com/borntyping/rust-psutil/compare/v1.6.0...v1.7.0
