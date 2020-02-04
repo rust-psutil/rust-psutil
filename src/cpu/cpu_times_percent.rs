@@ -78,6 +78,7 @@ impl CpuTimesPercent {
 fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesPercent {
 	let total_diff = second.total() - first.total();
 
+	// total_diff can be 0 if cpu_times_percent is called multiple times in succession
 	if total_diff == Duration::default() {
 		return CpuTimesPercent::default();
 	}
