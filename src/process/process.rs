@@ -127,10 +127,12 @@ impl Process {
 	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
 		let busy = self.cpu_times()?.busy();
 		let instant = Instant::now();
-		if busy < self.busy {
-			return Err(ProcessError::NoSuchProcess { pid: self.pid });
-		}
-		let percent = calculate_cpu_percent(self.busy, busy, instant - self.instant);
+		// idk why it would be less but it happens
+		let percent = if busy < self.busy {
+			0.0
+		} else {
+			calculate_cpu_percent(self.busy, busy, instant - self.instant)
+		};
 		self.busy = busy;
 		self.instant = instant;
 

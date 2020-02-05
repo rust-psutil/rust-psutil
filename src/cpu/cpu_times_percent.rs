@@ -1,5 +1,4 @@
 use std::io;
-use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::utils::calculate_cpu_percent;
@@ -76,12 +75,16 @@ impl CpuTimesPercent {
 }
 
 fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesPercent {
-	let total_diff = second.total() - first.total();
+	let first_total = first.total();
+	let second_total = second.total();
 
-	// total_diff can be 0 if cpu_times_percent is called multiple times in succession
-	if total_diff == Duration::default() {
+	// first_total can equal second_total if cpu_times_percent is called multiple times in succession
+	// first_total can also be greater than second_total although idk why
+	if first_total >= second_total {
 		return CpuTimesPercent::default();
 	}
+
+	let total_diff = second_total - first_total;
 
 	CpuTimesPercent {
 		user: calculate_cpu_percent(first.user, second.user, total_diff),
