@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
+- [disk][linux] unescape partition mountpoint escape sequences
 - [process] `cpu_percent` now errors instead of panics if the process pid has been reused
 
 ## [v2.0.0] - 2020-02-04

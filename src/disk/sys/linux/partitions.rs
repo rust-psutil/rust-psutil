@@ -3,6 +3,8 @@ use std::io;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use unescape::unescape;
+
 use crate::disk::{FileSystem, Partition};
 use crate::utils::invalid_data;
 
@@ -21,7 +23,7 @@ impl FromStr for Partition {
 
 		Ok(Partition {
 			device: String::from(fields[0]),
-			mountpoint: PathBuf::from(fields[1]),
+			mountpoint: PathBuf::from(unescape(fields[1]).unwrap()),
 			filesystem: FileSystem::from_str(fields[2]).unwrap(), // infallible unwrap
 			mount_options: String::from(fields[3]),
 		})
