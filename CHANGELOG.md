@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - [process] make `ProcessCollector` more efficient
+- [sensors][linux] implement `thermal_zone` temperatures
 
 ### Fix
 

@@ -90,8 +90,8 @@ fn hwmon_sensor(input: PathBuf) -> io::Result<TemperatureSensor> {
 // https://github.com/shirou/gopsutil/blob/2cbc9195c892b304060269ef280375236d2fcac9/host/host_linux.go#L624
 fn hwmon() -> Vec<io::Result<TemperatureSensor>> {
 	let mut glob_results = glob("/sys/class/hwmon/hwmon*/temp*_input")
-		.unwrap()
-		.peekable(); // only errors on invalid pattern
+		.unwrap() // only errors on invalid pattern
+		.peekable();
 
 	// checks if iterator is empty
 	if glob_results.peek().is_none() {
@@ -99,7 +99,7 @@ fn hwmon() -> Vec<io::Result<TemperatureSensor>> {
 		// https://github.com/giampaolo/psutil/issues/971
 		// https://github.com/nicolargo/glances/issues/1060
 		glob_results = glob("/sys/class/hwmon/hwmon*/device/temp*_input")
-			.unwrap()
+			.unwrap() // only errors on invalid pattern
 			.peekable();
 	}
 
@@ -113,7 +113,55 @@ fn hwmon() -> Vec<io::Result<TemperatureSensor>> {
 
 // https://www.kernel.org/doc/Documentation/thermal/sysfs-api.txt
 fn thermal_zone() -> Vec<io::Result<TemperatureSensor>> {
-	todo!()
+	glob("/sys/class/thermal/thermal_zone*")
+		.unwrap() // only errors on invalid pattern
+		.map(|result| {
+			let path = result.map_err(|e| e.into_error())?;
+
+			let current = read_temperature(path.join("temp"))?;
+
+			let mut unit = fs::read_to_string(path.join("type"))?;
+			unit.pop(); // dropping trailing `\n`
+
+			let mut max = None;
+			let mut crit = None;
+
+			glob(&path.join("trip_point_*_type").to_string_lossy().to_string())
+				.unwrap() // only errors on invalid pattern
+				.map(|result| -> io::Result<()> {
+					let path = result.map_err(|e| e.into_error())?;
+
+					let name = path.file_name().unwrap();
+					let offset = name.len() - b"type".len();
+					let prefix = OsStr::from_bytes(&name.as_bytes()[..offset]);
+					let root = path.parent().unwrap_or_else(|| unreachable!());
+					let temp_path = root.join(file_name(prefix, b"temp"));
+
+					let mut contents = fs::read_to_string(path)?;
+					contents.pop(); // dropping trailing `\n`
+					match contents.as_str() {
+						"critical" => {
+							crit = Some(read_temperature(temp_path)?);
+						}
+						"high" => {
+							max = Some(read_temperature(temp_path)?);
+						}
+						_ => {}
+					}
+
+					Ok(())
+				})
+				.collect::<io::Result<Vec<()>>>()?;
+
+			Ok(TemperatureSensor {
+				unit,
+				label: None,
+				current,
+				max,
+				crit,
+			})
+		})
+		.collect()
 }
 
 pub fn temperatures() -> Vec<io::Result<TemperatureSensor>> {
