@@ -79,7 +79,7 @@ fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesP
 	let second_total = second.total();
 
 	// first_total can equal second_total if cpu_times_percent is called multiple times in succession
-	// first_total can also be greater than second_total although idk why
+	// first_total can also be greater than second_total at least on Linux although idk why
 	if first_total >= second_total {
 		return CpuTimesPercent::default();
 	}

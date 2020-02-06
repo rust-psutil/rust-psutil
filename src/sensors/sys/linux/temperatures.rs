@@ -155,7 +155,7 @@ fn thermal_zone() -> Vec<io::Result<TemperatureSensor>> {
 
 			Ok(TemperatureSensor {
 				unit,
-				label: None,
+				label: None, // TODO
 				current,
 				max,
 				crit,

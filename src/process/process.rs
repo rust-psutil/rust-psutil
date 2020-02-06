@@ -127,7 +127,7 @@ impl Process {
 	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
 		let busy = self.cpu_times()?.busy();
 		let instant = Instant::now();
-		// idk why it would be less but it happens
+		// idk why it would be less but it happens at least on Linux
 		let percent = if busy < self.busy {
 			0.0
 		} else {
