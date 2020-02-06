@@ -44,33 +44,31 @@ impl CpuTimesPercent {
 	}
 
 	/// Time spent doing nothing.
-	#[cfg(target_os = "linux")]
 	pub fn idle(&self) -> Percent {
-		self.idle + self.iowait()
-	}
-
-	/// Time spent doing nothing.
-	#[cfg(target_os = "macos")]
-	pub fn idle(&self) -> Percent {
-		self.idle
+		#[cfg(target_os = "linux")]
+		{
+			self.idle + self.iowait()
+		}
+		#[cfg(target_os = "macos")]
+		{
+			self.idle
+		}
 	}
 
 	/// New method, not in Python psutil.
-	#[cfg(target_os = "linux")]
 	pub fn busy(&self) -> Percent {
-		self.user()
-			+ self.system()
-			+ self.nice()
-			+ self.irq() + self.softirq()
-			+ self.steal()
-			+ self.guest()
-			+ self.guest_nice()
-	}
-
-	/// New method, not in Python psutil.
-	#[cfg(target_os = "macos")]
-	pub fn busy(&self) -> Percent {
-		self.user() + self.system() + self.nice()
+		#[cfg(target_os = "linux")]
+		{
+			self.user()
+				+ self.system() + self.nice()
+				+ self.irq() + self.softirq()
+				+ self.steal() + self.guest()
+				+ self.guest_nice()
+		}
+		#[cfg(target_os = "macos")]
+		{
+			self.user() + self.system() + self.nice()
+		}
 	}
 }
 
