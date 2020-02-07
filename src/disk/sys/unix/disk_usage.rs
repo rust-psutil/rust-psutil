@@ -43,6 +43,10 @@ where
 	let statvfs = sys::statvfs::statvfs(path.as_ref())
 		.map_err(|_| invalid_data("failed to use statvfs: statvfs return an error code"))?;
 
+	// need to do the u64 casts since on some platforms the types are aliased to u32
+	// https://github.com/rust-psutil/rust-psutil/issues/64
+	// https://github.com/rust-psutil/rust-psutil/pull/39
+
 	let total = statvfs.blocks() as u64 * statvfs.fragment_size() as u64;
 
 	let avail_to_root = statvfs.blocks_free() as u64 * statvfs.fragment_size() as u64;

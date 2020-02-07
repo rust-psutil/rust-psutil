@@ -23,8 +23,10 @@ impl FromStr for Partition {
 
 		Ok(Partition {
 			device: String::from(fields[0]),
-			mountpoint: PathBuf::from(unescape(fields[1]).unwrap()),
-			filesystem: FileSystem::from_str(fields[2]).unwrap(), // infallible unwrap
+			// need to unescape since some characters are escaped by default like the space character
+			// https://github.com/cjbassi/ytop/issues/29
+			mountpoint: PathBuf::from(unescape(fields[1]).unwrap()), // TODO: can this unwrap fail?
+			filesystem: FileSystem::from_str(fields[2]).unwrap(),    // infallible unwrap
 			mount_options: String::from(fields[3]),
 		})
 	}
