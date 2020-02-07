@@ -5,6 +5,7 @@ use crate::memory::make_map;
 use crate::memory::VirtualMemory;
 use crate::utils::not_found;
 
+// TODO: some of this stuff relies on a kernel version greater than 2.6
 pub fn virtual_memory() -> io::Result<VirtualMemory> {
 	let data = fs::read_to_string("/proc/meminfo")?;
 	let mem_info = make_map(&data)?;

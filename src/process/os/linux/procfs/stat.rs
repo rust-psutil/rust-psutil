@@ -249,6 +249,7 @@ impl FromStr for ProcfsStat {
 		let rt_priority = try_parse!(fields[39]);
 		let policy = try_parse!(fields[40]);
 
+		// since kernel 2.6.18
 		let delayacct_blkio_ticks = if fields.len() >= 42 {
 			Some(try_parse!(fields[41]))
 		} else {
@@ -257,6 +258,7 @@ impl FromStr for ProcfsStat {
 		let delayacct_blkio = delayacct_blkio_ticks
 			.map(|val| Duration::from_secs_f64(val as f64 / *TICKS_PER_SECOND));
 
+		// since kernel 2.6.24
 		let (guest_time_ticks, cguest_time_ticks) = if fields.len() >= 44 {
 			(Some(try_parse!(fields[42])), Some(try_parse!(fields[43])))
 		} else {
@@ -267,6 +269,7 @@ impl FromStr for ProcfsStat {
 		let cguest_time =
 			cguest_time_ticks.map(|val| Duration::from_secs_f64(val as f64 / *TICKS_PER_SECOND));
 
+		// since kernel 3.3
 		let (start_data, end_data, start_brk) = if fields.len() >= 47 {
 			(
 				Some(try_parse!(fields[44])),
@@ -277,6 +280,7 @@ impl FromStr for ProcfsStat {
 			(None, None, None)
 		};
 
+		// since kernel 3.5
 		let (arg_start, arg_end, env_start, env_end, exit_code) = if fields.len() >= 52 {
 			(
 				Some(try_parse!(fields[47])),
