@@ -18,12 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - [process] make `ProcessCollector` more efficient
+- [process][linux] implement `cpu_times.iowait`
 - [sensors][linux] implement `thermal_zone` temperatures
+
+### Changed
+
+- [process][linux] change `cpu_times.iowait` from `Duration` to `Option<Duration>`
 
 ### Fix
 
-- [disk][linux] unescape partition mountpoint escape sequences
 - fix several 'overflow when subtracting durations' panics
+- [disk][linux] unescape partition mountpoint escape sequences
 
 ## [v2.0.0] - 2020-02-04
 

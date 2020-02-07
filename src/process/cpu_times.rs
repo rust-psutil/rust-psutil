@@ -13,7 +13,7 @@ pub struct ProcessCpuTimes {
 	pub(crate) children_system: Duration,
 
 	#[cfg(target_os = "linux")]
-	pub(crate) iowait: Duration,
+	pub(crate) iowait: Option<Duration>,
 }
 
 impl ProcessCpuTimes {
@@ -47,7 +47,7 @@ impl From<ProcfsStat> for ProcessCpuTimes {
 			system: procfs_stat.stime,
 			children_user: procfs_stat.cutime,
 			children_system: procfs_stat.cstime,
-			iowait: Duration::default(), // TODO
+			iowait: procfs_stat.delayacct_blkio,
 		}
 	}
 }
