@@ -4,11 +4,6 @@ use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::utils::calculate_cpu_percent;
 use crate::Percent;
 
-#[cfg(target_os = "linux")]
-use crate::cpu::os::linux::CpuTimesPercentExt as _;
-#[cfg(target_family = "unix")]
-use crate::cpu::os::unix::CpuTimesPercentExt as _;
-
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CpuTimesPercent {
@@ -47,7 +42,7 @@ impl CpuTimesPercent {
 	pub fn idle(&self) -> Percent {
 		#[cfg(target_os = "linux")]
 		{
-			self.idle + self.iowait()
+			self.idle + self.iowait
 		}
 		#[cfg(target_os = "macos")]
 		{
@@ -59,15 +54,15 @@ impl CpuTimesPercent {
 	pub fn busy(&self) -> Percent {
 		#[cfg(target_os = "linux")]
 		{
-			self.user()
-				+ self.system() + self.nice()
-				+ self.irq() + self.softirq()
-				+ self.steal() + self.guest()
-				+ self.guest_nice()
+			self.user
+				+ self.system + self.nice
+				+ self.irq + self.softirq
+				+ self.steal + self.guest
+				+ self.guest_nice
 		}
 		#[cfg(target_os = "macos")]
 		{
-			self.user() + self.system() + self.nice()
+			self.user + self.system + self.nice
 		}
 	}
 }

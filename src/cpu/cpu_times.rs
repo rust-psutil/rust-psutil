@@ -1,10 +1,5 @@
 use std::time::Duration;
 
-#[cfg(target_os = "linux")]
-use crate::cpu::os::linux::CpuTimesExt as _;
-#[cfg(target_family = "unix")]
-use crate::cpu::os::unix::CpuTimesExt as _;
-
 /// Every attribute represents the seconds the CPU has spent in the given mode.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CpuTimes {
@@ -43,7 +38,7 @@ impl CpuTimes {
 	pub fn idle(&self) -> Duration {
 		#[cfg(target_os = "linux")]
 		{
-			self.idle + self.iowait()
+			self.idle + self.iowait
 		}
 		#[cfg(target_os = "macos")]
 		{
@@ -59,15 +54,15 @@ impl CpuTimes {
 	pub fn busy(&self) -> Duration {
 		#[cfg(target_os = "linux")]
 		{
-			self.user()
-				+ self.system() + self.nice()
-				+ self.irq() + self.softirq()
-				+ self.steal() + self.guest()
-				+ self.guest_nice()
+			self.user
+				+ self.system + self.nice
+				+ self.irq + self.softirq
+				+ self.steal + self.guest
+				+ self.guest_nice
 		}
 		#[cfg(target_os = "macos")]
 		{
-			self.user() + self.system() + self.nice()
+			self.user + self.system + self.nice
 		}
 		#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 		{
