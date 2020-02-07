@@ -21,19 +21,19 @@ snafu = { version = "0.6.0", optional = true }
 unescape  = { version = "0.1.0", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-mach = { version = "0.3.2", optional = true }
 darwin-libproc = { version = "0.1.1", optional = true }
+mach = { version = "0.3.2", optional = true }
 
 [features]
 default = ["cpu", "disk", "host", "memory", "network", "process", "sensors"]
 
 # Modules
-cpu = ["num_cpus", "mach"]
+cpu = ["mach", "num_cpus"]
 disk = ["unescape"]
 host = ["platforms"]
 memory = ["mach"]
 network = []
-process = ["snafu", "memory", "darwin-libproc", "mach"]
+process = ["darwin-libproc", "mach", "memory", "snafu"]
 sensors = ["glob"]
 
 [dev-dependencies]
