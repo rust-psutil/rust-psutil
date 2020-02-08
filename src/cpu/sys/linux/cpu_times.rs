@@ -34,9 +34,25 @@ impl FromStr for CpuTimes {
 		let iowait = fields[4];
 		let irq = fields[5];
 		let softirq = fields[6];
-		let steal = fields[7];
-		let guest = fields[8];
-		let guest_nice = fields[9];
+
+		// since kernel 2.6.11
+		let steal = if fields.len() >= 8 {
+			Some(fields[7])
+		} else {
+			None
+		};
+		// since kernel 2.6.24
+		let guest = if fields.len() >= 9 {
+			Some(fields[8])
+		} else {
+			None
+		};
+		// since kernel 2.6.33
+		let guest_nice = if fields.len() >= 10 {
+			Some(fields[9])
+		} else {
+			None
+		};
 
 		Ok(CpuTimes {
 			user,
@@ -97,9 +113,9 @@ mod tests {
 			iowait: Duration::from_secs_f64(85955_f64 / *TICKS_PER_SECOND),
 			irq: Duration::from_secs_f64(502_109_f64 / *TICKS_PER_SECOND),
 			softirq: Duration::from_secs_f64(144_021_f64 / *TICKS_PER_SECOND),
-			steal: Duration::default(),
-			guest: Duration::default(),
-			guest_nice: Duration::default(),
+			steal: Some(Duration::default()),
+			guest: Some(Duration::default()),
+			guest_nice: Some(Duration::default()),
 		};
 		assert_eq!(result, expected);
 	}

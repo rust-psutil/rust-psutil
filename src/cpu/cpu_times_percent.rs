@@ -19,11 +19,11 @@ pub struct CpuTimesPercent {
 	#[cfg(target_os = "linux")]
 	pub(crate) softirq: Percent,
 	#[cfg(target_os = "linux")]
-	pub(crate) steal: Percent,
+	pub(crate) steal: Option<Percent>,
 	#[cfg(target_os = "linux")]
-	pub(crate) guest: Percent,
+	pub(crate) guest: Option<Percent>,
 	#[cfg(target_os = "linux")]
-	pub(crate) guest_nice: Percent,
+	pub(crate) guest_nice: Option<Percent>,
 }
 
 impl CpuTimesPercent {
@@ -63,7 +63,10 @@ impl CpuTimesPercent {
 			// https://github.com/torvalds/linux/blob/
 			//     447976ef4fd09b1be88b316d1a81553f1aa7cd07/kernel/sched/
 			//     cputime.c#L158
-			self.user + self.system + self.nice + self.irq + self.softirq + self.steal
+			self.user
+				+ self.system + self.nice
+				+ self.irq + self.softirq
+				+ self.steal.unwrap_or_default()
 		}
 		#[cfg(target_os = "macos")]
 		{
@@ -84,23 +87,55 @@ fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesP
 
 	let total_diff = second_total - first_total;
 
+	let user = calculate_cpu_percent(first.user, second.user, total_diff);
+	let system = calculate_cpu_percent(first.system, second.system, total_diff);
+	let idle = calculate_cpu_percent(first.idle, second.idle, total_diff);
+	let nice = calculate_cpu_percent(first.nice, second.nice, total_diff);
+
+	#[cfg(target_os = "linux")]
+	let iowait = calculate_cpu_percent(first.iowait, second.iowait, total_diff);
+	#[cfg(target_os = "linux")]
+	let irq = calculate_cpu_percent(first.irq, second.irq, total_diff);
+	#[cfg(target_os = "linux")]
+	let softirq = calculate_cpu_percent(first.softirq, second.softirq, total_diff);
+
+	#[cfg(target_os = "linux")]
+	let steal = first.steal.and_then(|first| {
+		second
+			.steal
+			.map(|second| calculate_cpu_percent(first, second, total_diff))
+	});
+	#[cfg(target_os = "linux")]
+	let guest = first.guest.and_then(|first| {
+		second
+			.guest
+			.map(|second| calculate_cpu_percent(first, second, total_diff))
+	});
+	#[cfg(target_os = "linux")]
+	let guest_nice = first.guest_nice.and_then(|first| {
+		second
+			.guest_nice
+			.map(|second| calculate_cpu_percent(first, second, total_diff))
+	});
+
 	CpuTimesPercent {
-		user: calculate_cpu_percent(first.user, second.user, total_diff),
-		system: calculate_cpu_percent(first.system, second.system, total_diff),
-		idle: calculate_cpu_percent(first.idle, second.idle, total_diff),
-		nice: calculate_cpu_percent(first.nice, second.nice, total_diff),
+		user,
+		system,
+		idle,
+		nice,
+
 		#[cfg(target_os = "linux")]
-		iowait: calculate_cpu_percent(first.iowait, second.iowait, total_diff),
+		iowait,
 		#[cfg(target_os = "linux")]
-		irq: calculate_cpu_percent(first.irq, second.irq, total_diff),
+		irq,
 		#[cfg(target_os = "linux")]
-		softirq: calculate_cpu_percent(first.softirq, second.softirq, total_diff),
+		softirq,
 		#[cfg(target_os = "linux")]
-		steal: calculate_cpu_percent(first.steal, second.steal, total_diff),
+		steal,
 		#[cfg(target_os = "linux")]
-		guest: calculate_cpu_percent(first.guest, second.guest, total_diff),
+		guest,
 		#[cfg(target_os = "linux")]
-		guest_nice: calculate_cpu_percent(first.guest_nice, second.guest_nice, total_diff),
+		guest_nice,
 	}
 }
 

@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- [cpu][linux] change `cpu_times{_percent}.{steal,guest,guest_nice}` to `Option`s
 - [process][linux] change `cpu_times.iowait` from `Duration` to `Option<Duration>`
 
 ### Fix

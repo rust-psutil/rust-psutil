@@ -15,11 +15,11 @@ pub struct CpuTimes {
 	#[cfg(target_os = "linux")]
 	pub(crate) softirq: Duration,
 	#[cfg(target_os = "linux")]
-	pub(crate) steal: Duration,
+	pub(crate) steal: Option<Duration>,
 	#[cfg(target_os = "linux")]
-	pub(crate) guest: Duration,
+	pub(crate) guest: Option<Duration>,
 	#[cfg(target_os = "linux")]
-	pub(crate) guest_nice: Duration,
+	pub(crate) guest_nice: Option<Duration>,
 }
 
 impl CpuTimes {
@@ -63,7 +63,10 @@ impl CpuTimes {
 			// https://github.com/torvalds/linux/blob/
 			//     447976ef4fd09b1be88b316d1a81553f1aa7cd07/kernel/sched/
 			//     cputime.c#L158
-			self.user + self.system + self.nice + self.irq + self.softirq + self.steal
+			self.user
+				+ self.system + self.nice
+				+ self.irq + self.softirq
+				+ self.steal.unwrap_or_default()
 		}
 		#[cfg(target_os = "macos")]
 		{

@@ -15,16 +15,16 @@ pub trait CpuTimesExt {
 	fn softirq(&self) -> Duration;
 
 	/// Time spent by other operating systems running in a virtualized environment.
-	fn steal(&self) -> Duration;
+	fn steal(&self) -> Option<Duration>;
 
 	/// Time spent running a virtual CPU for guest operating systems
 	/// under the control of the Linux kernel.
-	fn guest(&self) -> Duration;
+	fn guest(&self) -> Option<Duration>;
 
 	/// Time spent running a niced guest
 	/// (virtual CPU for guest operating systems
 	/// under the control of the Linux kernel).
-	fn guest_nice(&self) -> Duration;
+	fn guest_nice(&self) -> Option<Duration>;
 }
 
 impl CpuTimesExt for CpuTimes {
@@ -40,15 +40,15 @@ impl CpuTimesExt for CpuTimes {
 		self.softirq
 	}
 
-	fn steal(&self) -> Duration {
+	fn steal(&self) -> Option<Duration> {
 		self.steal
 	}
 
-	fn guest(&self) -> Duration {
+	fn guest(&self) -> Option<Duration> {
 		self.guest
 	}
 
-	fn guest_nice(&self) -> Duration {
+	fn guest_nice(&self) -> Option<Duration> {
 		self.guest_nice
 	}
 }
@@ -65,16 +65,16 @@ pub trait CpuTimesPercentExt {
 	fn softirq(&self) -> Percent;
 
 	/// Time spent by other operating systems running in a virtualized environment.
-	fn steal(&self) -> Percent;
+	fn steal(&self) -> Option<Percent>;
 
 	/// Time spent running a virtual CPU for guest operating systems
 	/// under the control of the Linux kernel.
-	fn guest(&self) -> Percent;
+	fn guest(&self) -> Option<Percent>;
 
 	/// Time spent running a niced guest
 	/// (virtual CPU for guest operating systems
 	/// under the control of the Linux kernel).
-	fn guest_nice(&self) -> Percent;
+	fn guest_nice(&self) -> Option<Percent>;
 }
 
 impl CpuTimesPercentExt for CpuTimesPercent {
@@ -90,15 +90,15 @@ impl CpuTimesPercentExt for CpuTimesPercent {
 		self.softirq
 	}
 
-	fn steal(&self) -> Percent {
+	fn steal(&self) -> Option<Percent> {
 		self.steal
 	}
 
-	fn guest(&self) -> Percent {
+	fn guest(&self) -> Option<Percent> {
 		self.guest
 	}
 
-	fn guest_nice(&self) -> Percent {
+	fn guest_nice(&self) -> Option<Percent> {
 		self.guest_nice
 	}
 }
