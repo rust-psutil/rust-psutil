@@ -14,7 +14,7 @@ use crate::process::{
 	errors, io_error_to_process_error, MemType, MemoryInfo, OpenFile, ProcessCpuTimes,
 	ProcessError, ProcessResult, Status,
 };
-use crate::utils::calculate_cpu_percent;
+use crate::utils::div_duration_f32;
 use crate::{Count, Percent, Pid};
 
 #[derive(Clone, Debug)]
@@ -127,12 +127,17 @@ impl Process {
 	pub fn cpu_percent(&mut self) -> ProcessResult<Percent> {
 		let busy = self.cpu_times()?.busy();
 		let instant = Instant::now();
-		// idk why it would be less but it happens at least on Linux
-		let percent = if busy < self.busy {
-			0.0
-		} else {
-			calculate_cpu_percent(self.busy, busy, instant - self.instant)
-		};
+
+		let percent = div_duration_f32(
+			// have to use checked_sub since CPU times can decrease over time at least on Linux
+			// https://github.com/cjbassi/ytop/issues/34
+			// TODO: figure out why. hibernation? something to do with running VMs?
+			busy.checked_sub(self.busy).unwrap_or_default(),
+			// TODO: can duration be zero if cpu_percent is called consecutively without allowing
+			// 		enough time to pass?
+			instant - self.instant,
+		);
+
 		self.busy = busy;
 		self.instant = instant;
 

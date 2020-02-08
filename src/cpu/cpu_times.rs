@@ -1,3 +1,4 @@
+use std::ops::Sub;
 use std::time::Duration;
 
 /// Every attribute represents the seconds the CPU has spent in the given mode.
@@ -54,15 +55,8 @@ impl CpuTimes {
 	pub fn busy(&self) -> Duration {
 		#[cfg(target_os = "linux")]
 		{
+			// On Linux guest times are already accounted in "user" or "nice" times.
 			// https://github.com/giampaolo/psutil/blob/e65cc95de72828caed74c7916530dd74fca351e3/psutil/__init__.py#L1653
-			// On Linux guest times are already accounted in "user" or
-			// "nice" times.
-			// Htop does the same. References:
-			// https://github.com/giampaolo/psutil/pull/940
-			// http://unix.stackexchange.com/questions/178045
-			// https://github.com/torvalds/linux/blob/
-			//     447976ef4fd09b1be88b316d1a81553f1aa7cd07/kernel/sched/
-			//     cputime.c#L158
 			self.user
 				+ self.system + self.nice
 				+ self.irq + self.softirq
@@ -81,5 +75,45 @@ impl CpuTimes {
 	/// New method, not in Python psutil.
 	pub fn total(&self) -> Duration {
 		self.busy() + self.idle()
+	}
+}
+
+impl Sub for &CpuTimes {
+	type Output = CpuTimes;
+
+	fn sub(self, other: Self) -> Self::Output {
+		CpuTimes {
+			// have to use `checked_sub` since CPU times can decrease over time on some platforms
+			// https://github.com/giampaolo/psutil/blob/e65cc95de72828caed74c7916530dd74fca351e3/psutil/__init__.py#L1687
+			user: self.user.checked_sub(other.user).unwrap_or_default(),
+			system: self.system.checked_sub(other.system).unwrap_or_default(),
+			idle: self.idle.checked_sub(other.idle).unwrap_or_default(),
+			nice: self.nice.checked_sub(other.nice).unwrap_or_default(),
+
+			#[cfg(target_os = "linux")]
+			iowait: self.iowait.checked_sub(other.iowait).unwrap_or_default(),
+			#[cfg(target_os = "linux")]
+			irq: self.irq.checked_sub(other.irq).unwrap_or_default(),
+			#[cfg(target_os = "linux")]
+			softirq: self.softirq.checked_sub(other.softirq).unwrap_or_default(),
+			#[cfg(target_os = "linux")]
+			steal: self.steal.and_then(|first| {
+				other
+					.steal
+					.map(|second| first.checked_sub(second).unwrap_or_default())
+			}),
+			#[cfg(target_os = "linux")]
+			guest: self.guest.and_then(|first| {
+				other
+					.guest
+					.map(|second| first.checked_sub(second).unwrap_or_default())
+			}),
+			#[cfg(target_os = "linux")]
+			guest_nice: self.guest_nice.and_then(|first| {
+				other
+					.guest_nice
+					.map(|second| first.checked_sub(second).unwrap_or_default())
+			}),
+		}
 	}
 }

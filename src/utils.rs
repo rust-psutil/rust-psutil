@@ -32,10 +32,6 @@ pub(crate) fn invalid_data(message: &str) -> io::Error {
 // TODO: fix casting
 // TODO: use nightly div_duration_f32
 #[allow(clippy::unnecessary_cast)]
-pub(crate) fn calculate_cpu_percent(
-	first: Duration,
-	second: Duration,
-	total_diff: Duration,
-) -> Percent {
-	(((second - first).as_nanos() as f64 / total_diff.as_nanos() as f64) * 100.0) as f32
+pub(crate) fn div_duration_f32(lhs: Duration, rhs: Duration) -> Percent {
+	((lhs.as_nanos() as f64 / rhs.as_nanos() as f64) * 100.0) as f32
 }

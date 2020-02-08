@@ -1,7 +1,8 @@
 use std::io;
+use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
-use crate::utils::calculate_cpu_percent;
+use crate::utils::div_duration_f32;
 use crate::Percent;
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
@@ -54,15 +55,8 @@ impl CpuTimesPercent {
 	pub fn busy(&self) -> Percent {
 		#[cfg(target_os = "linux")]
 		{
+			// On Linux guest times are already accounted in "user" or "nice" times.
 			// https://github.com/giampaolo/psutil/blob/e65cc95de72828caed74c7916530dd74fca351e3/psutil/__init__.py#L1653
-			// On Linux guest times are already accounted in "user" or
-			// "nice" times.
-			// Htop does the same. References:
-			// https://github.com/giampaolo/psutil/pull/940
-			// http://unix.stackexchange.com/questions/178045
-			// https://github.com/torvalds/linux/blob/
-			//     447976ef4fd09b1be88b316d1a81553f1aa7cd07/kernel/sched/
-			//     cputime.c#L158
 			self.user
 				+ self.system + self.nice
 				+ self.irq + self.softirq
@@ -75,67 +69,57 @@ impl CpuTimesPercent {
 	}
 }
 
-fn calculate_cpu_times_percent(first: &CpuTimes, second: &CpuTimes) -> CpuTimesPercent {
-	let first_total = first.total();
-	let second_total = second.total();
+impl From<CpuTimes> for CpuTimesPercent {
+	fn from(cpu_times: CpuTimes) -> Self {
+		let total = cpu_times.total();
 
-	// first_total can equal second_total if cpu_times_percent is called multiple times in succession
-	// first_total can also be greater than second_total at least on Linux although idk why
-	if first_total >= second_total {
-		return CpuTimesPercent::default();
-	}
+		// total can be zero if cpu_times_percent is called consecutively without allowing enough
+		// 		time to pass
+		// or also when CPU times decrease over time and we reset the calculated value to zero
+		if total == Duration::default() {
+			return CpuTimesPercent::default();
+		}
 
-	let total_diff = second_total - first_total;
+		let user = div_duration_f32(cpu_times.user, total);
+		let system = div_duration_f32(cpu_times.system, total);
+		let idle = div_duration_f32(cpu_times.idle, total);
+		let nice = div_duration_f32(cpu_times.nice, total);
 
-	let user = calculate_cpu_percent(first.user, second.user, total_diff);
-	let system = calculate_cpu_percent(first.system, second.system, total_diff);
-	let idle = calculate_cpu_percent(first.idle, second.idle, total_diff);
-	let nice = calculate_cpu_percent(first.nice, second.nice, total_diff);
+		#[cfg(target_os = "linux")]
+		let iowait = div_duration_f32(cpu_times.iowait, total);
+		#[cfg(target_os = "linux")]
+		let irq = div_duration_f32(cpu_times.irq, total);
+		#[cfg(target_os = "linux")]
+		let softirq = div_duration_f32(cpu_times.softirq, total);
 
-	#[cfg(target_os = "linux")]
-	let iowait = calculate_cpu_percent(first.iowait, second.iowait, total_diff);
-	#[cfg(target_os = "linux")]
-	let irq = calculate_cpu_percent(first.irq, second.irq, total_diff);
-	#[cfg(target_os = "linux")]
-	let softirq = calculate_cpu_percent(first.softirq, second.softirq, total_diff);
-
-	#[cfg(target_os = "linux")]
-	let steal = first.steal.and_then(|first| {
-		second
-			.steal
-			.map(|second| calculate_cpu_percent(first, second, total_diff))
-	});
-	#[cfg(target_os = "linux")]
-	let guest = first.guest.and_then(|first| {
-		second
-			.guest
-			.map(|second| calculate_cpu_percent(first, second, total_diff))
-	});
-	#[cfg(target_os = "linux")]
-	let guest_nice = first.guest_nice.and_then(|first| {
-		second
+		#[cfg(target_os = "linux")]
+		let steal = cpu_times.steal.map(|steal| div_duration_f32(steal, total));
+		#[cfg(target_os = "linux")]
+		let guest = cpu_times.guest.map(|guest| div_duration_f32(guest, total));
+		#[cfg(target_os = "linux")]
+		let guest_nice = cpu_times
 			.guest_nice
-			.map(|second| calculate_cpu_percent(first, second, total_diff))
-	});
+			.map(|guest_nice| div_duration_f32(guest_nice, total));
 
-	CpuTimesPercent {
-		user,
-		system,
-		idle,
-		nice,
+		CpuTimesPercent {
+			user,
+			system,
+			idle,
+			nice,
 
-		#[cfg(target_os = "linux")]
-		iowait,
-		#[cfg(target_os = "linux")]
-		irq,
-		#[cfg(target_os = "linux")]
-		softirq,
-		#[cfg(target_os = "linux")]
-		steal,
-		#[cfg(target_os = "linux")]
-		guest,
-		#[cfg(target_os = "linux")]
-		guest_nice,
+			#[cfg(target_os = "linux")]
+			iowait,
+			#[cfg(target_os = "linux")]
+			irq,
+			#[cfg(target_os = "linux")]
+			softirq,
+			#[cfg(target_os = "linux")]
+			steal,
+			#[cfg(target_os = "linux")]
+			guest,
+			#[cfg(target_os = "linux")]
+			guest_nice,
+		}
 	}
 }
 
@@ -171,7 +155,7 @@ impl CpuTimesPercentCollector {
 	/// `CpuTimesPercentCollector::new()` was called.
 	pub fn cpu_times_percent(&mut self) -> io::Result<CpuTimesPercent> {
 		let current_cpu_times = cpu_times()?;
-		let cpu_percent_since = calculate_cpu_times_percent(&self.cpu_times, &current_cpu_times);
+		let cpu_percent_since = CpuTimesPercent::from(&current_cpu_times - &self.cpu_times);
 		self.cpu_times = current_cpu_times;
 
 		Ok(cpu_percent_since)
@@ -185,7 +169,7 @@ impl CpuTimesPercentCollector {
 			.cpu_times_percpu
 			.iter()
 			.zip(current_cpu_times_percpu.iter())
-			.map(|(prev, cur)| calculate_cpu_times_percent(prev, &cur))
+			.map(|(prev, cur)| CpuTimesPercent::from(cur - prev))
 			.collect();
 		self.cpu_times_percpu = current_cpu_times_percpu;
 
