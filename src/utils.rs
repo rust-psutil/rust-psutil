@@ -29,9 +29,11 @@ pub(crate) fn invalid_data(message: &str) -> io::Error {
 	io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
-// TODO: fix casting
-// TODO: use nightly div_duration_f32
-#[allow(clippy::unnecessary_cast)]
-pub(crate) fn div_duration_f32(lhs: Duration, rhs: Duration) -> Percent {
-	((lhs.as_nanos() as f64 / rhs.as_nanos() as f64) * 100.0) as f32
+// TODO: switch this to nightly div_duration_f64
+pub(crate) fn div_duration_f64(lhs: Duration, rhs: Duration) -> f64 {
+	lhs.as_secs_f64() / rhs.as_secs_f64()
+}
+
+pub(crate) fn duration_percent(lhs: Duration, rhs: Duration) -> Percent {
+	(div_duration_f64(lhs, rhs) * 100.0) as f32
 }

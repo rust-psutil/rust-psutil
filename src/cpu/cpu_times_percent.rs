@@ -2,7 +2,7 @@ use std::io;
 use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
-use crate::utils::div_duration_f32;
+use crate::utils::duration_percent;
 use crate::Percent;
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
@@ -80,26 +80,26 @@ impl From<CpuTimes> for CpuTimesPercent {
 			return CpuTimesPercent::default();
 		}
 
-		let user = div_duration_f32(cpu_times.user, total);
-		let system = div_duration_f32(cpu_times.system, total);
-		let idle = div_duration_f32(cpu_times.idle, total);
-		let nice = div_duration_f32(cpu_times.nice, total);
+		let user = duration_percent(cpu_times.user, total);
+		let system = duration_percent(cpu_times.system, total);
+		let idle = duration_percent(cpu_times.idle, total);
+		let nice = duration_percent(cpu_times.nice, total);
 
 		#[cfg(target_os = "linux")]
-		let iowait = div_duration_f32(cpu_times.iowait, total);
+		let iowait = duration_percent(cpu_times.iowait, total);
 		#[cfg(target_os = "linux")]
-		let irq = div_duration_f32(cpu_times.irq, total);
+		let irq = duration_percent(cpu_times.irq, total);
 		#[cfg(target_os = "linux")]
-		let softirq = div_duration_f32(cpu_times.softirq, total);
+		let softirq = duration_percent(cpu_times.softirq, total);
 
 		#[cfg(target_os = "linux")]
-		let steal = cpu_times.steal.map(|steal| div_duration_f32(steal, total));
+		let steal = cpu_times.steal.map(|steal| duration_percent(steal, total));
 		#[cfg(target_os = "linux")]
-		let guest = cpu_times.guest.map(|guest| div_duration_f32(guest, total));
+		let guest = cpu_times.guest.map(|guest| duration_percent(guest, total));
 		#[cfg(target_os = "linux")]
 		let guest_nice = cpu_times
 			.guest_nice
-			.map(|guest_nice| div_duration_f32(guest_nice, total));
+			.map(|guest_nice| duration_percent(guest_nice, total));
 
 		CpuTimesPercent {
 			user,

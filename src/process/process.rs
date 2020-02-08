@@ -14,7 +14,7 @@ use crate::process::{
 	errors, io_error_to_process_error, MemType, MemoryInfo, OpenFile, ProcessCpuTimes,
 	ProcessError, ProcessResult, Status,
 };
-use crate::utils::div_duration_f32;
+use crate::utils::duration_percent;
 use crate::{Count, Percent, Pid};
 
 #[derive(Clone, Debug)]
@@ -128,7 +128,7 @@ impl Process {
 		let busy = self.cpu_times()?.busy();
 		let instant = Instant::now();
 
-		let percent = div_duration_f32(
+		let percent = duration_percent(
 			// have to use checked_sub since CPU times can decrease over time at least on Linux
 			// https://github.com/cjbassi/ytop/issues/34
 			// TODO: figure out why. hibernation? something to do with running VMs?
