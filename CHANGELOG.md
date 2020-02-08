@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - fix several 'overflow when subtracting durations' panics
+- [cpu][linux] fix calculation of cpu_percent, CpuTimes.total, and CpuTimesPercent.total
 - [disk][linux] unescape partition mountpoint escape sequences
 
 ## [v2.0.0] - 2020-02-04

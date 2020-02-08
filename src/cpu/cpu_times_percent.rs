@@ -54,11 +54,16 @@ impl CpuTimesPercent {
 	pub fn busy(&self) -> Percent {
 		#[cfg(target_os = "linux")]
 		{
-			self.user
-				+ self.system + self.nice
-				+ self.irq + self.softirq
-				+ self.steal + self.guest
-				+ self.guest_nice
+			// https://github.com/giampaolo/psutil/blob/e65cc95de72828caed74c7916530dd74fca351e3/psutil/__init__.py#L1653
+			// On Linux guest times are already accounted in "user" or
+			// "nice" times.
+			// Htop does the same. References:
+			// https://github.com/giampaolo/psutil/pull/940
+			// http://unix.stackexchange.com/questions/178045
+			// https://github.com/torvalds/linux/blob/
+			//     447976ef4fd09b1be88b316d1a81553f1aa7cd07/kernel/sched/
+			//     cputime.c#L158
+			self.user + self.system + self.nice + self.irq + self.softirq + self.steal
 		}
 		#[cfg(target_os = "macos")]
 		{
