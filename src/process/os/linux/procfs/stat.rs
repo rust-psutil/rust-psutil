@@ -1,11 +1,12 @@
-use std::fs;
-use std::io;
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::process::{io_error_to_process_error, procfs_path, ProcessResult, Status};
-use crate::utils::invalid_data;
-use crate::{Pid, PAGE_SIZE, TICKS_PER_SECOND};
+use snafu::{ensure, OptionExt, ResultExt};
+
+use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult, Status};
+use crate::{read_file, Error, MissingData, ParseInt, Pid, Result, PAGE_SIZE, TICKS_PER_SECOND};
+
+const STAT: &str = "stat";
 
 /// New struct, not in Python psutil.
 #[derive(Clone, Debug)]
@@ -166,92 +167,103 @@ pub struct ProcfsStat {
 }
 
 impl FromStr for ProcfsStat {
-	type Err = io::Error;
+	type Err = Error;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
+	fn from_str(contents: &str) -> Result<Self> {
+		let missing_data = MissingData {
+			path: STAT,
+			contents,
+		};
+
 		// We parse the comm field and everything before it seperately since
-		// the comm field is delimited by brackets and can contain spaces
-		let (pid_field, leftover) = match s.find('(') {
-			Some(i) => s.split_at(i - 1),
-			None => return Err(invalid_data("Could not parse comm field")),
-		};
-		let (comm_field, leftover) = match leftover.rfind(')') {
-			Some(i) => leftover.split_at(i + 2),
-			None => return Err(invalid_data("Could not parse comm field")),
-		};
+		// the comm field is delimited by parens and can contain spaces
+		let (pid_field, leftover) = contents
+			.find('(')
+			.map(|i| contents.split_at(i - 1))
+			.context(missing_data)?;
+		let (comm_field, leftover) = leftover
+			.rfind(')')
+			.map(|i| leftover.split_at(i + 2))
+			.context(missing_data)?;
 
 		let mut fields: Vec<&str> = Vec::new();
 		fields.push(pid_field);
 		fields.push(&comm_field[2..comm_field.len() - 2]);
 		fields.extend(leftover.trim_end().split_whitespace());
 
-		if fields.len() < 41 {
-			return Err(invalid_data(&format!(
-				"Expected at least 41 fields, got {}",
-				fields.len()
-			)));
-		}
+		ensure!(fields.len() >= 41, missing_data);
 
-		let pid = try_parse!(fields[0]);
-		let comm = try_parse!(fields[1]);
-		let state = try_parse!(fields[2]);
+		let parse_int = ParseInt {
+			path: STAT,
+			contents,
+		};
 
-		let ppid = try_parse!(fields[3]);
+		let parse_u32 = |s: &str| -> Result<u32> { s.parse().context(parse_int) };
+		let parse_i32 = |s: &str| -> Result<i32> { s.parse().context(parse_int) };
+		let parse_u64 = |s: &str| -> Result<u64> { s.parse().context(parse_int) };
+		let parse_i64 = |s: &str| -> Result<i64> { s.parse().context(parse_int) };
+		let parse_u128 = |s: &str| -> Result<u128> { s.parse().context(parse_int) };
+
+		let pid = parse_u32(fields[0])?;
+		let comm = fields[1].to_string();
+		let state = Status::from_str(fields[2])?;
+
+		let ppid = parse_u32(fields[3])?;
 		let ppid = if ppid == 0 { None } else { Some(ppid) };
 
-		let pgrp = try_parse!(fields[4]);
-		let session = try_parse!(fields[5]);
-		let tty_nr = try_parse!(fields[6]);
-		let tpgid = try_parse!(fields[7]);
-		let flags = try_parse!(fields[8]);
-		let minflt = try_parse!(fields[9]);
-		let cminflt = try_parse!(fields[10]);
-		let majflt = try_parse!(fields[11]);
-		let cmajflt = try_parse!(fields[12]);
+		let pgrp = parse_i32(fields[4])?;
+		let session = parse_i32(fields[5])?;
+		let tty_nr = parse_i32(fields[6])?;
+		let tpgid = parse_i32(fields[7])?;
+		let flags = parse_u32(fields[8])?;
+		let minflt = parse_u64(fields[9])?;
+		let cminflt = parse_u64(fields[10])?;
+		let majflt = parse_u64(fields[11])?;
+		let cmajflt = parse_u64(fields[12])?;
 
-		let utime_ticks = try_parse!(fields[13]);
+		let utime_ticks = parse_u64(fields[13])?;
 		let utime = Duration::from_secs_f64(utime_ticks as f64 / *TICKS_PER_SECOND);
 
-		let stime_ticks = try_parse!(fields[14]);
+		let stime_ticks = parse_u64(fields[14])?;
 		let stime = Duration::from_secs_f64(stime_ticks as f64 / *TICKS_PER_SECOND);
 
-		let cutime_ticks = try_parse!(fields[15]);
+		let cutime_ticks = parse_i64(fields[15])?;
 		let cutime = Duration::from_secs_f64(cutime_ticks as f64 / *TICKS_PER_SECOND);
 
-		let cstime_ticks = try_parse!(fields[16]);
+		let cstime_ticks = parse_i64(fields[16])?;
 		let cstime = Duration::from_secs_f64(cstime_ticks as f64 / *TICKS_PER_SECOND);
 
-		let priority = try_parse!(fields[17]);
-		let nice = try_parse!(fields[18]);
-		let num_threads = try_parse!(fields[19]);
-		let itrealvalue = try_parse!(fields[20]);
+		let priority = parse_i64(fields[17])?;
+		let nice = parse_i64(fields[18])?;
+		let num_threads = parse_i64(fields[19])?;
+		let itrealvalue = parse_i64(fields[20])?;
 
-		let starttime_ticks = try_parse!(fields[21]);
+		let starttime_ticks = parse_u128(fields[21])?;
 		let starttime = Duration::from_secs_f64(starttime_ticks as f64 / *TICKS_PER_SECOND);
 
-		let vsize = try_parse!(fields[22]);
-		let rss = try_parse!(fields[23], i64::from_str) * *PAGE_SIZE as i64;
-		let rsslim = try_parse!(fields[24]);
-		let startcode = try_parse!(fields[25]);
-		let endcode = try_parse!(fields[26]);
-		let startstack = try_parse!(fields[27]);
-		let kstkesp = try_parse!(fields[28]);
-		let kstkeip = try_parse!(fields[29]);
-		let signal = try_parse!(fields[30]);
-		let blocked = try_parse!(fields[31]);
-		let sigignore = try_parse!(fields[32]);
-		let sigcatch = try_parse!(fields[33]);
-		let wchan = try_parse!(fields[34]);
-		// let nswap = try_parse!(fields[35]);
-		// let cnswap = try_parse!(fields[36]);
-		let exit_signal = try_parse!(fields[37]);
-		let processor = try_parse!(fields[38]);
-		let rt_priority = try_parse!(fields[39]);
-		let policy = try_parse!(fields[40]);
+		let vsize = parse_u64(fields[22])?;
+		let rss = parse_i64(fields[23])? * *PAGE_SIZE as i64;
+		let rsslim = parse_u64(fields[24])?;
+		let startcode = parse_u64(fields[25])?;
+		let endcode = parse_u64(fields[26])?;
+		let startstack = parse_u64(fields[27])?;
+		let kstkesp = parse_u64(fields[28])?;
+		let kstkeip = parse_u64(fields[29])?;
+		let signal = parse_u64(fields[30])?;
+		let blocked = parse_u64(fields[31])?;
+		let sigignore = parse_u64(fields[32])?;
+		let sigcatch = parse_u64(fields[33])?;
+		let wchan = parse_u64(fields[34])?;
+		// let nswap = parse_u64(fields[35])?;
+		// let cnswap = parse_u64(fields[36])?;
+		let exit_signal = parse_i32(fields[37])?;
+		let processor = parse_i32(fields[38])?;
+		let rt_priority = parse_u32(fields[39])?;
+		let policy = parse_u64(fields[40])?;
 
 		// since kernel 2.6.18
 		let delayacct_blkio_ticks = if fields.len() >= 42 {
-			Some(try_parse!(fields[41]))
+			Some(parse_u128(fields[41])?)
 		} else {
 			None
 		};
@@ -260,7 +272,7 @@ impl FromStr for ProcfsStat {
 
 		// since kernel 2.6.24
 		let (guest_time_ticks, cguest_time_ticks) = if fields.len() >= 44 {
-			(Some(try_parse!(fields[42])), Some(try_parse!(fields[43])))
+			(Some(parse_u64(fields[42])?), Some(parse_i64(fields[43])?))
 		} else {
 			(None, None)
 		};
@@ -272,9 +284,9 @@ impl FromStr for ProcfsStat {
 		// since kernel 3.3
 		let (start_data, end_data, start_brk) = if fields.len() >= 47 {
 			(
-				Some(try_parse!(fields[44])),
-				Some(try_parse!(fields[45])),
-				Some(try_parse!(fields[46])),
+				Some(parse_u64(fields[44])?),
+				Some(parse_u64(fields[45])?),
+				Some(parse_u64(fields[46])?),
 			)
 		} else {
 			(None, None, None)
@@ -283,11 +295,11 @@ impl FromStr for ProcfsStat {
 		// since kernel 3.5
 		let (arg_start, arg_end, env_start, env_end, exit_code) = if fields.len() >= 52 {
 			(
-				Some(try_parse!(fields[47])),
-				Some(try_parse!(fields[48])),
-				Some(try_parse!(fields[49])),
-				Some(try_parse!(fields[50])),
-				Some(try_parse!(fields[51])),
+				Some(parse_u64(fields[47])?),
+				Some(parse_u64(fields[48])?),
+				Some(parse_u64(fields[49])?),
+				Some(parse_u64(fields[50])?),
+				Some(parse_i32(fields[51])?),
 			)
 		} else {
 			(None, None, None, None, None)
@@ -360,8 +372,8 @@ impl FromStr for ProcfsStat {
 
 /// New function, not in Python psutil.
 pub fn procfs_stat(pid: Pid) -> ProcessResult<ProcfsStat> {
-	let data = fs::read_to_string(procfs_path(pid, "stat"))
-		.map_err(|e| io_error_to_process_error(e, pid))?;
+	let contents =
+		read_file(procfs_path(pid, STAT)).map_err(|e| psutil_error_to_process_error(e, pid))?;
 
-	ProcfsStat::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+	ProcfsStat::from_str(&contents).map_err(|e| psutil_error_to_process_error(e, pid))
 }

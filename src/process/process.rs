@@ -6,13 +6,13 @@ use std::time::{Duration, Instant};
 
 use nix::sys::signal::{kill, Signal};
 use nix::unistd;
-use snafu::ResultExt;
+use snafu::ensure;
 
 use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::{
-	errors, io_error_to_process_error, MemType, MemoryInfo, OpenFile, ProcessCpuTimes,
-	ProcessError, ProcessResult, Status,
+	psutil_error_to_process_error, MemType, MemoryInfo, NoSuchProcess, OpenFile, ProcessCpuTimes,
+	ProcessResult, Status,
 };
 use crate::utils::duration_percent;
 use crate::{Count, Percent, Pid};
@@ -70,9 +70,7 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn parent(&self) -> ProcessResult<Option<Process>> {
-		if !self.is_running() {
-			return Err(ProcessError::NoSuchProcess { pid: self.pid });
-		}
+		ensure!(self.is_running(), NoSuchProcess { pid: self.pid });
 
 		let ppid = self.ppid()?;
 		match ppid {
@@ -155,7 +153,7 @@ impl Process {
 	pub fn memory_percent(&self) -> ProcessResult<Percent> {
 		let memory_info = self.memory_info()?;
 		let virtual_memory =
-			memory::virtual_memory().map_err(|e| io_error_to_process_error(e, self.pid))?;
+			memory::virtual_memory().map_err(|e| psutil_error_to_process_error(e, self.pid))?;
 		let percent = ((memory_info.rss() as f64 / virtual_memory.total() as f64) * 100.0) as f32;
 
 		Ok(percent)
@@ -213,14 +211,13 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
-		if !self.is_running() {
-			return Err(ProcessError::NoSuchProcess { pid: self.pid });
-		}
+		ensure!(self.is_running(), NoSuchProcess { pid: self.pid });
 
 		#[cfg(target_family = "unix")]
 		{
 			kill(unistd::Pid::from_raw(self.pid as i32), signal)
-				.context(errors::NixError { pid: self.pid })
+				.map_err(From::from)
+				.map_err(|e| psutil_error_to_process_error(e, self.pid))
 		}
 		#[cfg(not(any(target_family = "unix")))]
 		{

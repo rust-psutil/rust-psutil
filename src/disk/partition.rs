@@ -1,7 +1,7 @@
-use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::disk::{partitions, FileSystem};
+use crate::Result;
 
 #[derive(Clone, Debug)]
 pub struct Partition {
@@ -31,7 +31,7 @@ impl Partition {
 	}
 }
 
-pub fn partitions_physical() -> io::Result<Vec<Partition>> {
+pub fn partitions_physical() -> Result<Vec<Partition>> {
 	Ok(partitions()?
 		.into_iter()
 		.filter(|partition| partition.filesystem.is_physical())

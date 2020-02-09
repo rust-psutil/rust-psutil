@@ -1,12 +1,13 @@
 use std::collections::HashMap;
-use std::fs;
-use std::io;
 use std::str::FromStr;
 
+use snafu::{ensure, OptionExt, ResultExt};
+
 use crate::process::os::unix::{Gid, Uid};
-use crate::process::{io_error_to_process_error, procfs_path, ProcessResult};
-use crate::utils::invalid_data;
-use crate::Pid;
+use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult};
+use crate::{read_file, Error, MissingData, ParseInt, Pid, Result};
+
+const STATUS: &str = "status";
 
 // TODO: rest of the fields
 /// New struct, not in Python psutil.
@@ -24,66 +25,64 @@ pub struct ProcfsStatus {
 }
 
 impl FromStr for ProcfsStatus {
-	type Err = io::Error;
+	type Err = Error;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let map = s
+	fn from_str(contents: &str) -> Result<Self> {
+		let map = contents
 			.lines()
 			.map(|line| {
 				let fields = line.splitn(2, ':').collect::<Vec<&str>>();
-				if fields.len() != 2 {
-					return Err(invalid_data(&format!(
-						"Expected 2 fields, got {}",
-						fields.len()
-					)));
-				}
+				ensure!(
+					fields.len() == 2,
+					MissingData {
+						path: STATUS,
+						contents: line,
+					}
+				);
 				Ok((fields[0], fields[1].trim()))
 			})
-			.collect::<io::Result<HashMap<&str, &str>>>()?;
+			.collect::<Result<HashMap<&str, &str>>>()?;
 
-		let uid_fields: Vec<&str> = map
-			.get("Uid")
-			.ok_or_else(|| invalid_data("Missing Uid"))?
-			.split_whitespace()
-			.collect();
-		if uid_fields.len() != 4 {
-			return Err(invalid_data(&format!(
-				"Expected 4 fields, got {}",
-				uid_fields.len()
-			)));
-		}
+		let parse_int = ParseInt {
+			path: STATUS,
+			contents,
+		};
+
+		let parse_u32 = |s: &str| -> Result<u32> { s.parse().context(parse_int) };
+		let parse_u64 = |s: &str| -> Result<u64> { s.parse().context(parse_int) };
+
+		let missing_data = MissingData {
+			path: STATUS,
+			contents,
+		};
+
+		let get = |key: &str| -> Result<&str> { map.get(key).copied().context(missing_data) };
+
+		let uid_fields: Vec<&str> = get("Uid")?.split_whitespace().collect();
+		ensure!(uid_fields.len() >= 4, missing_data);
 		let uid = [
-			try_parse!(uid_fields[0]),
-			try_parse!(uid_fields[1]),
-			try_parse!(uid_fields[2]),
-			try_parse!(uid_fields[3]),
+			parse_u32(uid_fields[0])?,
+			parse_u32(uid_fields[1])?,
+			parse_u32(uid_fields[2])?,
+			parse_u32(uid_fields[3])?,
 		];
 
-		let gid_fields: Vec<&str> = map
-			.get("Gid")
-			.ok_or_else(|| invalid_data("Missing Gid"))?
-			.split_whitespace()
-			.collect();
-		if gid_fields.len() != 4 {
-			return Err(invalid_data(&format!(
-				"Expected 4 fields, got {}",
-				gid_fields.len()
-			)));
-		}
+		let gid_fields: Vec<&str> = get("Gid")?.split_whitespace().collect();
+		ensure!(gid_fields.len() >= 4, missing_data);
 		let gid = [
-			try_parse!(gid_fields[0]),
-			try_parse!(gid_fields[1]),
-			try_parse!(gid_fields[2]),
-			try_parse!(gid_fields[3]),
+			parse_u32(gid_fields[0])?,
+			parse_u32(gid_fields[1])?,
+			parse_u32(gid_fields[2])?,
+			parse_u32(gid_fields[3])?,
 		];
 
 		let voluntary_ctxt_switches = map
 			.get("voluntary_ctxt_switches")
-			.map(|entry| -> io::Result<u64> { Ok(try_parse!(entry)) })
+			.map(|entry| -> Result<u64> { Ok(parse_u64(entry)?) })
 			.transpose()?;
 		let nonvoluntary_ctxt_switches = map
 			.get("nonvoluntary_ctxt_switches")
-			.map(|entry| -> io::Result<u64> { Ok(try_parse!(entry)) })
+			.map(|entry| -> Result<u64> { Ok(parse_u64(entry)?) })
 			.transpose()?;
 
 		Ok(ProcfsStatus {
@@ -97,8 +96,8 @@ impl FromStr for ProcfsStatus {
 
 /// New function, not in Python psutil.
 pub fn procfs_status(pid: Pid) -> ProcessResult<ProcfsStatus> {
-	let data = fs::read_to_string(procfs_path(pid, "status"))
-		.map_err(|e| io_error_to_process_error(e, pid))?;
+	let contents =
+		read_file(procfs_path(pid, STATUS)).map_err(|e| psutil_error_to_process_error(e, pid))?;
 
-	ProcfsStatus::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+	ProcfsStatus::from_str(&contents).map_err(|e| psutil_error_to_process_error(e, pid))
 }

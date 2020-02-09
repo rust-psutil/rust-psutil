@@ -1,10 +1,11 @@
-use std::fs;
-use std::io;
 use std::str::FromStr;
 
-use crate::process::{io_error_to_process_error, procfs_path, ProcessResult};
-use crate::utils::invalid_data;
-use crate::{Pid, PAGE_SIZE};
+use snafu::{ensure, ResultExt};
+
+use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult};
+use crate::{read_file, Error, MissingData, ParseInt, Pid, Result, PAGE_SIZE};
+
+const STATM: &str = "statm";
 
 /// Memory usage of a process read from `/proc/[pid]/statm`.
 ///
@@ -29,32 +30,40 @@ pub struct ProcfsStatm {
 }
 
 impl FromStr for ProcfsStatm {
-	type Err = io::Error;
+	type Err = Error;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let fields: Vec<&str> = s.trim_end().split_whitespace().collect();
+	fn from_str(contents: &str) -> Result<Self> {
+		let fields: Vec<&str> = contents.trim_end().split_whitespace().collect();
 
-		if fields.len() != 7 {
-			return Err(invalid_data(&format!(
-				"Expected 7 fields, got {}",
-				fields.len()
-			)));
-		}
+		ensure!(
+			fields.len() >= 7,
+			MissingData {
+				path: STATM,
+				contents,
+			}
+		);
+
+		let parse = |s: &str| -> Result<u64> {
+			s.parse().context(ParseInt {
+				path: STATM,
+				contents,
+			})
+		};
 
 		Ok(ProcfsStatm {
-			size: try_parse!(fields[0], u64::from_str) * *PAGE_SIZE,
-			resident: try_parse!(fields[1], u64::from_str) * *PAGE_SIZE,
-			shared: try_parse!(fields[2], u64::from_str) * *PAGE_SIZE,
-			text: try_parse!(fields[3], u64::from_str) * *PAGE_SIZE,
-			data: try_parse!(fields[5], u64::from_str) * *PAGE_SIZE,
+			size: parse(fields[0])? * *PAGE_SIZE,
+			resident: parse(fields[1])? * *PAGE_SIZE,
+			shared: parse(fields[2])? * *PAGE_SIZE,
+			text: parse(fields[3])? * *PAGE_SIZE,
+			data: parse(fields[5])? * *PAGE_SIZE,
 		})
 	}
 }
 
 /// New function, not in Python psutil.
 pub fn procfs_statm(pid: Pid) -> ProcessResult<ProcfsStatm> {
-	let data = fs::read_to_string(procfs_path(pid, "statm"))
-		.map_err(|e| io_error_to_process_error(e, pid))?;
+	let contents =
+		read_file(procfs_path(pid, STATM)).map_err(|e| psutil_error_to_process_error(e, pid))?;
 
-	ProcfsStatm::from_str(&data).map_err(|e| io_error_to_process_error(e, pid))
+	ProcfsStatm::from_str(&contents).map_err(|e| psutil_error_to_process_error(e, pid))
 }

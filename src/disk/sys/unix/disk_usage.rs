@@ -1,10 +1,8 @@
-use std::io;
 use std::path::Path;
 
 use nix::sys;
 
-use crate::utils::invalid_data;
-use crate::{Bytes, Percent};
+use crate::{Bytes, Percent, Result};
 
 #[derive(Clone, Debug)]
 pub struct DiskUsage {
@@ -36,12 +34,11 @@ impl DiskUsage {
 	}
 }
 
-pub fn disk_usage<P>(path: P) -> io::Result<DiskUsage>
+pub fn disk_usage<P>(path: P) -> Result<DiskUsage>
 where
 	P: AsRef<Path>,
 {
-	let statvfs = sys::statvfs::statvfs(path.as_ref())
-		.map_err(|_| invalid_data("failed to use statvfs: statvfs return an error code"))?;
+	let statvfs = sys::statvfs::statvfs(path.as_ref())?;
 
 	// need to do the u64 casts since on some platforms the types are aliased to u32
 	// https://github.com/rust-psutil/rust-psutil/issues/64

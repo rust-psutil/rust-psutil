@@ -1,7 +1,5 @@
-use std::io;
-
 use crate::cpu::CpuTimesPercentCollector;
-use crate::Percent;
+use crate::{Percent, Result};
 
 /// Get cpu percents in non-blocking mode.
 ///
@@ -20,7 +18,7 @@ pub struct CpuPercentCollector {
 
 impl CpuPercentCollector {
 	/// Initialize the `CpuPercentCollector` so the method calls are ready to be used.
-	pub fn new() -> io::Result<CpuPercentCollector> {
+	pub fn new() -> Result<CpuPercentCollector> {
 		let cpu_times_percent_collector = CpuTimesPercentCollector::new()?;
 
 		Ok(CpuPercentCollector {
@@ -30,7 +28,7 @@ impl CpuPercentCollector {
 
 	/// Returns a cpu percent since the last time this was called or since
 	/// `CpuPercentCollector::new()` was called.
-	pub fn cpu_percent(&mut self) -> io::Result<Percent> {
+	pub fn cpu_percent(&mut self) -> Result<Percent> {
 		let percent = self.cpu_times_percent_collector.cpu_times_percent()?.busy();
 
 		Ok(percent)
@@ -38,7 +36,7 @@ impl CpuPercentCollector {
 
 	/// Returns a cpu percent for each cpu since the last time this was called or since
 	/// `CpuPercentCollector::new()` was called.
-	pub fn cpu_percent_percpu(&mut self) -> io::Result<Vec<Percent>> {
+	pub fn cpu_percent_percpu(&mut self) -> Result<Vec<Percent>> {
 		let percents = self
 			.cpu_times_percent_collector
 			.cpu_times_percent_percpu()?

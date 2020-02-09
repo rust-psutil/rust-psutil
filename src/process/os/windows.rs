@@ -1,13 +1,12 @@
 use std::collections::HashMap;
-use std::io;
 
-use crate::process::Process;
+use crate::process::{Process, ProcessResult};
 use crate::Count;
 
 pub struct IoCounters {}
 
 pub trait ProcessExt {
-	fn environ(&self) -> io::Result<HashMap<String, String>>;
+	fn environ(&self) -> ProcessResult<HashMap<String, String>>;
 
 	fn get_ionice(&self) -> i32;
 
@@ -25,7 +24,7 @@ pub trait ProcessExt {
 }
 
 impl ProcessExt for Process {
-	fn environ(&self) -> io::Result<HashMap<String, String>> {
+	fn environ(&self) -> ProcessResult<HashMap<String, String>> {
 		todo!()
 	}
 

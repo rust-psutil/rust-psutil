@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
-use std::io;
 
 use crate::process::{self, Process};
-use crate::Pid;
+use crate::{Pid, Result};
 
 #[derive(Debug, Clone)]
 pub struct ProcessCollector {
@@ -10,7 +9,7 @@ pub struct ProcessCollector {
 }
 
 impl ProcessCollector {
-	pub fn new() -> io::Result<ProcessCollector> {
+	pub fn new() -> Result<ProcessCollector> {
 		let processes = process::processes()?
 			.into_iter()
 			.filter_map(|process| process.ok())
@@ -20,7 +19,7 @@ impl ProcessCollector {
 		Ok(ProcessCollector { processes })
 	}
 
-	pub fn update(&mut self) -> io::Result<()> {
+	pub fn update(&mut self) -> Result<()> {
 		let new = ProcessCollector::new()?.processes;
 
 		// remove processes with a PID that is no longer in use

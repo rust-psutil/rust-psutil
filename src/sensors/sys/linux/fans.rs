@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use std::io;
 
 use crate::sensors::FanSensor;
+use crate::Result;
 
-pub fn fans() -> io::Result<HashMap<String, Vec<FanSensor>>> {
+pub fn fans() -> Result<HashMap<String, Vec<FanSensor>>> {
 	todo!()
 }

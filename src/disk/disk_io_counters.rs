@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::io;
 use std::time::Duration;
 
 use crate::disk::disk_io_counters_per_partition;
-use crate::{Bytes, Count};
+use crate::{Bytes, Count, Result};
 
 #[derive(Clone, Debug, Default)]
 pub struct DiskIoCounters {
@@ -134,13 +133,11 @@ pub struct DiskIoCountersCollector {
 }
 
 impl DiskIoCountersCollector {
-	pub fn disk_io_counters(&mut self) -> io::Result<DiskIoCounters> {
+	pub fn disk_io_counters(&mut self) -> Result<DiskIoCounters> {
 		todo!()
 	}
 
-	pub fn disk_io_counters_per_partition(
-		&mut self,
-	) -> io::Result<HashMap<String, DiskIoCounters>> {
+	pub fn disk_io_counters_per_partition(&mut self) -> Result<HashMap<String, DiskIoCounters>> {
 		let io_counters = disk_io_counters_per_partition()?;
 
 		let corrected_counters = match (
