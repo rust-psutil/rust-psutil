@@ -9,9 +9,11 @@ use snafu::{ResultExt, Snafu};
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]
 pub enum ParseStatusError {
+	/// Linux only.
 	#[snafu(display("Length is not 1. Contents: '{}'", contents))]
 	IncorrectLength { contents: String },
 
+	/// Linux and macOS.
 	#[snafu(display("Incorrect char. Contents: '{}'", contents))]
 	IncorrectChar { contents: String },
 }
@@ -21,12 +23,15 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]
 pub enum Error {
+	/// Linux only.
 	#[snafu(display("Failed to read file '{}': {}", path.display(), source))]
 	ReadFile { path: PathBuf, source: io::Error },
 
+	/// Linux only.
 	#[snafu(display("File '{}' is missing data. Contents: '{}'", path.display(), contents))]
 	MissingData { path: PathBuf, contents: String },
 
+	/// Linux only.
 	#[snafu(display("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source))]
 	ParseInt {
 		path: PathBuf,
@@ -34,6 +39,7 @@ pub enum Error {
 		source: std::num::ParseIntError,
 	},
 
+	/// Linux only.
 	#[snafu(display("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source))]
 	ParseFloat {
 		path: PathBuf,
@@ -41,12 +47,15 @@ pub enum Error {
 		source: std::num::ParseFloatError,
 	},
 
+	/// Linux and macOS.
 	#[snafu(display("Failed to parse status. {}", source))]
 	ParseStatus { source: ParseStatusError },
 
+	// Unix only.
 	#[snafu(display("nix error: {}", source))]
 	NixError { source: nix::Error },
 
+	/// macOS only.
 	#[snafu(display("OS error: {}", source))]
 	OsError { source: io::Error },
 }

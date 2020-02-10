@@ -24,8 +24,9 @@ pub enum ProcessError {
 
 pub(crate) fn psutil_error_to_process_error(e: Error, pid: Pid) -> ProcessError {
 	match e {
-		Error::ReadFile { source, .. } => io_error_to_process_error(source, pid),
-		Error::OsError { source, .. } => io_error_to_process_error(source, pid),
+		Error::ReadFile { source, .. } | Error::OsError { source, .. } => {
+			io_error_to_process_error(source, pid)
+		}
 		_ => ProcessError::PsutilError { pid, source: e },
 	}
 }
