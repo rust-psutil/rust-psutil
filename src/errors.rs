@@ -6,6 +6,16 @@ use glob::glob as other_glob;
 use nix;
 use snafu::{ResultExt, Snafu};
 
+#[derive(Debug, Snafu)]
+#[snafu(visibility(pub(crate)))]
+pub enum ParseStatusError {
+	#[snafu(display("Length is not 1. Contents: '{}'", contents))]
+	IncorrectLength { contents: String },
+
+	#[snafu(display("Incorrect char. Contents: '{}'", contents))]
+	IncorrectChar { contents: String },
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Snafu)]
@@ -31,8 +41,8 @@ pub enum Error {
 		source: std::num::ParseFloatError,
 	},
 
-	#[snafu(display("Error while parsing status. Contents: '{}'.", contents))]
-	ParseStatus { contents: String },
+	#[snafu(display("Failed to parse status. {}", source))]
+	ParseStatus { source: ParseStatusError },
 
 	#[snafu(display("nix error: {}", source))]
 	NixError { source: nix::Error },
@@ -50,6 +60,12 @@ impl From<nix::Error> for Error {
 impl From<io::Error> for Error {
 	fn from(error: io::Error) -> Self {
 		Error::OsError { source: error }
+	}
+}
+
+impl From<ParseStatusError> for Error {
+	fn from(error: ParseStatusError) -> Self {
+		Error::ParseStatus { source: error }
 	}
 }
 

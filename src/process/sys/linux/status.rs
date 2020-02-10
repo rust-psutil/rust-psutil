@@ -4,7 +4,7 @@ use std::str::FromStr;
 use snafu::ensure;
 
 use crate::process::Status;
-use crate::{Error, ParseStatus, Result};
+use crate::{IncorrectLength, ParseStatusError};
 
 /// Returns a Status based on a status character from `/proc/[pid]/stat`.
 ///
@@ -13,9 +13,9 @@ use crate::{Error, ParseStatus, Result};
 /// [array.c:115]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L115
 /// [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
 impl TryFrom<char> for Status {
-	type Error = Error;
+	type Error = ParseStatusError;
 
-	fn try_from(value: char) -> Result<Status> {
+	fn try_from(value: char) -> Result<Self, Self::Error> {
 		match value {
 			'R' => Ok(Status::Running),
 			'S' => Ok(Status::Sleeping),
@@ -28,7 +28,7 @@ impl TryFrom<char> for Status {
 			'W' => Ok(Status::Waking),
 			'P' => Ok(Status::Parked),
 			'I' => Ok(Status::Idle),
-			_ => Err(Error::ParseStatus {
+			_ => Err(ParseStatusError::IncorrectChar {
 				contents: value.to_string(),
 			}),
 		}
@@ -36,10 +36,10 @@ impl TryFrom<char> for Status {
 }
 
 impl FromStr for Status {
-	type Err = Error;
+	type Err = ParseStatusError;
 
-	fn from_str(s: &str) -> Result<Self> {
-		ensure!(s.len() == 1, ParseStatus { contents: s });
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		ensure!(s.len() == 1, IncorrectLength { contents: s });
 
 		Status::try_from(s.chars().nth(0).unwrap())
 	}

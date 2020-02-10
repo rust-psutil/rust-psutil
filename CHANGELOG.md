@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Switch from io::Error to a custom error type
 - [cpu][linux] change `cpu_times{_percent}.{steal,guest,guest_nice}` to `Option`s
+- [process] status parsing now returns a ParseStatusError
 - [process][linux] change `cpu_times.iowait` from `Duration` to `Option<Duration>`
 - [process][linux] change `process.environ` return type from `io::Result` to `ProcessResult`
 

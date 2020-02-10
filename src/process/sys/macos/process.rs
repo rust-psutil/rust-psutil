@@ -11,8 +11,8 @@ use nix::libc;
 use crate::common::NetConnectionType;
 use crate::process::os::macos::{kinfo_proc, kinfo_process, kinfo_processes};
 use crate::process::{
-	io_error_to_process_error, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
-	ProcessError, ProcessResult, Status,
+	io_error_to_process_error, psutil_error_to_process_error, MemType, MemoryInfo, OpenFile,
+	Process, ProcessCpuTimes, ProcessError, ProcessResult, Status,
 };
 use crate::{Count, Error, Percent, Pid, Result};
 
@@ -32,7 +32,7 @@ fn catch_zombie(proc_err: ProcessError) -> ProcessError {
 				return match Status::try_from(kinfo_proc.kp_proc.p_stat) {
 					Ok(Status::Zombie) => ProcessError::ZombieProcess { pid },
 					Ok(_) => ProcessError::AccessDenied { pid },
-					Err(e) => io_error_to_process_error(e, pid),
+					Err(e) => psutil_error_to_process_error(e.into(), pid),
 				};
 			}
 		}
