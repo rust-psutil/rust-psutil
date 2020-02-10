@@ -1,7 +1,6 @@
-use std::io;
-
 use crate::sensors::TemperatureSensor;
+use crate::Result;
 
-pub fn temperatures() -> Vec<io::Result<TemperatureSensor>> {
+pub fn temperatures() -> Vec<Result<TemperatureSensor>> {
 	todo!()
 }

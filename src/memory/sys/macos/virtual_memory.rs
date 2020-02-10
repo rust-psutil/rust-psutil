@@ -8,9 +8,8 @@ use std::ptr;
 
 use nix::libc;
 
-use super::common;
-use crate::memory::VirtualMemory;
-use crate::PAGE_SIZE;
+use crate::memory::{host_vm_info, VirtualMemory};
+use crate::{Result, PAGE_SIZE};
 
 const CTL_HW: libc::c_int = 6;
 const HW_MEMSIZE: libc::c_int = 24;
@@ -37,9 +36,9 @@ unsafe fn hw_memsize() -> io::Result<u64> {
 	}
 }
 
-pub fn virtual_memory() -> io::Result<VirtualMemory> {
+pub fn virtual_memory() -> Result<VirtualMemory> {
 	let total = unsafe { hw_memsize()? };
-	let vm_stats = unsafe { common::host_vm_info()? };
+	let vm_stats = unsafe { host_vm_info()? };
 	let page_size = *PAGE_SIZE;
 
 	let available = u64::from(vm_stats.active_count + vm_stats.free_count) * page_size;

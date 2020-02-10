@@ -3,7 +3,6 @@
 
 use std::convert::TryFrom;
 use std::ffi::CStr;
-use std::io;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -15,24 +14,31 @@ use crate::process::{
 	io_error_to_process_error, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
 	ProcessError, ProcessResult, Status,
 };
-use crate::{Count, Percent, Pid};
+use crate::{Count, Error, Percent, Pid, Result};
 
-fn catch_zombie(e: ProcessError) -> ProcessError {
-	match e {
-		ProcessError::IoError { pid, source } if source.raw_os_error() == Some(libc::ESRCH) => {
-			let kinfo_proc = match kinfo_process(pid) {
-				Ok(info) => info,
-				Err(e) => return e,
-			};
+fn catch_zombie(proc_err: ProcessError) -> ProcessError {
+	if let ProcessError::PsutilError {
+		pid,
+		source: ref psutil_err,
+	} = proc_err
+	{
+		if let Error::OsError { source: io_err } = psutil_err {
+			if io_err.raw_os_error() == Some(libc::ESRCH) {
+				let kinfo_proc = match kinfo_process(pid) {
+					Ok(info) => info,
+					Err(e) => return e,
+				};
 
-			match Status::try_from(kinfo_proc.kp_proc.p_stat) {
-				Ok(Status::Zombie) => ProcessError::ZombieProcess { pid },
-				Ok(_) => ProcessError::AccessDenied { pid },
-				Err(e) => io_error_to_process_error(e, pid),
+				return match Status::try_from(kinfo_proc.kp_proc.p_stat) {
+					Ok(Status::Zombie) => ProcessError::ZombieProcess { pid },
+					Ok(_) => ProcessError::AccessDenied { pid },
+					Err(e) => io_error_to_process_error(e, pid),
+				};
 			}
 		}
-		other => other,
 	}
+
+	proc_err
 }
 
 fn cpu_times(pid: Pid) -> ProcessResult<ProcessCpuTimes> {
@@ -176,6 +182,6 @@ impl Process {
 	}
 }
 
-pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
+pub fn processes() -> Result<Vec<ProcessResult<Process>>> {
 	Ok(kinfo_processes()?.into_iter().map(process_new).collect())
 }

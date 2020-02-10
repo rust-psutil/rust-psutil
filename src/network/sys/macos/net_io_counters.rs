@@ -9,6 +9,7 @@ use std::ptr;
 use nix::libc;
 
 use crate::network::NetIoCounters;
+use crate::{Error, Result};
 
 #[derive(Debug)]
 struct Routes {
@@ -174,7 +175,7 @@ impl From<if_msghdr2> for NetIoCounters {
 	}
 }
 
-pub(crate) fn net_io_counters_pernic() -> io::Result<HashMap<String, NetIoCounters>> {
+pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>> {
 	let interfaces = unsafe { net_pf_route() };
 	interfaces?
 		.into_iter()
@@ -191,5 +192,6 @@ pub(crate) fn net_io_counters_pernic() -> io::Result<HashMap<String, NetIoCounte
 
 			Ok((name, NetIoCounters::from(msg)))
 		})
+		.map(|result| result.map_err(Error::from))
 		.collect()
 }

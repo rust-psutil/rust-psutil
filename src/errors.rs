@@ -36,11 +36,20 @@ pub enum Error {
 
 	#[snafu(display("nix error: {}", source))]
 	NixError { source: nix::Error },
+
+	#[snafu(display("OS error: {}", source))]
+	OsError { source: io::Error },
 }
 
 impl From<nix::Error> for Error {
 	fn from(error: nix::Error) -> Self {
 		Error::NixError { source: error }
+	}
+}
+
+impl From<io::Error> for Error {
+	fn from(error: io::Error) -> Self {
+		Error::OsError { source: error }
 	}
 }
 

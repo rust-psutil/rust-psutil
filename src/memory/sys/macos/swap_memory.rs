@@ -8,9 +8,8 @@ use std::ptr;
 
 use nix::libc;
 
-use super::common;
-use crate::memory::SwapMemory;
-use crate::PAGE_SIZE;
+use crate::memory::{host_vm_info, SwapMemory};
+use crate::{Result, PAGE_SIZE};
 
 const CTL_VM: libc::c_int = 2;
 const VM_SWAPUSAGE: libc::c_int = 5;
@@ -37,9 +36,9 @@ unsafe fn vm_swapusage() -> io::Result<libc::xsw_usage> {
 	}
 }
 
-pub fn swap_memory() -> io::Result<SwapMemory> {
+pub fn swap_memory() -> Result<SwapMemory> {
 	let xsw_usage = unsafe { vm_swapusage()? };
-	let vm_stats = unsafe { common::host_vm_info()? };
+	let vm_stats = unsafe { host_vm_info()? };
 	let page_size = *PAGE_SIZE;
 
 	let total = u64::from(xsw_usage.xsu_total);

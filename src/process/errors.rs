@@ -22,13 +22,21 @@ pub enum ProcessError {
 	PsutilError { pid: Pid, source: Error },
 }
 
-pub fn psutil_error_to_process_error(e: Error, pid: Pid) -> ProcessError {
+pub(crate) fn psutil_error_to_process_error(e: Error, pid: Pid) -> ProcessError {
 	match e {
-		Error::ReadFile { ref source, .. } => match source.kind() {
-			io::ErrorKind::NotFound => ProcessError::NoSuchProcess { pid },
-			io::ErrorKind::PermissionDenied => ProcessError::AccessDenied { pid },
-			_ => ProcessError::PsutilError { pid, source: e },
-		},
+		Error::ReadFile { source, .. } => io_error_to_process_error(source, pid),
+		Error::OsError { source, .. } => io_error_to_process_error(source, pid),
 		_ => ProcessError::PsutilError { pid, source: e },
+	}
+}
+
+pub(crate) fn io_error_to_process_error(e: io::Error, pid: Pid) -> ProcessError {
+	match e.kind() {
+		io::ErrorKind::NotFound => ProcessError::NoSuchProcess { pid },
+		io::ErrorKind::PermissionDenied => ProcessError::AccessDenied { pid },
+		_ => ProcessError::PsutilError {
+			pid,
+			source: Error::OsError { source: e },
+		},
 	}
 }
