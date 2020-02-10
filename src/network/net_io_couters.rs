@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::io;
 use std::ops::Add;
 
 use crate::network::net_io_counters_pernic;
-use crate::{Bytes, Count};
+use crate::{Bytes, Count, Result};
 
 #[derive(Clone, Debug, Default)]
 pub struct NetIoCounters {
@@ -144,7 +143,7 @@ pub struct NetIoCountersCollector {
 }
 
 impl NetIoCountersCollector {
-	pub fn net_io_counters(&mut self) -> io::Result<NetIoCounters> {
+	pub fn net_io_counters(&mut self) -> Result<NetIoCounters> {
 		let sum = self
 			.net_io_counters_pernic()?
 			.into_iter()
@@ -154,7 +153,7 @@ impl NetIoCountersCollector {
 		Ok(sum)
 	}
 
-	pub fn net_io_counters_pernic(&mut self) -> io::Result<HashMap<String, NetIoCounters>> {
+	pub fn net_io_counters_pernic(&mut self) -> Result<HashMap<String, NetIoCounters>> {
 		let io_counters = net_io_counters_pernic()?;
 
 		let corrected_counters = match (

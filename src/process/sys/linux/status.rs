@@ -1,8 +1,10 @@
 use std::convert::TryFrom;
-use std::io;
 use std::str::FromStr;
 
+use snafu::ensure;
+
 use crate::process::Status;
+use crate::{IncorrectLength, ParseStatusError};
 
 /// Returns a Status based on a status character from `/proc/[pid]/stat`.
 ///
@@ -11,9 +13,9 @@ use crate::process::Status;
 /// [array.c:115]: https://github.com/torvalds/linux/blob/master/fs/proc/array.c#L115
 /// [proc(5)]: http://man7.org/linux/man-pages/man5/proc.5.html
 impl TryFrom<char> for Status {
-	type Error = std::io::Error;
+	type Error = ParseStatusError;
 
-	fn try_from(value: char) -> io::Result<Status> {
+	fn try_from(value: char) -> Result<Self, Self::Error> {
 		match value {
 			'R' => Ok(Status::Running),
 			'S' => Ok(Status::Sleeping),
@@ -26,26 +28,20 @@ impl TryFrom<char> for Status {
 			'W' => Ok(Status::Waking),
 			'P' => Ok(Status::Parked),
 			'I' => Ok(Status::Idle),
-			_ => Err(io::Error::new(
-				io::ErrorKind::InvalidInput,
-				format!("Invalid status character: {:?}", value),
-			)),
+			_ => Err(ParseStatusError::IncorrectChar {
+				contents: value.to_string(),
+			}),
 		}
 	}
 }
 
 impl FromStr for Status {
-	type Err = io::Error;
+	type Err = ParseStatusError;
 
-	fn from_str(s: &str) -> io::Result<Self> {
-		if !s.len() == 1 {
-			Err(io::Error::new(
-				io::ErrorKind::InvalidInput,
-				format!("Status is not a single character: {:?}", s),
-			))
-		} else {
-			Status::try_from(s.chars().nth(0).unwrap())
-		}
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		ensure!(s.len() == 1, IncorrectLength { contents: s });
+
+		Status::try_from(s.chars().nth(0).unwrap())
 	}
 }
 

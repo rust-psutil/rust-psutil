@@ -1,35 +1,42 @@
-use std::fs;
-use std::io;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::utils::invalid_data;
+use snafu::{ensure, OptionExt, ResultExt};
 
-fn parse_boot_time(data: &str) -> io::Result<SystemTime> {
-	for line in data.lines() {
-		if line.starts_with("btime ") {
-			let parts: Vec<&str> = line.split_whitespace().collect();
-			if parts.len() != 2 {
-				return Err(invalid_data(&format!(
-					"malformed '/proc/stat' data: '{}'",
-					data
-				)));
-			}
-			let boot_time = UNIX_EPOCH + Duration::from_secs(try_parse!(parts[1]));
+use crate::{read_file, MissingData, ParseInt, Result};
 
-			return Ok(boot_time);
+const PROC_STAT: &str = "/proc/stat";
+
+fn parse_boot_time(line: &str) -> Result<SystemTime> {
+	let fields: Vec<&str> = line.split_whitespace().collect();
+
+	ensure!(
+		fields.len() >= 2,
+		MissingData {
+			path: PROC_STAT,
+			contents: line,
 		}
-	}
+	);
 
-	Err(invalid_data(&format!(
-		"malformed '/proc/stat' data: '{}'",
-		data
-	)))
+	let parsed = fields[1].parse().context(ParseInt {
+		path: PROC_STAT,
+		contents: line,
+	})?;
+	let boot_time = UNIX_EPOCH + Duration::from_secs(parsed);
+
+	Ok(boot_time)
 }
 
 // TODO: cache with https://github.com/jaemk/cached once `pub fn` is supported
-pub fn boot_time() -> io::Result<SystemTime> {
-	let data = fs::read_to_string("/proc/stat")?;
-	let boot_time = parse_boot_time(&data)?;
+pub fn boot_time() -> Result<SystemTime> {
+	let contents = read_file(PROC_STAT)?;
+	let line = contents
+		.lines()
+		.filter(|line| line.starts_with("btime "))
+		.nth(0)
+		.context(MissingData {
+			path: PROC_STAT,
+			contents: &contents,
+		})?;
 
-	Ok(boot_time)
+	parse_boot_time(line)
 }

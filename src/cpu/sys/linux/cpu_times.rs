@@ -1,31 +1,38 @@
-use std::fs;
-use std::io;
 use std::str::FromStr;
 use std::time::Duration;
 
+use snafu::{ensure, ResultExt};
+
 use crate::cpu::CpuTimes;
-use crate::utils::invalid_data;
-use crate::{Count, TICKS_PER_SECOND};
+use crate::{read_file, Count, Error, MissingData, ParseInt, Result, TICKS_PER_SECOND};
+
+const PROC_STAT: &str = "/proc/stat";
 
 impl FromStr for CpuTimes {
-	type Err = std::io::Error;
+	type Err = Error;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let fields = s
+	fn from_str(line: &str) -> Result<Self> {
+		let fields = line
 			.split_whitespace()
 			.skip(1)
-			.map(|entry| Ok(try_parse!(entry, Count::from_str)))
-			.collect::<io::Result<Vec<Count>>>()?
+			.map(|entry| {
+				entry.parse().context(ParseInt {
+					path: PROC_STAT,
+					contents: line,
+				})
+			})
+			.collect::<Result<Vec<Count>>>()?
 			.into_iter()
 			.map(|entry| Duration::from_secs_f64(entry as f64 / *TICKS_PER_SECOND))
 			.collect::<Vec<Duration>>();
 
-		if fields.len() != 10 {
-			return Err(invalid_data(&format!(
-				"Expected 10 fields but got {}",
-				fields.len()
-			)));
-		}
+		ensure!(
+			fields.len() >= 7,
+			MissingData {
+				path: PROC_STAT,
+				contents: line,
+			}
+		);
 
 		let user = fields[0];
 		let nice = fields[1];
@@ -69,30 +76,36 @@ impl FromStr for CpuTimes {
 	}
 }
 
-pub fn cpu_times() -> io::Result<CpuTimes> {
-	let data = fs::read_to_string("/proc/stat")?;
-	let lines = data.lines().collect::<Vec<&str>>();
+pub fn cpu_times() -> Result<CpuTimes> {
+	let contents = read_file(PROC_STAT)?;
+	let lines = contents.lines().collect::<Vec<&str>>();
 
-	if lines.is_empty() {
-		return Err(invalid_data("'/proc/stat' is empty"));
-	}
+	ensure!(
+		!lines.is_empty(),
+		MissingData {
+			path: PROC_STAT,
+			contents,
+		}
+	);
 
-	let line = lines[0];
-
-	CpuTimes::from_str(&line)
+	CpuTimes::from_str(lines[0])
 }
 
-pub fn cpu_times_percpu() -> io::Result<Vec<CpuTimes>> {
-	let data = fs::read_to_string("/proc/stat")?;
-	let lines = data
+pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
+	let contents = read_file(PROC_STAT)?;
+	let lines = contents
 		.lines()
 		.skip(1)
 		.take_while(|line| line.starts_with("cpu"))
 		.collect::<Vec<&str>>();
 
-	if lines.is_empty() {
-		return Err(invalid_data("'/proc/stat' is missing per cpu times"));
-	}
+	ensure!(
+		!lines.is_empty(),
+		MissingData {
+			path: PROC_STAT,
+			contents,
+		}
+	);
 
 	lines.into_iter().map(CpuTimes::from_str).collect()
 }

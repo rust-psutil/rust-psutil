@@ -1,34 +1,45 @@
-use std::fs;
-use std::io;
+use snafu::OptionExt;
 
-use crate::memory::make_map;
-use crate::memory::SwapMemory;
-use crate::utils::not_found;
+use crate::memory::{make_map, SwapMemory};
+use crate::utils::u64_percent;
+use crate::{read_file, MissingData, Result};
+
+const PROC_MEMINFO: &str = "/proc/meminfo";
+const PROC_VMSTAT: &str = "/proc/vmstat";
 
 // TODO: return an option for when swap is disabled?
-pub fn swap_memory() -> io::Result<SwapMemory> {
-	let data = fs::read_to_string("/proc/meminfo")?;
-	let meminfo = make_map(&data)?;
+pub fn swap_memory() -> Result<SwapMemory> {
+	let meminfo_contents = read_file(PROC_MEMINFO)?;
+	let meminfo = make_map(&meminfo_contents, PROC_MEMINFO)?;
 
-	let data = fs::read_to_string("/proc/vmstat")?;
-	let vmstat = make_map(&data)?;
+	let vmstat_contents = read_file(PROC_VMSTAT)?;
+	let vmstat = make_map(&vmstat_contents, PROC_VMSTAT)?;
 
-	let total = *meminfo
-		.get("SwapTotal:")
-		.ok_or_else(|| not_found("SwapTotal"))?;
-	let free = *meminfo
-		.get("SwapFree:")
-		.ok_or_else(|| not_found("SwapFree"))?;
+	let meminfo_get = |key: &str| -> Result<u64> {
+		meminfo.get(key).copied().context(MissingData {
+			path: PROC_MEMINFO,
+			contents: &meminfo_contents,
+		})
+	};
+	let vmstat_get = |key: &str| -> Result<u64> {
+		vmstat.get(key).copied().context(MissingData {
+			path: PROC_VMSTAT,
+			contents: &vmstat_contents,
+		})
+	};
 
-	let swapped_in = *vmstat.get("pswpin").ok_or_else(|| not_found("pswpin"))?;
-	let swapped_out = *vmstat.get("pswpout").ok_or_else(|| not_found("pswpout"))?;
+	let total = meminfo_get("SwapTotal")?;
+	let free = meminfo_get("SwapFree")?;
+
+	let swapped_in = vmstat_get("pswpin")?;
+	let swapped_out = vmstat_get("pswpout")?;
 
 	let used = total - free;
 	// total will be 0 if swap is disabled
 	let percent = if total == 0 {
 		0.0
 	} else {
-		((used as f64 / total as f64) * 100.0) as f32
+		u64_percent(used, total)
 	};
 
 	Ok(SwapMemory {

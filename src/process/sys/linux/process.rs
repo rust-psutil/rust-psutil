@@ -1,5 +1,3 @@
-use std::fs;
-use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
 use std::time::Instant;
@@ -7,10 +5,10 @@ use std::time::Instant;
 use crate::common::NetConnectionType;
 use crate::process::os::linux::{procfs_stat, ProcessExt as _};
 use crate::process::{
-	io_error_to_process_error, pids, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
+	pids, psutil_error_to_process_error, MemType, MemoryInfo, OpenFile, Process, ProcessCpuTimes,
 	ProcessResult, Status,
 };
-use crate::{Count, Percent, Pid};
+use crate::{read_dir, read_file, read_link, Count, Percent, Pid, Result};
 
 /// Returns a path to a file in `/proc/[pid]/`.
 pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
@@ -45,7 +43,7 @@ impl Process {
 	}
 
 	pub(crate) fn sys_exe(&self) -> ProcessResult<PathBuf> {
-		fs::read_link(self.procfs_path("exe")).map_err(|e| io_error_to_process_error(e, self.pid))
+		read_link(self.procfs_path("exe")).map_err(|e| psutil_error_to_process_error(e, self.pid))
 	}
 
 	pub(crate) fn sys_cmdline(&self) -> ProcessResult<Option<String>> {
@@ -53,8 +51,8 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cmdline_vec(&self) -> ProcessResult<Option<Vec<String>>> {
-		let cmdline = fs::read_to_string(&self.procfs_path("cmdline"))
-			.map_err(|e| io_error_to_process_error(e, self.pid))?;
+		let cmdline = read_file(&self.procfs_path("cmdline"))
+			.map_err(|e| psutil_error_to_process_error(e, self.pid))?;
 
 		if cmdline.is_empty() {
 			return Ok(None);
@@ -77,7 +75,7 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cwd(&self) -> ProcessResult<PathBuf> {
-		fs::read_link(self.procfs_path("cwd")).map_err(|e| io_error_to_process_error(e, self.pid))
+		read_link(self.procfs_path("cwd")).map_err(|e| psutil_error_to_process_error(e, self.pid))
 	}
 
 	pub(crate) fn sys_username(&self) -> String {
@@ -127,12 +125,12 @@ impl Process {
 	}
 
 	pub(crate) fn sys_open_files(&self) -> ProcessResult<Vec<OpenFile>> {
-		fs::read_dir(self.procfs_path("fd"))
-			.map_err(|e| io_error_to_process_error(e, self.pid))?
+		read_dir(self.procfs_path("fd"))
+			.map_err(|e| psutil_error_to_process_error(e, self.pid))?
+			.into_iter()
 			.map(|entry| {
-				let path = entry
-					.map_err(|e| io_error_to_process_error(e, self.pid))?
-					.path();
+				let path = entry.path();
+				// TODO: fix or document the unwraps
 				let fd = path
 					.file_name()
 					.unwrap()
@@ -140,7 +138,7 @@ impl Process {
 					.parse::<u32>()
 					.unwrap();
 				let open_file =
-					fs::read_link(&path).map_err(|e| io_error_to_process_error(e, self.pid))?;
+					read_link(&path).map_err(|e| psutil_error_to_process_error(e, self.pid))?;
 
 				Ok(OpenFile {
 					fd: Some(fd),
@@ -163,7 +161,7 @@ impl Process {
 	}
 }
 
-pub fn processes() -> io::Result<Vec<ProcessResult<Process>>> {
+pub fn processes() -> Result<Vec<ProcessResult<Process>>> {
 	let processes = pids()?.into_iter().map(Process::new).collect();
 
 	Ok(processes)

@@ -1,46 +1,43 @@
-use std::fs;
-use std::io;
 use std::str::FromStr;
 
+use snafu::{ensure, ResultExt};
+
 use crate::host::LoadAvg;
-use crate::utils::invalid_data;
+use crate::{read_file, Error, MissingData, ParseFloat, Result};
+
+const PROC_LOADAVG: &str = "/proc/loadavg";
 
 impl FromStr for LoadAvg {
-	type Err = std::io::Error;
+	type Err = Error;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
+	fn from_str(s: &str) -> Result<Self> {
 		let fields: Vec<&str> = s.split_whitespace().collect();
-		if fields.len() != 5 {
-			return Err(invalid_data(&format!("malformed loadavg data: '{}'", s)));
-		}
-		let one = try_parse!(fields[0]);
-		let five = try_parse!(fields[1]);
-		let fifteen = try_parse!(fields[2]);
 
-		let last_pid = try_parse!(fields[4]);
+		ensure!(
+			fields.len() >= 3,
+			MissingData {
+				path: PROC_LOADAVG,
+				contents: s,
+			}
+		);
 
-		let entities = fields[3].split('/').collect::<Vec<&str>>();
-		if entities.len() != 2 {
-			return Err(invalid_data(&format!("malformed loadavg data: '{}'", s)));
-		}
-		let runnable = try_parse!(entities[0]);
-		let total_runnable = try_parse!(entities[1]);
+		let parse = |s: &str| -> Result<f64> {
+			s.parse().context(ParseFloat {
+				path: PROC_LOADAVG,
+				contents: s,
+			})
+		};
 
-		Ok(LoadAvg {
-			one,
-			five,
-			fifteen,
-			runnable,
-			total_runnable,
-			last_pid,
-		})
+		let one = parse(fields[0])?;
+		let five = parse(fields[1])?;
+		let fifteen = parse(fields[2])?;
+
+		Ok(LoadAvg { one, five, fifteen })
 	}
 }
 
-pub fn loadavg() -> io::Result<LoadAvg> {
-	let data = fs::read_to_string("/proc/loadavg")?;
-
-	LoadAvg::from_str(&data)
+pub fn loadavg() -> Result<LoadAvg> {
+	LoadAvg::from_str(&read_file(PROC_LOADAVG)?)
 }
 
 #[cfg(test)]

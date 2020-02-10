@@ -1,9 +1,8 @@
 use std::io;
 
-use nix;
 use snafu::Snafu;
 
-use crate::Pid;
+use crate::{Error, Pid};
 
 pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
@@ -19,17 +18,25 @@ pub enum ProcessError {
 	#[snafu(display("Access denied for process {}", pid))]
 	AccessDenied { pid: Pid },
 
-	#[snafu(display("io error for process {}: {}", pid, source))]
-	IoError { pid: Pid, source: io::Error },
-
-	#[snafu(display("nix error for process {}: {}", pid, source))]
-	NixError { pid: Pid, source: nix::Error },
+	#[snafu(display("psutil error for process {}: {}", pid, source))]
+	PsutilError { pid: Pid, source: Error },
 }
 
-pub fn io_error_to_process_error(e: io::Error, pid: Pid) -> ProcessError {
+pub(crate) fn psutil_error_to_process_error(e: Error, pid: Pid) -> ProcessError {
+	match e {
+		Error::ReadFile { source, .. } => io_error_to_process_error(source, pid),
+		Error::OsError { source, .. } => io_error_to_process_error(source, pid),
+		_ => ProcessError::PsutilError { pid, source: e },
+	}
+}
+
+pub(crate) fn io_error_to_process_error(e: io::Error, pid: Pid) -> ProcessError {
 	match e.kind() {
 		io::ErrorKind::NotFound => ProcessError::NoSuchProcess { pid },
 		io::ErrorKind::PermissionDenied => ProcessError::AccessDenied { pid },
-		_ => ProcessError::IoError { pid, source: e },
+		_ => ProcessError::PsutilError {
+			pid,
+			source: Error::OsError { source: e },
+		},
 	}
 }

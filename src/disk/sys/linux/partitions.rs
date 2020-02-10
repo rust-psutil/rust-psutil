@@ -1,25 +1,29 @@
-use std::fs;
-use std::io;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use snafu::ensure;
 use unescape::unescape;
 
+use crate::{read_file, Error, MissingData, Result};
+
 use crate::disk::{FileSystem, Partition};
-use crate::utils::invalid_data;
+
+const PROC_MOUNTS: &str = "/proc/mounts";
 
 impl FromStr for Partition {
-	type Err = io::Error;
+	type Err = Error;
 
-	fn from_str(line: &str) -> io::Result<Partition> {
+	fn from_str(line: &str) -> Result<Partition> {
 		// Example: `/dev/sda3 /home ext4 rw,relatime,data=ordered 0 0`
 		let fields: Vec<&str> = line.split_whitespace().collect();
 
-		if fields.len() < 4 {
-			return Err(invalid_data(
-				"failed to load partition information on '/proc/mounts'",
-			));
-		}
+		ensure!(
+			fields.len() >= 4,
+			MissingData {
+				path: PROC_MOUNTS,
+				contents: line,
+			}
+		);
 
 		Ok(Partition {
 			device: String::from(fields[0]),
@@ -32,8 +36,8 @@ impl FromStr for Partition {
 	}
 }
 
-pub fn partitions() -> io::Result<Vec<Partition>> {
-	fs::read_to_string("/proc/mounts")?
+pub fn partitions() -> Result<Vec<Partition>> {
+	read_file(PROC_MOUNTS)?
 		.lines()
 		.map(|line| Partition::from_str(line))
 		.collect()

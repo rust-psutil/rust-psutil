@@ -1,23 +1,26 @@
 use std::collections::HashMap;
-use std::fs;
-use std::io;
+
+use snafu::ensure;
 
 use crate::process::os::linux::{
 	procfs_stat, procfs_statm, procfs_status, ProcfsStat, ProcfsStatm, ProcfsStatus,
 };
-use crate::process::{Process, ProcessResult};
-use crate::utils::invalid_data;
+use crate::process::{psutil_error_to_process_error, Process, ProcessResult};
+use crate::{read_file, MissingData, Result};
 
-fn parse_environ(data: &str) -> io::Result<HashMap<String, String>> {
-	data.split_terminator('\0')
+fn parse_environ(contents: &str) -> Result<HashMap<String, String>> {
+	contents
+		.split_terminator('\0')
 		.map(|mapping| {
 			let split: Vec<&str> = mapping.splitn(2, '=').collect();
-			if split.len() != 2 {
-				return Err(invalid_data(&format!(
-					"malformed env mapping: '{}'",
-					mapping
-				)));
-			}
+
+			ensure!(
+				split.len() == 2,
+				MissingData {
+					path: "environ",
+					contents
+				}
+			);
 
 			Ok((split[0].to_owned(), split[1].to_owned()))
 		})
@@ -27,7 +30,7 @@ fn parse_environ(data: &str) -> io::Result<HashMap<String, String>> {
 pub struct IoCounters {}
 
 pub trait ProcessExt {
-	fn environ(&self) -> io::Result<HashMap<String, String>>;
+	fn environ(&self) -> ProcessResult<HashMap<String, String>>;
 
 	fn get_ionice(&self) -> i32;
 
@@ -58,10 +61,11 @@ pub trait ProcessExt {
 }
 
 impl ProcessExt for Process {
-	fn environ(&self) -> io::Result<HashMap<String, String>> {
-		let data = fs::read_to_string(self.procfs_path("environ"))?;
+	fn environ(&self) -> ProcessResult<HashMap<String, String>> {
+		let contents = read_file(self.procfs_path("environ"))
+			.map_err(|e| psutil_error_to_process_error(e, self.pid))?;
 
-		parse_environ(&data)
+		parse_environ(&contents).map_err(|e| psutil_error_to_process_error(e, self.pid))
 	}
 
 	fn get_ionice(&self) -> i32 {

@@ -1,9 +1,7 @@
-use std::io;
-
 use crate::process::processes;
-use crate::Pid;
+use crate::{Pid, Result};
 
-pub fn pids() -> io::Result<Vec<Pid>> {
+pub fn pids() -> Result<Vec<Pid>> {
 	Ok(processes()?
 		.into_iter()
 		.filter_map(|process| process.ok())

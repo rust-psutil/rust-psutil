@@ -23,14 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Switch from io::Error to a custom error type
 - [cpu][linux] change `cpu_times{_percent}.{steal,guest,guest_nice}` to `Option`s
+- [process] status parsing now returns a ParseStatusError
 - [process][linux] change `cpu_times.iowait` from `Duration` to `Option<Duration>`
+- [process][linux] change `process.environ` return type from `io::Result` to `ProcessResult`
 
 ### Fix
 
 - fix several 'overflow when subtracting durations' panics
 - [cpu][linux] fix calculation of cpu_percent, CpuTimes.total, and CpuTimesPercent.total
 - [disk][linux] unescape partition mountpoint escape sequences
+
+### Removed
+
+- [host] remove runnable, total_runnable, and last_pid from LoadAvg
 
 ## [v2.0.0] - 2020-02-04
 

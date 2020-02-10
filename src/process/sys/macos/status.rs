@@ -1,11 +1,11 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/bindings/process.rs
 
 use std::convert::TryFrom;
-use std::io;
 
 use nix::libc;
 
 use crate::process::Status;
+use crate::ParseStatusError;
 
 // Process status values, declared at `bsd/sys/proc.h`
 // ex. http://fxr.watson.org/fxr/source/bsd/sys/proc.h?v=xnu-792.6.70#L149
@@ -23,7 +23,7 @@ const SSTOP: libc::c_char = 4;
 const SZOMB: libc::c_char = 5;
 
 impl TryFrom<libc::c_char> for Status {
-	type Error = io::Error;
+	type Error = ParseStatusError;
 
 	fn try_from(value: libc::c_char) -> Result<Status, Self::Error> {
 		match value {
@@ -32,10 +32,9 @@ impl TryFrom<libc::c_char> for Status {
 			SSLEEP => Ok(Status::Sleeping),
 			SSTOP => Ok(Status::Stopped),
 			SZOMB => Ok(Status::Zombie),
-			other => Err(io::Error::new(
-				io::ErrorKind::InvalidInput,
-				format!("Unknown process p_stat {:?}", other),
-			)),
+			other => Err(ParseStatusError::IncorrectChar {
+				contents: other.to_string(),
+			}),
 		}
 	}
 }

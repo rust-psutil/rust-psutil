@@ -1,13 +1,13 @@
 // https://github.com/heim-rs/heim/blob/master/heim-disk/src/sys/linux/counters.rs
 
 use std::collections::HashMap;
-use std::fs;
-use std::io;
 use std::str::FromStr;
 use std::time::Duration;
 
+use snafu::{ensure, ResultExt};
+
 use crate::disk::DiskIoCounters;
-use crate::utils::invalid_data;
+use crate::{read_file, Error, MissingData, ParseInt, Result};
 
 // Copied from the `psutil` sources:
 //
@@ -23,67 +23,87 @@ use crate::utils::invalid_data;
 // * https://lkml.org/lkml/2015/8/17/234
 const DISK_SECTOR_SIZE: u64 = 512;
 
+const PROC_DISKSTATS: &str = "/proc/diskstats";
+const PROC_PARTITIONS: &str = "/proc/partitions";
+
 impl FromStr for DiskIoCounters {
-	type Err = io::Error;
+	type Err = Error;
 
 	// At the moment supports format used in Linux 2.6+,
 	// except ignoring discard values introduced in Linux 4.18.
 	//
 	// https://www.kernel.org/doc/Documentation/iostats.txt
 	// https://www.kernel.org/doc/Documentation/ABI/testing/procfs-diskstats
-	fn from_str(line: &str) -> io::Result<DiskIoCounters> {
+	fn from_str(line: &str) -> Result<DiskIoCounters> {
 		let fields: Vec<&str> = line.split_whitespace().collect();
-		if fields.len() < 14 {
-			return Err(invalid_data(
-				"'/proc/diskstats' does not have the right number of values",
-			));
-		}
+
+		ensure!(
+			fields.len() >= 14,
+			MissingData {
+				path: PROC_DISKSTATS,
+				contents: line,
+			}
+		);
+
+		let parse = |s: &str| -> Result<u64> {
+			s.parse().context(ParseInt {
+				path: PROC_DISKSTATS,
+				contents: line,
+			})
+		};
+
 		Ok(DiskIoCounters {
-			read_count: try_parse!(fields[3]),
-			write_count: try_parse!(fields[7]),
-			read_bytes: try_parse!(fields[5], u64::from_str) * DISK_SECTOR_SIZE,
-			write_bytes: try_parse!(fields[9], u64::from_str) * DISK_SECTOR_SIZE,
-			read_time: Duration::from_millis(try_parse!(fields[6])),
-			write_time: Duration::from_millis(try_parse!(fields[10])),
-			busy_time: Duration::from_millis(try_parse!(fields[12])),
-			read_merged_count: try_parse!(fields[4]),
-			write_merged_count: try_parse!(fields[8]),
+			read_count: parse(fields[3])?,
+			write_count: parse(fields[7])?,
+			read_bytes: parse(fields[5])? * DISK_SECTOR_SIZE,
+			write_bytes: parse(fields[9])? * DISK_SECTOR_SIZE,
+			read_time: Duration::from_millis(parse(fields[6])?),
+			write_time: Duration::from_millis(parse(fields[10])?),
+			busy_time: Duration::from_millis(parse(fields[12])?),
+			read_merged_count: parse(fields[4])?,
+			write_merged_count: parse(fields[8])?,
 		})
 	}
 }
 
 /// Determine partitions we want to look for.
-fn get_partitions(data: &str) -> io::Result<Vec<&str>> {
-	data.lines()
+fn get_partitions(contents: &str) -> Result<Vec<&str>> {
+	contents
+		.lines()
 		.skip(2)
 		.map(|line| {
 			let fields: Vec<&str> = line.split_whitespace().collect();
-			if fields.len() != 4 {
-				return Err(invalid_data(
-					"failed to load partition information from '/proc/partitions'",
-				));
-			}
+
+			ensure!(
+				fields.len() >= 4,
+				MissingData {
+					path: PROC_PARTITIONS,
+					contents: line,
+				}
+			);
 
 			Ok(fields[3])
 		})
 		.collect()
 }
 
-pub(crate) fn disk_io_counters_per_partition() -> io::Result<HashMap<String, DiskIoCounters>> {
-	let data = fs::read_to_string("/proc/partitions")?;
-	let partitions = get_partitions(&data)?;
-
-	let disk_stats = fs::read_to_string("/proc/diskstats")?;
-
+pub(crate) fn disk_io_counters_per_partition() -> Result<HashMap<String, DiskIoCounters>> {
+	let contents = read_file(PROC_PARTITIONS)?;
+	let partitions = get_partitions(&contents)?;
+	let contents = read_file(PROC_DISKSTATS)?;
 	let mut io_counters: HashMap<String, DiskIoCounters> = HashMap::new();
 
-	for line in disk_stats.lines() {
+	for line in contents.lines() {
 		let fields: Vec<&str> = line.split_whitespace().collect();
-		if fields.len() < 14 {
-			return Err(invalid_data(
-				"'/proc/diskstats' does not have the right number of values",
-			));
-		}
+
+		ensure!(
+			fields.len() >= 14,
+			MissingData {
+				path: PROC_DISKSTATS,
+				contents: line,
+			}
+		);
+
 		let name = fields[2];
 		if partitions.contains(&name) {
 			io_counters.insert(String::from(name), DiskIoCounters::from_str(line)?);

@@ -1,29 +1,34 @@
-use std::fs;
-use std::io;
 use std::time::Duration;
 
-use crate::utils::invalid_data;
+use snafu::{ensure, ResultExt};
 
-fn parse_uptime(data: &str) -> io::Result<Duration> {
-	let fields: Vec<&str> = data.split_whitespace().collect();
-	if fields.len() != 2 {
-		return Err(invalid_data(&format!("malformed uptime data: '{}'", data)));
-	}
-	let uptime: Vec<&str> = fields[0].split('.').collect();
-	if uptime.len() != 2 {
-		return Err(invalid_data(&format!("malformed uptime data: '{}'", data)));
-	}
-	let (seconds, centiseconds): (u64, u32) = (try_parse!(uptime[0]), try_parse!(uptime[1]));
-	let uptime = Duration::new(seconds, centiseconds * 10_000_000);
+use crate::{read_file, MissingData, ParseFloat, Result};
+
+const PROC_UPTIME: &str = "/proc/uptime";
+
+fn parse_uptime(contents: &str) -> Result<Duration> {
+	let fields: Vec<&str> = contents.split_whitespace().collect();
+
+	ensure!(
+		fields.len() >= 2,
+		MissingData {
+			path: PROC_UPTIME,
+			contents,
+		}
+	);
+
+	let parsed = fields[0].parse().context(ParseFloat {
+		path: PROC_UPTIME,
+		contents,
+	})?;
+	let uptime = Duration::from_secs_f64(parsed);
 
 	Ok(uptime)
 }
 
 /// New function, not in Python psutil.
-pub fn uptime() -> io::Result<Duration> {
-	let data = fs::read_to_string("/proc/uptime")?;
-
-	parse_uptime(&data)
+pub fn uptime() -> Result<Duration> {
+	parse_uptime(&read_file(PROC_UPTIME)?)
 }
 
 #[cfg(test)]
@@ -39,7 +44,7 @@ mod unit_tests {
 	fn test_parse_uptime() {
 		assert_eq!(
 			parse_uptime("12489513.08 22906637.29\n").unwrap(),
-			Duration::new(12_489_513, 8 * 10_000_000)
+			Duration::from_secs_f64(12_489_513.08)
 		);
 	}
 }

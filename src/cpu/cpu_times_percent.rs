@@ -1,9 +1,8 @@
-use std::io;
 use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::utils::duration_percent;
-use crate::Percent;
+use crate::{Percent, Result};
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -141,7 +140,7 @@ pub struct CpuTimesPercentCollector {
 
 impl CpuTimesPercentCollector {
 	/// Initialize the `CpuTimesPercentCollector` so the method calls are ready to be used.
-	pub fn new() -> io::Result<CpuTimesPercentCollector> {
+	pub fn new() -> Result<CpuTimesPercentCollector> {
 		let cpu_times = cpu_times()?;
 		let cpu_times_percpu = cpu_times_percpu()?;
 
@@ -153,7 +152,7 @@ impl CpuTimesPercentCollector {
 
 	/// Returns a `CpuTimesPercent` since the last time this was called or since
 	/// `CpuTimesPercentCollector::new()` was called.
-	pub fn cpu_times_percent(&mut self) -> io::Result<CpuTimesPercent> {
+	pub fn cpu_times_percent(&mut self) -> Result<CpuTimesPercent> {
 		let current_cpu_times = cpu_times()?;
 		let cpu_percent_since = CpuTimesPercent::from(&current_cpu_times - &self.cpu_times);
 		self.cpu_times = current_cpu_times;
@@ -163,7 +162,7 @@ impl CpuTimesPercentCollector {
 
 	/// Returns a `CpuTimesPercent` for each cpu since the last time this was called or since
 	/// `CpuTimesPercentCollector::new()` was called.
-	pub fn cpu_times_percent_percpu(&mut self) -> io::Result<Vec<CpuTimesPercent>> {
+	pub fn cpu_times_percent_percpu(&mut self) -> Result<Vec<CpuTimesPercent>> {
 		let current_cpu_times_percpu = cpu_times_percpu()?;
 		let vec = self
 			.cpu_times_percpu

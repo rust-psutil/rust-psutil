@@ -17,7 +17,7 @@ use mach::vm_types::{integer_t, natural_t, vm_address_t, vm_map_t, vm_size_t};
 use nix::libc;
 
 use crate::cpu::CpuTimes;
-use crate::TICKS_PER_SECOND;
+use crate::{Result, TICKS_PER_SECOND};
 
 const PROCESSOR_CPU_LOAD_INFO: libc::c_int = 2;
 const HOST_CPU_LOAD_INFO: libc::c_int = 3;
@@ -183,13 +183,13 @@ impl From<processor_cpu_load_info> for CpuTimes {
 	}
 }
 
-pub fn cpu_times() -> io::Result<CpuTimes> {
+pub fn cpu_times() -> Result<CpuTimes> {
 	let info = unsafe { cpu_load_info()? };
 
 	Ok(info.into())
 }
 
-pub fn cpu_times_percpu() -> io::Result<Vec<CpuTimes>> {
+pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 	let processors = unsafe { processor_load_info()? };
 
 	Ok(processors
