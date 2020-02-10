@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- [disk] implement DiskIoCountersCollector::disk_io_counters
 - [process] make `ProcessCollector` more efficient
 - [process][linux] implement `cpu_times.iowait`
 - [sensors][linux] implement `thermal_zone` temperatures

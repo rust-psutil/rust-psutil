@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
+use derive_more::{Add, Sum};
+
 use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count, Result};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Add, Sum)]
 pub struct DiskIoCounters {
 	pub(crate) read_count: Count,
 	pub(crate) write_count: Count,
@@ -134,7 +136,13 @@ pub struct DiskIoCountersCollector {
 
 impl DiskIoCountersCollector {
 	pub fn disk_io_counters(&mut self) -> Result<DiskIoCounters> {
-		todo!()
+		let sum = self
+			.disk_io_counters_per_partition()?
+			.into_iter()
+			.map(|(_key, val)| val)
+			.sum();
+
+		Ok(sum)
 	}
 
 	pub fn disk_io_counters_per_partition(&mut self) -> Result<HashMap<String, DiskIoCounters>> {

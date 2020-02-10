@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::ops::Add;
+
+use derive_more::{Add, Sum};
 
 use crate::network::net_io_counters_pernic;
 use crate::{Bytes, Count, Result};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Add, Sum)]
 pub struct NetIoCounters {
 	pub(crate) bytes_sent: Bytes,
 	pub(crate) bytes_recv: Bytes,
@@ -59,23 +60,6 @@ impl NetIoCounters {
 	/// Renamed from `dropout` in Python psutil.
 	pub fn drop_out(&self) -> Count {
 		self.drop_out
-	}
-}
-
-impl Add for NetIoCounters {
-	type Output = Self;
-
-	fn add(self, other: Self) -> Self {
-		Self {
-			bytes_sent: self.bytes_sent + other.bytes_sent,
-			bytes_recv: self.bytes_recv + other.bytes_recv,
-			packets_sent: self.packets_sent + other.packets_sent,
-			packets_recv: self.packets_recv + other.packets_recv,
-			err_in: self.err_in + other.err_in,
-			err_out: self.err_out + other.err_out,
-			drop_in: self.drop_in + other.drop_in,
-			drop_out: self.drop_out + other.drop_out,
-		}
 	}
 }
 
@@ -148,7 +132,7 @@ impl NetIoCountersCollector {
 			.net_io_counters_pernic()?
 			.into_iter()
 			.map(|(_key, val)| val)
-			.fold(NetIoCounters::default(), |start, item| start + item);
+			.sum();
 
 		Ok(sum)
 	}
