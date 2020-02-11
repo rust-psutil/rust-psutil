@@ -13,14 +13,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-psutil = "2.0.0"
+psutil = "3.0.0"
 ```
 
 Or to opt into only a certain submodule:
 
 ```toml
 [dependencies]
-psutil = { version = "2.0.0", default-features = false, features = ["process"] }
+psutil = { version = "3.0.0", default-features = false, features = ["process"] }
 ```
 
 ## Platform Support
