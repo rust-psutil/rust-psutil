@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "sensors")]
 use glob::glob as other_glob;
 use nix;
 use snafu::{ResultExt, Snafu};
@@ -112,6 +113,7 @@ where
 	})
 }
 
+#[cfg(feature = "sensors")]
 pub(crate) fn glob(path: &str) -> Vec<Result<PathBuf>> {
 	other_glob(path)
 		.unwrap() // only errors on invalid pattern

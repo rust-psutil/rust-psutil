@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix
+
+- fix compilation if the sensors feature is not enabled
+
 ## [v3.0.0] - 2020-02-10
 
 ### Added
