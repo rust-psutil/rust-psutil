@@ -6,7 +6,7 @@ use derive_more::{Add, Sum};
 use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count, Result};
 
-#[derive(Clone, Debug, Add, Sum)]
+#[derive(Clone, Debug, Add, Sum, Default)]
 pub struct DiskIoCounters {
 	pub(crate) read_count: Count,
 	pub(crate) write_count: Count,
