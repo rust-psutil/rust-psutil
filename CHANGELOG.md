@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.0.1] - 2020-02-12
+
 ### Fix
 
 - fix compilation if the sensors feature is not enabled
@@ -111,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove `getpid()`, `getppid()`, `Process.from_pidfile()`, `write_pidfile()`, and `read_pidfile()`
 
-[Unreleased]: https://github.com/rust-psutil/rust-psutil/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/rust-psutil/rust-psutil/compare/v3.0.1...HEAD
+[v3.0.1]: https://github.com/rust-psutil/rust-psutil/compare/v3.0.0...v3.0.1
 [v3.0.0]: https://github.com/rust-psutil/rust-psutil/compare/v2.0.0...v3.0.0
 [v2.0.0]: https://github.com/rust-psutil/rust-psutil/compare/v1.7.0...v2.0.0
 [v1.7.0]: https://github.com/rust-psutil/rust-psutil/compare/v1.6.0...v1.7.0
