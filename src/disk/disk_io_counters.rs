@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use derive_more::{Add, Sum};
+use derive_more::{Add, Sub, Sum};
 
 use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count, Result};
 
-#[derive(Clone, Debug, Add, Sum, Default)]
+#[derive(Clone, Debug, Add, Sum, Default, Sub)]
 pub struct DiskIoCounters {
 	pub(crate) read_count: Count,
 	pub(crate) write_count: Count,

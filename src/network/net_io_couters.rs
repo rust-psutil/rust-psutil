@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use derive_more::{Add, Sum};
+use derive_more::{Add, Sub, Sum};
 
 use crate::network::net_io_counters_pernic;
 use crate::{Bytes, Count, Result};
 
-#[derive(Clone, Debug, Add, Sum)]
+#[derive(Clone, Debug, Add, Sum, Sub)]
 pub struct NetIoCounters {
 	pub(crate) bytes_sent: Bytes,
 	pub(crate) bytes_recv: Bytes,
