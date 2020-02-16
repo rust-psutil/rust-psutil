@@ -8,6 +8,9 @@ pub struct ProcessCollector {
 	pub processes: BTreeMap<Pid, Process>,
 }
 
+/// Used to maintain a list of up-to-date processes while persisting cached data within the process
+/// struct between each update. For example, processes cache CPU busy times in order to calculate
+/// CPU percent.
 impl ProcessCollector {
 	pub fn new() -> Result<ProcessCollector> {
 		let processes = process::processes()?
@@ -33,10 +36,16 @@ impl ProcessCollector {
 			self.processes.remove(&id);
 		}
 
-		// add new processes and replace processes with reused PIDs
 		new.into_iter().for_each(|(pid, process)| {
+			// add new processes and replace processes with reused PIDs
 			if !self.processes.contains_key(&pid) || self.processes[&pid] != process {
 				self.processes.insert(pid, process);
+			} else {
+				// Update data used for oneshot.
+				#[cfg(target_os = "linux")]
+				{
+					self.processes.get_mut(&pid).unwrap().procfs_stat = process.procfs_stat;
+				}
 			}
 		});
 

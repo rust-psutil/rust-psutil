@@ -18,8 +18,9 @@ pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
 impl Process {
 	pub(crate) fn sys_new(pid: Pid) -> ProcessResult<Process> {
 		let procfs_stat = procfs_stat(pid)?;
+
 		let create_time = procfs_stat.starttime;
-		let busy = ProcessCpuTimes::from(procfs_stat).busy();
+		let busy = ProcessCpuTimes::from(&procfs_stat).busy();
 		let instant = Instant::now();
 
 		Ok(Process {
@@ -27,6 +28,7 @@ impl Process {
 			create_time,
 			busy,
 			instant,
+			procfs_stat,
 		})
 	}
 
@@ -103,9 +105,7 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
-		let stat = self.procfs_stat()?;
-
-		Ok(ProcessCpuTimes::from(stat))
+		Ok(ProcessCpuTimes::from(&self.procfs_stat()?))
 	}
 
 	pub(crate) fn sys_memory_info(&self) -> ProcessResult<MemoryInfo> {

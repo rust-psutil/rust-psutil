@@ -40,8 +40,8 @@ impl ProcessCpuTimes {
 }
 
 #[cfg(target_os = "linux")]
-impl From<ProcfsStat> for ProcessCpuTimes {
-	fn from(procfs_stat: ProcfsStat) -> Self {
+impl From<&ProcfsStat> for ProcessCpuTimes {
+	fn from(procfs_stat: &ProcfsStat) -> Self {
 		ProcessCpuTimes {
 			user: procfs_stat.utime,
 			system: procfs_stat.stime,

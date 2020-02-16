@@ -17,12 +17,20 @@ use crate::process::{
 use crate::utils::duration_percent;
 use crate::{Count, Percent, Pid};
 
+#[cfg(target_os = "linux")]
+use crate::process::os::linux::ProcfsStat;
+
 #[derive(Clone, Debug)]
 pub struct Process {
 	pub(crate) pid: Pid,
 	pub(crate) create_time: Duration,
 	pub(crate) busy: Duration,
 	pub(crate) instant: Instant,
+
+	#[cfg(target_os = "linux")]
+	// TODO: ignore debug for this field when the feature becomes available.
+	// https://github.com/rust-lang/rust/issues/37009
+	pub(crate) procfs_stat: ProcfsStat,
 }
 
 impl Process {
@@ -132,7 +140,7 @@ impl Process {
 			// TODO: figure out why. hibernation? something to do with running VMs?
 			busy.checked_sub(self.busy).unwrap_or_default(),
 			// TODO: can duration be zero if cpu_percent is called consecutively without allowing
-			// 		enough time to pass?
+			// 		enough time to pass? Cause then we have division by zero.
 			instant - self.instant,
 		);
 
@@ -151,9 +159,17 @@ impl Process {
 	}
 
 	pub fn memory_percent(&self) -> ProcessResult<Percent> {
-		let memory_info = self.memory_info()?;
 		let virtual_memory =
 			memory::virtual_memory().map_err(|e| psutil_error_to_process_error(e, self.pid))?;
+
+		self.memory_percent_oneshot(&virtual_memory)
+	}
+
+	pub fn memory_percent_oneshot(
+		&self,
+		virtual_memory: &memory::VirtualMemory,
+	) -> ProcessResult<Percent> {
+		let memory_info = self.memory_info()?;
 		let percent = ((memory_info.rss() as f64 / virtual_memory.total() as f64) * 100.0) as f32;
 
 		Ok(percent)
