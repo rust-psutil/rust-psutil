@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [process][linux] implement some oneshot functions
 
+### Fix
+
+- [process] fix process CPU percent calculation when using the ProcessCollector
+
 ## [v3.0.1] - 2020-02-12
 
 ### Fix

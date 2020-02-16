@@ -29,7 +29,7 @@ impl ProcessCollector {
 		let to_remove: Vec<Pid> = self
 			.processes
 			.iter()
-			.filter(|(pid, _process)| new.contains_key(pid))
+			.filter(|(pid, _process)| !new.contains_key(pid))
 			.map(|(pid, _process)| *pid)
 			.collect();
 		for id in to_remove {
