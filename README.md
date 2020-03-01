@@ -40,6 +40,7 @@ Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], a
 ## Apps using rust-psutil
 
 - [ytop](https://github.com/cjbassi/ytop)
+- [procrec](https://github.com/gh0st42/procrec)
 
 ## Related projects
 
