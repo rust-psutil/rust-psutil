@@ -13,48 +13,35 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-psutil = "3.0.0"
+psutil = "3.0.1"
 ```
 
 Or to opt into only a certain submodule:
 
 ```toml
 [dependencies]
-psutil = { version = "3.0.0", default-features = false, features = ["process"] }
+psutil = { version = "3.0.1", default-features = false, features = ["process"] }
 ```
 
 ## Platform Support
 
 Currently, only Linux and macOS are supported, but support is planned for all major platforms.
 
-[platform_support](./platform_support.md) details the implementation level of each platform.
-
-## License
-
-`rust-psutil` is licensed under the [MIT License].
-
-## Authors
-
-Originally written by [Sam Clements], maintained by [Sam Clements], [Rob Day], and [Caleb Bassi], and developed by multiple [contributors].
+[platform-support](./platform-support.md) details the implementation level of each platform.
 
 ## Apps using rust-psutil
 
-- [ytop](https://github.com/cjbassi/ytop)
 - [procrec](https://github.com/gh0st42/procrec)
+- [ytop](https://github.com/cjbassi/ytop)
 
 ## Related projects
 
-- [hiem](https://github.com/heim-rs/heim)
-- [rust-battery](https://github.com/svartalf/rust-battery)
-- [systemstat](https://github.com/myfreeweb/systemstat)
-- [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
 - [gopsutil](https://github.com/shirou/gopsutil)
+- [hiem](https://github.com/heim-rs/heim)
 - [psutil]
+- [rust-battery](https://github.com/svartalf/rust-battery)
 - [sys-info-rs](https://github.com/FillZpp/sys-info-rs)
+- [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
+- [systemstat](https://github.com/myfreeweb/systemstat)
 
-[MIT License]: https://opensource.org/licenses/MIT
 [psutil]: https://github.com/giampaolo/psutil
-[Sam Clements]: https://github.com/borntyping
-[Rob Day]: https://github.com/rkday
-[Caleb Bassi]: https://github.com/cjbassi
-[contributors]: https://github.com/borntyping/rust-psutil/graphs/contributors
