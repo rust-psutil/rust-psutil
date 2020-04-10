@@ -4,7 +4,7 @@ use nix::sys;
 
 use crate::{Bytes, Percent, Result};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct DiskUsage {
 	pub(crate) total: Bytes,
 	pub(crate) used: Bytes,
