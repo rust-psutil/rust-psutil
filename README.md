@@ -1,9 +1,9 @@
 # rust-psutil
 
-[![Latest Version](https://img.shields.io/crates/v/psutil.svg)](https://crates.io/crates/psutil)
-[![Latest Version](https://docs.rs/psutil/badge.svg)](https://docs.rs/psutil)
+[![crates.io](https://img.shields.io/crates/v/psutil.svg)](https://crates.io/crates/psutil)
+[![docs.rs](https://docs.rs/psutil/badge.svg)](https://docs.rs/psutil)
 ![Minimum rustc version](https://img.shields.io/badge/rustc-1.39+-green.svg)
-[![Matrix](https://img.shields.io/matrix/rust-psutil:matrix.org)](https://matrix.to/#/#rust-psutil:matrix.org)
+[![Matrix](https://img.shields.io/badge/matrix-%23rust--psutil-blue.svg)](https://matrix.to/#/#rust-psutil:matrix.org)
 
 A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
