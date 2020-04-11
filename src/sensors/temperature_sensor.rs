@@ -17,7 +17,7 @@ impl TemperatureSensor {
 
 	/// Returns sensor label.
 	pub fn label(&self) -> Option<&str> {
-		self.label.as_ref().map(|s| s.as_str())
+		self.label.as_deref()
 	}
 
 	/// Returns current temperature reported by sensor.

@@ -31,8 +31,7 @@ pub fn boot_time() -> Result<SystemTime> {
 	let contents = read_file(PROC_STAT)?;
 	let line = contents
 		.lines()
-		.filter(|line| line.starts_with("btime "))
-		.nth(0)
+		.find(|line| line.starts_with("btime "))
 		.context(MissingData {
 			path: PROC_STAT,
 			contents: &contents,

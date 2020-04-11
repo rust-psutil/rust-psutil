@@ -41,7 +41,7 @@ impl FromStr for Status {
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		ensure!(s.len() == 1, IncorrectLength { contents: s });
 
-		Status::try_from(s.chars().nth(0).unwrap())
+		Status::try_from(s.chars().next().unwrap())
 	}
 }
 
