@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 
 #[cfg(feature = "sensors")]
 use glob::glob as other_glob;
-use nix;
 use snafu::{ResultExt, Snafu};
 
 #[derive(Debug, Snafu)]

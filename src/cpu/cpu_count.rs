@@ -1,5 +1,3 @@
-use num_cpus;
-
 use crate::Count;
 
 pub fn cpu_count() -> Count {
