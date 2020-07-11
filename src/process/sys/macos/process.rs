@@ -161,7 +161,7 @@ impl Process {
 		todo!()
 	}
 
-	pub(crate) fn sys_chidren(&self) {
+	pub(crate) fn sys_children(&self) {
 		todo!()
 	}
 

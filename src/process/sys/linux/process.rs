@@ -120,7 +120,7 @@ impl Process {
 		todo!()
 	}
 
-	pub(crate) fn sys_chidren(&self) {
+	pub(crate) fn sys_children(&self) {
 		todo!()
 	}
 
@@ -128,22 +128,24 @@ impl Process {
 		read_dir(self.procfs_path("fd"))
 			.map_err(|e| psutil_error_to_process_error(e, self.pid))?
 			.into_iter()
-			.map(|entry| {
+			.filter_map(|entry| {
 				let path = entry.path();
-				// TODO: fix or document the unwraps
+
 				let fd = path
 					.file_name()
-					.unwrap()
+					.expect("directory entries should always contain a file name")
 					.to_string_lossy()
 					.parse::<u32>()
-					.unwrap();
-				let open_file =
-					read_link(&path).map_err(|e| psutil_error_to_process_error(e, self.pid))?;
+					.ok()?;
+				let open_file = match read_link(&path) {
+					Ok(path) => path,
+					Err(e) => return Some(Err(psutil_error_to_process_error(e, self.pid))),
+				};
 
-				Ok(OpenFile {
+				Some(Ok(OpenFile {
 					fd: Some(fd),
 					path: open_file,
-				})
+				}))
 			})
 			.collect()
 	}
