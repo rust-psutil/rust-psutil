@@ -1,5 +1,6 @@
 mod disk_io_counters;
 mod filesystem;
+pub mod os;
 mod partition;
 mod sys;
 

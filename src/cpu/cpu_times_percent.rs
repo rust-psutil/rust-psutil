@@ -48,6 +48,10 @@ impl CpuTimesPercent {
 		{
 			self.idle
 		}
+		#[cfg(target_os = "windows")]
+		{
+			todo!()
+		}
 	}
 
 	/// New method, not in Python psutil.
@@ -64,6 +68,10 @@ impl CpuTimesPercent {
 		#[cfg(target_os = "macos")]
 		{
 			self.user + self.system + self.nice
+		}
+		#[cfg(target_os = "windows")]
+		{
+			self.user + self.system
 		}
 	}
 }

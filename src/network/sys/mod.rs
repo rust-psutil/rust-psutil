@@ -6,5 +6,9 @@ cfg_if::cfg_if! {
 		mod macos;
 		#[allow(unused_imports)]
 		pub use macos::*;
+	} else if #[cfg(target_os = "windows")] {
+		mod windows;
+		#[allow(unused_imports)]
+		pub use windows::*;
 	}
 }

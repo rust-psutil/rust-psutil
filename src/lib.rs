@@ -59,3 +59,6 @@ cfg_if::cfg_if! {
 		use unix::*;
 	}
 }
+
+#[cfg(target_os = "windows")]
+mod windows_util;

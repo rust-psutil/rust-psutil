@@ -9,6 +9,9 @@ pub struct Partition {
 	pub(crate) mountpoint: PathBuf,
 	pub(crate) filesystem: FileSystem,
 	pub(crate) mount_options: String,
+
+	#[cfg(target_os = "windows")]
+	pub(crate) name: Option<String>,
 }
 
 impl Partition {
@@ -36,4 +39,28 @@ pub fn partitions_physical() -> Result<Vec<Partition>> {
 		.into_iter()
 		.filter(|partition| partition.filesystem.is_physical())
 		.collect())
+}
+
+#[cfg(test)]
+mod unit_tests {
+	#[test]
+	fn test_partitions() {
+		super::partitions().unwrap();
+	}
+
+	#[test]
+	fn test_partitions_usage() {
+		use crate::disk::disk_usage;
+		let p = super::partitions().unwrap();
+		for p in p.iter() {
+			match disk_usage(p.mountpoint()) {
+				Ok(_) => (),
+				Err(e) => panic!(
+					"Failed to query disk usage for {} {}",
+					p.mountpoint().display(),
+					e
+				),
+			}
+		}
+	}
 }

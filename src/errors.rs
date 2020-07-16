@@ -1,10 +1,35 @@
+#[cfg(not(target_os = "windows"))]
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+#[cfg(not(target_os = "windows"))]
+use std::path::Path;
+use std::path::PathBuf;
 
+#[cfg(target_os = "windows")]
+use std::string::FromUtf16Error;
+#[cfg(target_os = "windows")]
+use winapi::{shared::ntdef::NTSTATUS, um::errhandlingapi::GetLastError};
+
+#[cfg(not(target_os = "windows"))]
 #[cfg(feature = "sensors")]
 use glob::glob as other_glob;
-use snafu::{ResultExt, Snafu};
+#[cfg(not(target_os = "windows"))]
+use snafu::ResultExt;
+use snafu::Snafu;
+
+#[cfg(target_os = "windows")]
+#[derive(Debug, Snafu)]
+#[snafu(visibility(pub(crate)))]
+pub enum WindowsOsError {
+	#[snafu(display("Windows call to \"{}\" failed with status code {:#x}", call, code))]
+	Win32Error { call: &'static str, code: u32 },
+
+	#[snafu(display("{} failed with status code {:#x}", call, status))]
+	NtError {
+		call: &'static str,
+		status: NTSTATUS,
+	},
+}
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]
@@ -53,13 +78,25 @@ pub enum Error {
 
 	// Unix only.
 	#[snafu(display("nix error: {}", source))]
+	#[cfg(target_family = "unix")]
 	NixError { source: nix::Error },
 
 	/// macOS only.
 	#[snafu(display("OS error: {}", source))]
 	OsError { source: io::Error },
+
+	/// Windows only
+	#[cfg(target_os = "windows")]
+	#[snafu(display("Windows error: {}", source))]
+	WindowsError { source: WindowsOsError },
+
+	/// Windows only
+	#[cfg(target_os = "windows")]
+	#[snafu(display("Failed to convert from UTF-16 : {}", source))]
+	FromUtf16ConvertError { source: FromUtf16Error },
 }
 
+#[cfg(target_family = "unix")]
 impl From<nix::Error> for Error {
 	fn from(error: nix::Error) -> Self {
 		Error::NixError { source: error }
@@ -78,6 +115,40 @@ impl From<ParseStatusError> for Error {
 	}
 }
 
+#[cfg(target_os = "windows")]
+impl From<WindowsOsError> for Error {
+	fn from(error: WindowsOsError) -> Self {
+		Error::WindowsError { source: error }
+	}
+}
+
+#[cfg(target_os = "windows")]
+impl From<FromUtf16Error> for Error {
+	fn from(error: FromUtf16Error) -> Self {
+		Error::FromUtf16ConvertError { source: error }
+	}
+}
+
+#[cfg(target_os = "windows")]
+impl WindowsOsError {
+	pub(crate) fn last_win32_error(call: &'static str) -> WindowsOsError {
+		Self::Win32Error {
+			call,
+			code: unsafe { GetLastError() },
+		}
+	}
+	pub(crate) fn from_code(code: u32, call: &'static str) -> WindowsOsError {
+		Self::Win32Error { call, code }
+	}
+	pub(crate) fn last_win32_error_code() -> u32 {
+		unsafe { GetLastError() as u32 }
+	}
+	pub(crate) fn nt_error(call: &'static str, status: NTSTATUS) -> WindowsOsError {
+		Self::NtError { call, status }
+	}
+}
+
+#[cfg(not(target_os = "windows"))]
 pub(crate) fn read_file<P>(path: P) -> Result<String>
 where
 	P: AsRef<Path>,
@@ -87,6 +158,7 @@ where
 	})
 }
 
+#[cfg(not(target_os = "windows"))]
 pub(crate) fn read_dir<P>(path: P) -> Result<Vec<fs::DirEntry>>
 where
 	P: AsRef<Path>,
@@ -103,6 +175,7 @@ where
 		.collect()
 }
 
+#[cfg(not(target_os = "windows"))]
 pub(crate) fn read_link<P>(path: P) -> Result<PathBuf>
 where
 	P: AsRef<Path>,
@@ -113,6 +186,7 @@ where
 }
 
 #[cfg(feature = "sensors")]
+#[cfg(not(target_os = "windows"))]
 pub(crate) fn glob(path: &str) -> Vec<Result<PathBuf>> {
 	other_glob(path)
 		.unwrap() // only errors on invalid pattern

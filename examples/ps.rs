@@ -16,16 +16,19 @@ fn main() {
 		"PID", "%CPU", "%MEM", "COMMAND"
 	);
 	for p in processes {
-		let mut p = p.unwrap();
-
-		println!(
-			"{:>6} {:>2.1} {:>2.1} {:.100}",
-			p.pid(),
-			p.cpu_percent().unwrap(),
-			p.memory_percent().unwrap(),
-			p.cmdline()
-				.unwrap()
-				.unwrap_or_else(|| format!("[{}]", p.name().unwrap())),
-		);
+		match p {
+			Ok(mut p) => {
+				println!(
+					"{:>6} {:>2.1} {:>2.1} {}",
+					p.pid(),
+					p.cpu_percent().unwrap_or(0.0f32),
+					p.memory_percent().unwrap_or(0.0f32),
+					p.cmdline()
+						.unwrap_or(None)
+						.unwrap_or_else(|| format!("[{}]", p.name().unwrap())),
+				);
+			}
+			Err(_) => {}
+		};
 	}
 }
