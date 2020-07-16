@@ -361,6 +361,7 @@ mod unit_tests {
 	}
 
 	/// This could fail if you run the tests as PID 1. Please don't do that.
+	#[cfg(not(target_os = "windows"))]
 	#[test]
 	fn test_process_inequality() {
 		assert_ne!(Process::current().unwrap(), Process::new(1).unwrap());
