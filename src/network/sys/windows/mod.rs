@@ -57,7 +57,7 @@ unsafe fn get_nic_addresses() -> Result<Vec<IP_ADAPTER_ADDRESSES>> {
 		}
 	};
 
-	return Ok(buffer);
+	Ok(buffer)
 }
 
 pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>> {
@@ -67,7 +67,7 @@ pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>>
 	let nics = unsafe { get_nic_addresses()? };
 	let mut nic_ptr: *const IP_ADAPTER_ADDRESSES = nics.as_ptr();
 
-	while nic_ptr != ptr::null() {
+	while !nic_ptr.is_null() {
 		unsafe {
 			let mut mir: MIB_IF_ROW2 = mem::MaybeUninit::uninit().assume_init();
 			mir.InterfaceLuid = mem::zeroed();
@@ -78,8 +78,8 @@ pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>>
 					map.insert(
 						mir.InterfaceIndex.to_string(),
 						NetIoCounters {
-							bytes_sent: (mir.OutOctets as u64).checked_mul(8).unwrap_or(u64::MAX),
-							bytes_recv: (mir.InOctets as u64).checked_mul(8).unwrap_or(u64::MAX),
+							bytes_sent: (mir.OutOctets as u64).saturating_mul(8),
+							bytes_recv: (mir.InOctets as u64).saturating_mul(8),
 							packets_sent: mir.OutUcastPkts as u64 + mir.OutNUcastPkts as u64,
 							packets_recv: mir.InUcastPkts as u64 + mir.InNUcastPkts as u64,
 							err_in: mir.InErrors,

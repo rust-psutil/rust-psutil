@@ -5,6 +5,7 @@ use crate::process::{
 use crate::windows_util::*;
 use crate::{Count, Error, Percent, Pid, Result, WindowsOsError};
 use std::cmp::min;
+use std::ffi::c_void;
 use std::mem;
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
@@ -12,7 +13,7 @@ use std::ptr;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use winapi::shared::minwindef::{FILETIME, LPFILETIME, MAX_PATH};
+use winapi::shared::minwindef::{FILETIME, MAX_PATH};
 use winapi::shared::ntdef::UNICODE_STRING;
 use winapi::shared::ntstatus::{
 	STATUS_BUFFER_OVERFLOW, STATUS_BUFFER_TOO_SMALL, STATUS_INFO_LENGTH_MISMATCH, STATUS_NOT_FOUND,
@@ -27,8 +28,7 @@ use winapi::um::psapi::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
 use winapi::um::shellapi::CommandLineToArgvW;
 use winapi::um::synchapi::WaitForSingleObject;
 use winapi::um::tlhelp32::{
-	CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, LPPROCESSENTRY32W, PROCESSENTRY32W,
-	TH32CS_SNAPPROCESS,
+	CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
 };
 use winapi::um::winbase::{LocalFree, QueryFullProcessImageNameW, INFINITE};
 use winapi::um::winnt::{
@@ -69,7 +69,7 @@ impl Process {
 	fn raise_privileges(&self, more_rights: u32) -> ProcessResult<SafeHandle> {
 		unsafe {
 			let current_process = GetCurrentProcess();
-			let mut handle: HANDLE = MaybeUninit::uninit().assume_init();
+			let mut handle: HANDLE = handle_invalid();
 			if DuplicateHandle(
 				current_process,
 				self.get_handle()?.get_raw(),
@@ -86,7 +86,7 @@ impl Process {
 				));
 			}
 
-			return Ok(SafeHandle::from_raw_handle(handle));
+			Ok(SafeHandle::from_raw_handle(handle))
 		}
 	}
 
@@ -117,7 +117,7 @@ impl Process {
 				handle.get_raw(),
 				0,
 				buffer.as_mut_ptr() as *mut u16,
-				&mut size as _,
+				&mut size as *mut _,
 			) == 0
 			{
 				let code = GetLastError();
@@ -126,7 +126,7 @@ impl Process {
 						handle.get_raw(),
 						1, /* PROCESS_NAME_NATIVE */
 						buffer.as_mut_ptr() as *mut u16,
-						&mut size as _,
+						&mut size as *mut _,
 					) != 0
 				{
 					// Attempt to query win32 path of WSL processes returns ERROR_GEN_FAILURE
@@ -146,15 +146,16 @@ impl Process {
 				}
 			}
 
-			match String::from_utf16(mem::transmute(&buffer[..size as usize])) {
-				Ok(d) => return Ok(PathBuf::from(d)),
-				Err(e) => {
-					return Err(ProcessError::PsutilError {
-						pid: self.pid,
-						source: Error::from(e),
-					})
-				}
-			};
+			match String::from_utf16(
+				&*(&buffer[..size as usize] as *const [std::mem::MaybeUninit<u16>]
+					as *const [u16]),
+			) {
+				Ok(d) => Ok(PathBuf::from(d)),
+				Err(e) => Err(ProcessError::PsutilError {
+					pid: self.pid,
+					source: Error::from(e),
+				}),
+			}
 		}
 	}
 
@@ -166,8 +167,8 @@ impl Process {
 		let c = unsafe { self.get_command_line()? };
 		let mut num_args: u32 = 0;
 		unsafe {
-			let p = CommandLineToArgvW(c.as_ptr(), mem::transmute(&mut num_args as *mut _));
-			if p == mem::transmute(ptr::null::<u16>()) {
+			let p = CommandLineToArgvW(c.as_ptr(), &mut num_args as *mut _ as *mut i32);
+			if p.is_null() {
 				return Err(windows_error_to_process_error(
 					self.pid,
 					WindowsOsError::last_win32_error("CommandLineToArgvW"),
@@ -192,9 +193,9 @@ impl Process {
 				};
 			}
 
-			LocalFree(mem::transmute(p));
+			LocalFree(p as *mut c_void);
 
-			return Ok(Some(cmdline));
+			Ok(Some(cmdline))
 		}
 	}
 
@@ -268,41 +269,41 @@ impl Process {
 
 	pub(crate) fn sys_cpu_times(&self) -> ProcessResult<ProcessCpuTimes> {
 		unsafe {
-			let mut creation_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut exit_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut kernel_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut user_time: FILETIME = MaybeUninit::uninit().assume_init();
+			let mut creation_time: FILETIME = windows_filetime_default();
+			let mut exit_time: FILETIME = windows_filetime_default();
+			let mut kernel_time: FILETIME = windows_filetime_default();
+			let mut user_time: FILETIME = windows_filetime_default();
 
 			if GetProcessTimes(
 				self.get_handle()?.get_raw(),
-				&mut creation_time as LPFILETIME,
-				&mut exit_time as LPFILETIME,
-				&mut kernel_time as LPFILETIME,
-				&mut user_time as LPFILETIME,
+				&mut creation_time as *mut _,
+				&mut exit_time as *mut _,
+				&mut kernel_time as *mut _,
+				&mut user_time as *mut _,
 			) != 0
 			{
 				let user_time_nanos = windows_filetime_to_ns(&user_time);
 				let kernel_time_nanos = windows_filetime_to_ns(&kernel_time);
 
-				return Ok(ProcessCpuTimes {
+				Ok(ProcessCpuTimes {
 					user: Duration::from_nanos(user_time_nanos),
 					system: Duration::from_nanos(kernel_time_nanos),
 					// TODO:
 					children_user: Duration::from_nanos(0),
 					children_system: Duration::from_nanos(0),
-				});
+				})
 			} else {
-				return Err(windows_error_to_process_error(
+				Err(windows_error_to_process_error(
 					self.pid,
 					WindowsOsError::last_win32_error("GetProcessTimes"),
-				));
+				))
 			}
 		}
 	}
 
 	pub(crate) fn sys_memory_info(&self) -> ProcessResult<MemoryInfo> {
 		unsafe {
-			let mut pmc: PROCESS_MEMORY_COUNTERS = MaybeUninit::uninit().assume_init();
+			let mut pmc: PROCESS_MEMORY_COUNTERS = mem::zeroed();
 			if GetProcessMemoryInfo(
 				self.get_handle()?.get_raw(),
 				&mut pmc as *mut _,
@@ -315,10 +316,10 @@ impl Process {
 				));
 			}
 
-			return Ok(MemoryInfo {
+			Ok(MemoryInfo {
 				rss: pmc.WorkingSetSize as u64,
 				vms: pmc.PagefileUsage as u64,
-			});
+			})
 		}
 	}
 
@@ -404,7 +405,7 @@ impl Process {
 			match NtQueryInformationProcess(
 				handle.get_raw(),
 				ProcessWow64Information,
-				mem::transmute(&mut ppeb32 as *mut _),
+				&mut ppeb32 as *mut _ as *mut c_void,
 				mem::size_of::<*const u8>() as u32,
 				ptr::null_mut(),
 			) {
@@ -417,15 +418,14 @@ impl Process {
 				}
 			}
 
-			if ppeb32 != ptr::null_mut() {
-				let mut peb32: PEB32 = MaybeUninit::uninit().assume_init();
-				let mut procParameters32: RTL_USER_PROCESS_PARAMETERS32 =
-					MaybeUninit::uninit().assume_init();
+			if !ppeb32.is_null() {
+				let mut peb32: PEB32 = mem::zeroed();
+				let mut procParameters32: RTL_USER_PROCESS_PARAMETERS32 = mem::zeroed();
 
 				if ReadProcessMemory(
 					handle.get_raw(),
-					mem::transmute(ppeb32),
-					mem::transmute(&mut peb32 as *mut _),
+					ppeb32 as *const c_void,
+					&mut peb32 as *mut _ as *mut c_void,
 					mem::size_of::<PEB32>(),
 					ptr::null_mut(),
 				) == 0
@@ -439,7 +439,7 @@ impl Process {
 				if ReadProcessMemory(
 					handle.get_raw(),
 					mem::transmute(peb32.ProcessParameters as u64),
-					mem::transmute(&mut procParameters32 as *mut _),
+					&mut procParameters32 as *mut _ as *mut c_void,
 					mem::size_of::<RTL_USER_PROCESS_PARAMETERS32>(),
 					ptr::null_mut(),
 				) == 0
@@ -475,16 +475,15 @@ impl Process {
 		#[cfg(target_pointer_width = "32")]
 		type UintPtr = u32;
 
-		if src == ptr::null() {
-			let mut pbi: PROCESS_BASIC_INFORMATION = MaybeUninit::uninit().assume_init();
-			let mut peb: PEB_ = MaybeUninit::uninit().assume_init();
-			let mut procParameters: RTL_USER_PROCESS_PARAMETERS_ =
-				MaybeUninit::uninit().assume_init();
+		if src.is_null() {
+			let mut pbi: PROCESS_BASIC_INFORMATION = mem::zeroed();
+			let mut peb: PEB_ = mem::zeroed();
+			let mut procParameters: RTL_USER_PROCESS_PARAMETERS_ = mem::zeroed();
 
 			match NtQueryInformationProcess(
 				handle.get_raw(),
 				ProcessBasicInformation,
-				mem::transmute(&mut pbi as *mut _),
+				&mut pbi as *mut _ as *mut c_void,
 				mem::size_of::<PROCESS_BASIC_INFORMATION>() as u32,
 				ptr::null_mut(),
 			) {
@@ -500,7 +499,7 @@ impl Process {
 			if ReadProcessMemory(
 				handle.get_raw(),
 				mem::transmute(pbi.PebBaseAddress as UintPtr),
-				mem::transmute(&mut peb as *mut _),
+				&mut peb as *mut _ as *mut c_void,
 				mem::size_of::<PEB_>(),
 				ptr::null_mut(),
 			) == 0
@@ -514,7 +513,7 @@ impl Process {
 			if ReadProcessMemory(
 				handle.get_raw(),
 				mem::transmute(peb.ProcessParameters as UintPtr),
-				mem::transmute(&mut procParameters as *mut _),
+				&mut procParameters as *mut _ as *mut c_void,
 				mem::size_of::<RTL_USER_PROCESS_PARAMETERS_>(),
 				ptr::null_mut(),
 			) == 0
@@ -575,8 +574,8 @@ impl Process {
 		}
 		if ReadProcessMemory(
 			handle.get_raw(),
-			mem::transmute(src),
-			mem::transmute(buffer.as_mut_ptr()),
+			src as *const c_void,
+			buffer.as_mut_ptr() as *mut c_void,
 			size,
 			ptr::null_mut(),
 		) == 0
@@ -589,7 +588,7 @@ impl Process {
 
 		let buffer_len = buffer.len();
 		buffer[buffer_len - 1] = 0;
-		return Ok(buffer);
+		Ok(buffer)
 	}
 
 	unsafe fn get_process_region_size(
@@ -608,7 +607,7 @@ impl Process {
 
 		if VirtualQueryEx(
 			handle.get_raw(),
-			mem::transmute(src),
+			src as *const c_void,
 			&mut mbi as *mut _,
 			mem::size_of::<MEMORY_BASIC_INFORMATION>(),
 		) == 0
@@ -639,7 +638,7 @@ impl Process {
 			p = p.offset(1);
 		}
 
-		return len;
+		len
 	}
 	unsafe fn get_command_line_using_peb(&self) -> ProcessResult<Vec<u16>> {
 		let mut delay = 1;
@@ -707,7 +706,7 @@ impl Process {
 		status = NtQueryInformationProcess(
 			handle.get_raw(),
 			ProcessCommandLineInformation,
-			mem::transmute(buffer.as_mut_ptr()),
+			buffer.as_mut_ptr() as *mut c_void,
 			buffer_len,
 			&mut buffer_len as *mut _,
 		);
@@ -719,17 +718,17 @@ impl Process {
 		}
 
 		// copy to force proper alignment
-		let mut us: UNICODE_STRING = MaybeUninit::uninit().assume_init();
+		let mut us: UNICODE_STRING = mem::zeroed();
 		ptr::copy::<u8>(
 			buffer.as_ptr(),
-			mem::transmute::<*mut UNICODE_STRING, *mut u8>(&mut us as *mut _),
+			&mut us as *mut _ as *mut u8,
 			mem::size_of::<UNICODE_STRING>(),
 		);
 		let len = Self::string_length(us.Buffer);
 
 		Ok(::std::slice::from_raw_parts::<u16>(us.Buffer, len)
 			.iter()
-			.map(|x| *x)
+			.copied()
 			.chain(::std::iter::once(0))
 			.collect::<Vec<u16>>())
 	}
@@ -741,17 +740,17 @@ fn get_process_info(pid: Pid) -> ProcessResult<Process> {
 
 	match unsafe { try_open_process_for_query(pid, true) } {
 		Ok((handle, access_rights)) => unsafe {
-			let mut creation_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut exit_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut kernel_time: FILETIME = MaybeUninit::uninit().assume_init();
-			let mut user_time: FILETIME = MaybeUninit::uninit().assume_init();
+			let mut creation_time: FILETIME = windows_filetime_default();
+			let mut exit_time: FILETIME = windows_filetime_default();
+			let mut kernel_time: FILETIME = windows_filetime_default();
+			let mut user_time: FILETIME = windows_filetime_default();
 
 			if GetProcessTimes(
 				handle.get_raw(),
-				&mut creation_time as LPFILETIME,
-				&mut exit_time as LPFILETIME,
-				&mut kernel_time as LPFILETIME,
-				&mut user_time as LPFILETIME,
+				&mut creation_time as *mut _,
+				&mut exit_time as *mut _,
+				&mut kernel_time as *mut _,
+				&mut user_time as *mut _,
 			) != 0
 			{
 				let create_time_raw = windows_filetime_to_ns(&creation_time);
@@ -796,7 +795,7 @@ pub fn processes() -> Result<Vec<ProcessResult<Process>>> {
 			)));
 		}
 
-		if Process32FirstW(snapshot.get_raw(), &mut pe as LPPROCESSENTRY32W) == 0 {
+		if Process32FirstW(snapshot.get_raw(), &mut pe as *mut _) == 0 {
 			return Err(Error::from(WindowsOsError::last_win32_error(
 				"CreateToolhelp32Snapshot",
 			)));
@@ -804,7 +803,7 @@ pub fn processes() -> Result<Vec<ProcessResult<Process>>> {
 
 		process_entry(&pe, &mut pl);
 
-		while Process32NextW(snapshot.get_raw(), &mut pe as LPPROCESSENTRY32W) != 0 {
+		while Process32NextW(snapshot.get_raw(), &mut pe as *mut _) != 0 {
 			process_entry(&pe, &mut pl);
 		}
 	}

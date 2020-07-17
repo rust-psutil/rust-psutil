@@ -2,7 +2,7 @@ use crate::utils::u64_percent;
 use crate::windows_util::*;
 use crate::{Bytes, Error, Percent, Result, WindowsOsError};
 use std::iter::once;
-use std::mem::{transmute, MaybeUninit};
+use std::mem::{transmute, zeroed};
 use std::os::windows::ffi::OsStrExt as _;
 use std::path::Path;
 use std::ptr;
@@ -51,8 +51,8 @@ where
 		.chain(once(0))
 		.collect();
 	unsafe {
-		let mut total_uli: ULARGE_INTEGER = MaybeUninit::uninit().assume_init();
-		let mut free_uli: ULARGE_INTEGER = MaybeUninit::uninit().assume_init();
+		let mut total_uli: ULARGE_INTEGER = zeroed();
+		let mut free_uli: ULARGE_INTEGER = zeroed();
 
 		if GetDiskFreeSpaceExW(
 			transmute(raw_path.as_ptr()),
@@ -68,11 +68,11 @@ where
 		let total = ularge_integer_to_u64(&total_uli);
 		let free = ularge_integer_to_u64(&free_uli);
 
-		return Ok(DiskUsage {
+		Ok(DiskUsage {
 			total,
 			used: total - free,
 			free: total,
 			percent: u64_percent(total - free, total),
-		});
+		})
 	}
 }

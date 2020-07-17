@@ -1,7 +1,8 @@
 use crate::errors::{Error, WindowsOsError};
 use crate::process::ProcessError;
 use crate::Pid;
-use std::mem::{size_of, transmute, zeroed, MaybeUninit};
+use crate::Result;
+use std::mem::{size_of, zeroed};
 
 use winapi::shared::minwindef::FILETIME;
 use winapi::shared::ntdef::{LARGE_INTEGER, ULARGE_INTEGER};
@@ -9,9 +10,10 @@ use winapi::shared::ntstatus;
 use winapi::shared::winerror::ERROR_ACCESS_DENIED;
 use winapi::um::handleapi::{CloseHandle, DuplicateHandle, INVALID_HANDLE_VALUE};
 use winapi::um::processthreadsapi::{GetCurrentProcess, OpenProcess};
+use winapi::um::sysinfoapi::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
 use winapi::um::winnt::{
-	DUPLICATE_SAME_ACCESS, HANDLE, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION,
-	RTL_OSVERSIONINFOEXW, SYNCHRONIZE,
+	DUPLICATE_SAME_ACCESS, HANDLE, OSVERSIONINFOW, PROCESS_QUERY_INFORMATION,
+	PROCESS_QUERY_LIMITED_INFORMATION, RTL_OSVERSIONINFOEXW, SYNCHRONIZE,
 };
 
 use ntapi::ntrtl::RtlGetVersion;
@@ -68,7 +70,7 @@ impl Clone for SafeHandle {
 	fn clone(&self) -> Self {
 		unsafe {
 			let cp = GetCurrentProcess();
-			let mut new_handle: HANDLE = MaybeUninit::uninit().assume_init();
+			let mut new_handle: HANDLE = zeroed();
 			if DuplicateHandle(
 				cp,
 				self.get_raw(),
@@ -82,9 +84,9 @@ impl Clone for SafeHandle {
 				new_handle = INVALID_HANDLE_VALUE;
 			}
 
-			return Self {
+			Self {
 				raw_handle: new_handle,
-			};
+			}
 		}
 	}
 }
@@ -147,7 +149,7 @@ pub(crate) fn get_windows_version() -> (u32, u32) {
 	unsafe {
 		let mut vi: RTL_OSVERSIONINFOEXW = zeroed();
 		vi.dwOSVersionInfoSize = size_of::<RTL_OSVERSIONINFOEXW>() as u32;
-		RtlGetVersion(transmute(&mut vi as *mut _));
+		RtlGetVersion(&mut vi as *mut _ as *mut OSVERSIONINFOW);
 
 		(vi.dwMajorVersion, vi.dwMinorVersion)
 	}
@@ -158,9 +160,35 @@ pub(crate) fn is_windows_version_higher_than_8_1() -> bool {
 
 	if major == 6 && minor >= 3 {
 		true
-	} else if major > 6 {
-		true
 	} else {
-		false
+		major > 6
+	}
+}
+
+#[inline(always)]
+pub(crate) fn windows_filetime_default() -> FILETIME {
+	FILETIME {
+		dwLowDateTime: 0,
+		dwHighDateTime: 0,
+	}
+}
+
+#[inline(always)]
+pub(crate) fn handle_invalid() -> HANDLE {
+	INVALID_HANDLE_VALUE
+}
+
+#[inline(always)]
+pub(crate) fn global_memory_status_ex() -> Result<MEMORYSTATUSEX> {
+	unsafe {
+		let mut msx: MEMORYSTATUSEX = zeroed();
+		msx.dwLength = size_of::<MEMORYSTATUSEX>() as u32;
+		if GlobalMemoryStatusEx(&mut msx as *mut _) == 0 {
+			return Err(Error::from(WindowsOsError::last_win32_error(
+				"GlobalMemoryStatusEx",
+			)));
+		}
+
+		Ok(msx)
 	}
 }

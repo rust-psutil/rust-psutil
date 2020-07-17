@@ -1,7 +1,8 @@
 use crate::cpu::CpuTimes;
-use crate::windows_util::windows_filetime_to_ns;
+use crate::windows_util::{windows_filetime_default, windows_filetime_to_ns};
 use crate::{Error, Result, WindowsOsError};
-use std::mem::{size_of, transmute, zeroed, MaybeUninit};
+use std::ffi::c_void;
+use std::mem::{size_of, zeroed};
 use std::ptr;
 use std::time::Duration;
 
@@ -19,9 +20,9 @@ use crate::windows_util::*;
 
 pub fn cpu_times() -> Result<CpuTimes> {
 	unsafe {
-		let mut idle: FILETIME = MaybeUninit::uninit().assume_init();
-		let mut kernel: FILETIME = MaybeUninit::uninit().assume_init();
-		let mut user: FILETIME = MaybeUninit::uninit().assume_init();
+		let mut idle: FILETIME = windows_filetime_default();
+		let mut kernel: FILETIME = windows_filetime_default();
+		let mut user: FILETIME = windows_filetime_default();
 
 		if GetSystemTimes(
 			&mut idle as *mut _,
@@ -36,12 +37,12 @@ pub fn cpu_times() -> Result<CpuTimes> {
 
 		let idle = windows_filetime_to_ns(&idle);
 
-		return Ok(CpuTimes {
+		Ok(CpuTimes {
 			idle: Duration::from_nanos(idle),
 			system: Duration::from_nanos(windows_filetime_to_ns(&kernel) - idle),
 			user: Duration::from_nanos(windows_filetime_to_ns(&user)),
 			nice: Duration::from_nanos(0),
-		});
+		})
 	}
 }
 
@@ -57,7 +58,7 @@ pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 
 		let status = NtQuerySystemInformation(
 			SystemProcessorPerformanceInformation,
-			transmute(sppi.as_mut_ptr()),
+			sppi.as_mut_ptr() as *mut c_void,
 			sppi.len() as u32 * size_of::<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>() as u32,
 			ptr::null_mut(),
 		);
@@ -70,15 +71,9 @@ pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 
 		let mut cpu_times: Vec<CpuTimes> = Vec::with_capacity(num_cpus as usize);
 		for i in sppi.iter() {
-			let user = large_integer_to_u64(&i.UserTime)
-				.checked_mul(100)
-				.unwrap_or(u64::MAX);
-			let kernel = large_integer_to_u64(&i.KernelTime)
-				.checked_mul(100)
-				.unwrap_or(u64::MAX);
-			let idle = large_integer_to_u64(&i.IdleTime)
-				.checked_mul(100)
-				.unwrap_or(u64::MAX);
+			let user = large_integer_to_u64(&i.UserTime).saturating_mul(100);
+			let kernel = large_integer_to_u64(&i.KernelTime).saturating_mul(100);
+			let idle = large_integer_to_u64(&i.IdleTime).saturating_mul(100);
 
 			cpu_times.push(CpuTimes {
 				idle: Duration::from_nanos(idle),
@@ -88,6 +83,6 @@ pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 			});
 		}
 
-		return Ok(cpu_times);
+		Ok(cpu_times)
 	}
 }

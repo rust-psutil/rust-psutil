@@ -5,7 +5,7 @@ use crate::{Error, Result, WindowsOsError};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::iter::once;
-use std::mem::{size_of, transmute, zeroed, MaybeUninit};
+use std::mem::{size_of, transmute, zeroed};
 use std::os::windows::ffi::OsStrExt as _;
 use std::ptr;
 use std::time::Duration;
@@ -18,7 +18,7 @@ use winapi::um::winnt::{
 };
 
 unsafe fn get_io_counter_for_partition(partition: &Partition) -> Result<DiskIoCounters> {
-	let device = partition.device().trim_end_matches("\\");
+	let device = partition.device().trim_end_matches('\\');
 	let device_utf16: Vec<u16> = OsStr::new(device).encode_wide().chain(once(0)).collect();
 
 	let handle = SafeHandle::from_raw_handle(CreateFileW(
@@ -35,14 +35,14 @@ unsafe fn get_io_counter_for_partition(partition: &Partition) -> Result<DiskIoCo
 	}
 
 	let mut stat: DISK_PERFORMANCE = zeroed();
-	let mut bytes_returned = MaybeUninit::uninit().assume_init();
+	let mut bytes_returned: u32 = 0;
 
 	if DeviceIoControl(
 		handle.get_raw(),
 		IOCTL_DISK_PERFORMANCE,
 		ptr::null_mut(),
 		0,
-		transmute(&mut stat as *mut _),
+		&mut stat as *mut _ as *mut std::ffi::c_void,
 		size_of::<DISK_PERFORMANCE>() as u32,
 		&mut bytes_returned as *mut _,
 		ptr::null_mut(),
@@ -84,5 +84,5 @@ pub(crate) fn disk_io_counters_per_partition() -> Result<HashMap<String, DiskIoC
 		}
 	}
 
-	return Ok(map);
+	Ok(map)
 }

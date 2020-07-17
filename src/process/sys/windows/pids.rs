@@ -35,7 +35,7 @@ pub fn pids() -> Result<Vec<Pid>> {
 			pids.push(pe.th32ProcessID);
 		}
 
-		return Ok(pids);
+		Ok(pids)
 	}
 }
 

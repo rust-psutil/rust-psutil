@@ -1,9 +1,8 @@
 use crate::host::Info;
-//use crate::{Error, WindowsOsError};
 use platforms::target::{Arch, OS};
 
 use std::iter::once;
-use std::mem::{zeroed, MaybeUninit};
+use std::mem::zeroed;
 use std::ptr;
 
 use winapi::shared::{
@@ -14,8 +13,7 @@ use winapi::um::sysinfoapi::{GetSystemInfo, SYSTEM_INFO};
 use winapi::um::winbase::GetComputerNameW;
 use winapi::um::winnt::{
 	KEY_QUERY_VALUE, PROCESSOR_ARCHITECTURE_AMD64, PROCESSOR_ARCHITECTURE_ARM,
-	PROCESSOR_ARCHITECTURE_ARM64, PROCESSOR_ARCHITECTURE_IA64, PROCESSOR_ARCHITECTURE_INTEL,
-	PROCESSOR_ARCHITECTURE_UNKNOWN, REG_SZ,
+	PROCESSOR_ARCHITECTURE_ARM64, PROCESSOR_ARCHITECTURE_INTEL, REG_SZ,
 };
 use winapi::um::winreg::{RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY_LOCAL_MACHINE};
 
@@ -50,11 +48,11 @@ unsafe fn get_string_value(key: HKEY, buffer: &mut Vec<u16>, n: &str) -> Option<
 		}
 	}
 
-	return None;
+	None
 }
 
 unsafe fn get_version_and_release(buffer: &mut Vec<u16>) -> (String, String) {
-	let mut current_version: HKEY = MaybeUninit::uninit().assume_init();
+	let mut current_version: HKEY = zeroed();
 
 	let status: u32 = RegOpenKeyExW(
 		HKEY_LOCAL_MACHINE,
@@ -71,10 +69,10 @@ unsafe fn get_version_and_release(buffer: &mut Vec<u16>) -> (String, String) {
 		return ("<unknown>".to_owned(), "<unknown>".to_owned());
 	}
 
-	let version =
-		get_string_value(current_version, buffer, "ProductName").unwrap_or("<unknown>".to_owned());
-	let release =
-		get_string_value(current_version, buffer, "BuildLabEx").unwrap_or("<unknown>".to_owned());
+	let version = get_string_value(current_version, buffer, "ProductName")
+		.unwrap_or_else(|| "<unknown>".to_owned());
+	let release = get_string_value(current_version, buffer, "BuildLabEx")
+		.unwrap_or_else(|| "<unknown>".to_owned());
 
 	RegCloseKey(current_version);
 
@@ -90,7 +88,7 @@ unsafe fn get_cpu_arch() -> Arch {
 		PROCESSOR_ARCHITECTURE_ARM => Arch::ARM,
 		PROCESSOR_ARCHITECTURE_ARM64 => Arch::AARCH64,
 		PROCESSOR_ARCHITECTURE_INTEL => Arch::X86,
-		PROCESSOR_ARCHITECTURE_UNKNOWN | PROCESSOR_ARCHITECTURE_IA64 | _ => Arch::Unknown,
+		_ => Arch::Unknown,
 	}
 }
 
@@ -99,12 +97,12 @@ pub fn info() -> Info {
 	let mut hostname_len: u32 = buffer.capacity() as u32;
 	unsafe { buffer.set_len(buffer.capacity()) };
 
-	let hostname: String = match unsafe {
-		GetComputerNameW(buffer.as_mut_ptr(), &mut hostname_len as *mut _)
-	} {
-		0 => "<unknown>".to_owned(),
-		_ => String::from_utf16(&buffer[..hostname_len as usize]).unwrap_or("<unknown>".to_owned()),
-	};
+	let hostname: String =
+		match unsafe { GetComputerNameW(buffer.as_mut_ptr(), &mut hostname_len as *mut _) } {
+			0 => "<unknown>".to_owned(),
+			_ => String::from_utf16(&buffer[..hostname_len as usize])
+				.unwrap_or_else(|_| "<unknown>".to_owned()),
+		};
 
 	let (version, release) = unsafe { get_version_and_release(&mut buffer) };
 

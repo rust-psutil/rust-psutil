@@ -25,7 +25,7 @@ unsafe fn get_partition(root: &[u16]) -> Result<Option<Partition>> {
 	volume_name_buffer[0] = MaybeUninit::new(0);
 	volume_path_buffer[0] = MaybeUninit::new(0);
 
-	if root.len() == 0 {
+	if root.is_empty() {
 		return Ok(None);
 	}
 	let drive_type_os = GetDriveTypeW(root.as_ptr());
@@ -42,12 +42,12 @@ unsafe fn get_partition(root: &[u16]) -> Result<Option<Partition>> {
 
 	if GetVolumeInformationW(
 		root.as_ptr(),
-		mem::transmute(volume_name_buffer.as_mut_ptr()),
+		volume_name_buffer.as_mut_ptr() as *mut u16,
 		volume_name_buffer.len() as u32,
 		ptr::null_mut(),
 		ptr::null_mut(),
 		&mut flags as *mut _,
-		mem::transmute(fs_type_buffer.as_mut_ptr()),
+		fs_type_buffer.as_mut_ptr() as *mut u16,
 		fs_type_buffer.len() as u32,
 	) != 0
 	{
@@ -82,7 +82,7 @@ unsafe fn get_partition(root: &[u16]) -> Result<Option<Partition>> {
 
 	if GetVolumeNameForVolumeMountPointW(
 		root.as_ptr(),
-		mem::transmute(volume_path_buffer.as_mut_ptr()),
+		volume_path_buffer.as_mut_ptr() as *mut u16,
 		volume_path_buffer.len() as u32,
 	) == 0
 	{
@@ -113,21 +113,26 @@ unsafe fn get_partition(root: &[u16]) -> Result<Option<Partition>> {
 		.unwrap_or(volume_path_buffer.len());
 
 	let root_utf8 = String::from_utf16(root)?;
-	let fs_utf8 = String::from_utf16(mem::transmute(&fs_type_buffer[..fs_name_terminator]))?;
-	let volume_path_utf8 = String::from_utf16(mem::transmute(
-		&volume_path_buffer[..volume_path_terminator],
-	))?;
+	let fs_utf8 = String::from_utf16(
+		&*(&fs_type_buffer[..fs_name_terminator] as *const [std::mem::MaybeUninit<u16>]
+			as *const [u16]),
+	)?;
+	let volume_path_utf8 = String::from_utf16(
+		&*(&volume_path_buffer[..volume_path_terminator] as *const [std::mem::MaybeUninit<u16>]
+			as *const [u16]),
+	)?;
 
-	let volume_name_utf8 = String::from_utf16(mem::transmute(
-		&volume_name_buffer[..volume_name_terminator],
-	))?;
+	let volume_name_utf8 = String::from_utf16(
+		&*(&volume_name_buffer[..volume_name_terminator] as *const [std::mem::MaybeUninit<u16>]
+			as *const [u16]),
+	)?;
 
 	Ok(Some(Partition {
 		device: volume_path_utf8,
 		mountpoint: PathBuf::from(root_utf8),
 		filesystem: FileSystem::from_str(&fs_utf8).unwrap_or(FileSystem::Other(fs_utf8)),
 		mount_options: fs_flags_array.join(","),
-		name: if volume_name_utf8.len() == 0 {
+		name: if volume_name_utf8.is_empty() {
 			None
 		} else {
 			Some(volume_name_utf8)
@@ -159,10 +164,11 @@ pub fn partitions() -> Result<Vec<Partition>> {
 
 		for root in s.split(|x| *x == 0) {
 			match get_partition(root) {
-				Ok(s) => match s {
-					Some(p) => partitions.push(p),
-					None => (),
-				},
+				Ok(s) => {
+					if let Some(p) = s {
+						partitions.push(p)
+					}
+				}
 				Err(e) => {
 					last_error = Some(e);
 				}
@@ -170,7 +176,7 @@ pub fn partitions() -> Result<Vec<Partition>> {
 		}
 
 		if let Some(error) = last_error {
-			if partitions.len() == 0 {
+			if partitions.is_empty() {
 				return Err(error);
 			}
 		}
