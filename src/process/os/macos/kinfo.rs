@@ -143,6 +143,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 	let mut processes: Vec<kinfo_proc> = vec![];
 
 	loop {
+		// Dry-run to get the size required for the process list
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
@@ -163,6 +164,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 			processes.reserve_exact(num_processes - processes.capacity());
 		}
 
+		// Attempt to store the process list in `processes`
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
