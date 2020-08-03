@@ -1,24 +1,22 @@
 use std::io;
 
-use snafu::Snafu;
-
 use crate::{Error, Pid};
 
 pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
-#[derive(Debug, Snafu)]
-#[snafu(visibility(pub(crate)))]
-pub enum ProcessError {
-	#[snafu(display("Process {} does not exists", pid))]
+// TODO: get this visibility junk sorted out
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum ProcessError {
+	#[error("Process {} does not exists", pid)]
 	NoSuchProcess { pid: Pid },
 
-	#[snafu(display("Process {} is a zombie", pid))]
+	#[error("Process {} is a zombie", pid)]
 	ZombieProcess { pid: Pid },
 
-	#[snafu(display("Access denied for process {}", pid))]
+	#[error("Access denied for process {}", pid)]
 	AccessDenied { pid: Pid },
 
-	#[snafu(display("psutil error for process {}: {}", pid, source))]
+	#[error("psutil error for process {}: {}", pid, source)]
 	PsutilError { pid: Pid, source: Error },
 }
 

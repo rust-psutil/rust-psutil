@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use snafu::{ensure, OptionExt, ResultExt};
-
 use crate::process::os::unix::{Gid, Uid};
 use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult};
-use crate::{read_file, Error, MissingData, ParseInt, Pid, Result};
+use crate::{read_file, Error, Pid, Result};
 
 const STATUS: &str = "status";
 
@@ -31,35 +29,45 @@ impl FromStr for ProcfsStatus {
 		let map = contents
 			.lines()
 			.map(|line| {
-				let fields = line.splitn(2, ':').collect::<Vec<&str>>();
-				ensure!(
-					fields.len() == 2,
-					MissingData {
-						path: STATUS,
-						contents: line,
-					}
-				);
+				let fields = match line.splitn(2, ':').collect::<Vec<_>>() {
+					fields if fields.len() == 2 => Ok(fields),
+					_ => Err(Error::MissingData {
+						path: STATUS.into(),
+						contents: line.to_string(),
+					}),
+				}?;
+
 				Ok((fields[0], fields[1].trim()))
 			})
 			.collect::<Result<HashMap<&str, &str>>>()?;
 
-		let parse_int = ParseInt {
-			path: STATUS,
-			contents,
+		let parse_u32 = |s: &str| -> Result<u32> {
+			s.parse().map_err(|err| Error::ParseInt {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+				source: err,
+			})
+		};
+		let parse_u64 = |s: &str| -> Result<u64> {
+			s.parse().map_err(|err| Error::ParseInt {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+				source: err,
+			})
 		};
 
-		let parse_u32 = |s: &str| -> Result<u32> { s.parse().context(parse_int) };
-		let parse_u64 = |s: &str| -> Result<u64> { s.parse().context(parse_int) };
-
-		let missing_data = MissingData {
-			path: STATUS,
-			contents,
+		let missing_data = Error::MissingData {
+			path: STATUS.into(),
+			contents: contents.to_string(),
 		};
 
-		let get = |key: &str| -> Result<&str> { map.get(key).copied().context(missing_data) };
+		let get = |key: &str| -> Result<&str> { map.get(key).copied().ok_or(missing_data) };
 
-		let uid_fields: Vec<&str> = get("Uid")?.split_whitespace().collect();
-		ensure!(uid_fields.len() >= 4, missing_data);
+		let uid_fields = match get("Uid")?.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 4 => Ok(fields),
+			_ => Err(missing_data),
+		}?;
+
 		let uid = [
 			parse_u32(uid_fields[0])?,
 			parse_u32(uid_fields[1])?,
@@ -67,8 +75,11 @@ impl FromStr for ProcfsStatus {
 			parse_u32(uid_fields[3])?,
 		];
 
-		let gid_fields: Vec<&str> = get("Gid")?.split_whitespace().collect();
-		ensure!(gid_fields.len() >= 4, missing_data);
+		let gid_fields = match get("Gid")?.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 4 => Ok(fields),
+			_ => Err(missing_data),
+		}?;
+
 		let gid = [
 			parse_u32(gid_fields[0])?,
 			parse_u32(gid_fields[1])?,

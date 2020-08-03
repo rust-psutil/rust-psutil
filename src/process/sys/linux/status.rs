@@ -1,10 +1,8 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 
-use snafu::ensure;
-
 use crate::process::Status;
-use crate::{IncorrectLength, ParseStatusError};
+use crate::ParseStatusError;
 
 /// Returns a Status based on a status character from `/proc/[pid]/stat`.
 ///
@@ -39,7 +37,11 @@ impl FromStr for Status {
 	type Err = ParseStatusError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		ensure!(s.len() == 1, IncorrectLength { contents: s });
+		if s.len() == 1 {
+			return Err(ParseStatusError::IncorrectLength {
+				contents: s.to_string(),
+			});
+		}
 
 		Status::try_from(s.chars().next().unwrap())
 	}

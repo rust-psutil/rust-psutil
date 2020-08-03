@@ -1,10 +1,8 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-use snafu::{ensure, ResultExt};
-
 use crate::cpu::CpuTimes;
-use crate::{read_file, Count, Error, MissingData, ParseInt, Result, TICKS_PER_SECOND};
+use crate::{read_file, Count, Error, Result, TICKS_PER_SECOND};
 
 const PROC_STAT: &str = "/proc/stat";
 
@@ -16,9 +14,10 @@ impl FromStr for CpuTimes {
 			.split_whitespace()
 			.skip(1)
 			.map(|entry| {
-				entry.parse().context(ParseInt {
-					path: PROC_STAT,
-					contents: line,
+				entry.parse().map_err(|err| Error::ParseInt {
+					path: PROC_STAT.into(),
+					contents: line.to_string(),
+					source: err,
 				})
 			})
 			.collect::<Result<Vec<Count>>>()?
@@ -26,13 +25,12 @@ impl FromStr for CpuTimes {
 			.map(|entry| Duration::from_secs_f64(entry as f64 / *TICKS_PER_SECOND))
 			.collect::<Vec<Duration>>();
 
-		ensure!(
-			fields.len() >= 7,
-			MissingData {
-				path: PROC_STAT,
-				contents: line,
-			}
-		);
+		if fields.len() < 7 {
+			return Err(Error::MissingData {
+				path: PROC_STAT.into(),
+				contents: line.to_string(),
+			});
+		}
 
 		let user = fields[0];
 		let nice = fields[1];
@@ -78,34 +76,32 @@ impl FromStr for CpuTimes {
 
 pub fn cpu_times() -> Result<CpuTimes> {
 	let contents = read_file(PROC_STAT)?;
-	let lines = contents.lines().collect::<Vec<&str>>();
+	let lines: Vec<_> = contents.lines().collect();
 
-	ensure!(
-		!lines.is_empty(),
-		MissingData {
-			path: PROC_STAT,
+	if lines.is_empty() {
+		return Err(Error::MissingData {
+			path: PROC_STAT.into(),
 			contents,
-		}
-	);
+		});
+	}
 
 	CpuTimes::from_str(lines[0])
 }
 
 pub fn cpu_times_percpu() -> Result<Vec<CpuTimes>> {
 	let contents = read_file(PROC_STAT)?;
-	let lines = contents
+	let lines: Vec<_> = contents
 		.lines()
 		.skip(1)
 		.take_while(|line| line.starts_with("cpu"))
-		.collect::<Vec<&str>>();
+		.collect();
 
-	ensure!(
-		!lines.is_empty(),
-		MissingData {
-			path: PROC_STAT,
+	if lines.is_empty() {
+		return Err(Error::MissingData {
+			path: PROC_STAT.into(),
 			contents,
-		}
-	);
+		});
+	}
 
 	lines.into_iter().map(CpuTimes::from_str).collect()
 }

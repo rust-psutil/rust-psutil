@@ -1,8 +1,6 @@
-use snafu::OptionExt;
-
 use crate::memory::{make_map, SwapMemory};
 use crate::utils::u64_percent;
-use crate::{read_file, MissingData, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_MEMINFO: &str = "/proc/meminfo";
 const PROC_VMSTAT: &str = "/proc/vmstat";
@@ -16,15 +14,15 @@ pub fn swap_memory() -> Result<SwapMemory> {
 	let vmstat = make_map(&vmstat_contents, PROC_VMSTAT)?;
 
 	let meminfo_get = |key: &str| -> Result<u64> {
-		meminfo.get(key).copied().context(MissingData {
-			path: PROC_MEMINFO,
-			contents: &meminfo_contents,
+		meminfo.get(key).copied().ok_or(Error::MissingData {
+			path: PROC_MEMINFO.into(),
+			contents: meminfo_contents,
 		})
 	};
 	let vmstat_get = |key: &str| -> Result<u64> {
-		vmstat.get(key).copied().context(MissingData {
-			path: PROC_VMSTAT,
-			contents: &vmstat_contents,
+		vmstat.get(key).copied().ok_or(Error::MissingData {
+			path: PROC_VMSTAT.into(),
+			contents: vmstat_contents,
 		})
 	};
 

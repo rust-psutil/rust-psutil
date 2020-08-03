@@ -1,9 +1,7 @@
 use std::str::FromStr;
 
-use snafu::{ensure, ResultExt};
-
 use crate::host::LoadAvg;
-use crate::{read_file, Error, MissingData, ParseFloat, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_LOADAVG: &str = "/proc/loadavg";
 
@@ -11,20 +9,19 @@ impl FromStr for LoadAvg {
 	type Err = Error;
 
 	fn from_str(s: &str) -> Result<Self> {
-		let fields: Vec<&str> = s.split_whitespace().collect();
-
-		ensure!(
-			fields.len() >= 3,
-			MissingData {
-				path: PROC_LOADAVG,
-				contents: s,
-			}
-		);
+		let fields = match s.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 3 => Ok(fields),
+			_ => Err(Error::MissingData {
+				path: PROC_LOADAVG.into(),
+				contents: s.to_string(),
+			}),
+		}?;
 
 		let parse = |s: &str| -> Result<f64> {
-			s.parse().context(ParseFloat {
-				path: PROC_LOADAVG,
-				contents: s,
+			s.parse().map_err(|err| Error::ParseFloat {
+				path: PROC_LOADAVG.into(),
+				contents: s.to_string(),
+				source: err,
 			})
 		};
 

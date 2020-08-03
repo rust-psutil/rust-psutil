@@ -5,10 +5,8 @@ use std::ffi::{OsStr, OsString};
 use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
-use snafu::ResultExt;
-
 use crate::sensors::TemperatureSensor;
-use crate::{glob, read_file, ParseFloat, Result, Temperature};
+use crate::{glob, read_file, Error, Result, Temperature};
 
 #[inline]
 fn file_name(prefix: &OsStr, postfix: &[u8]) -> OsString {
@@ -21,12 +19,15 @@ fn file_name(prefix: &OsStr, postfix: &[u8]) -> OsString {
 
 fn read_temperature(path: PathBuf) -> Result<Temperature> {
 	let contents = read_file(&path)?;
-	contents
-		.trim_end()
-		.parse::<f64>()
+	match contents.trim_end().parse::<f64>() {
 		// Originally value is in millidegrees of Celsius
-		.map(|value| Temperature::new(value / 1_000.0))
-		.context(ParseFloat { path, contents })
+		Ok(value) => Ok(Temperature::new(value / 1_000.0)),
+		Err(err) => Err(Error::ParseFloat {
+			path,
+			contents,
+			source: err,
+		}),
+	}
 }
 
 fn hwmon_sensor(input: PathBuf) -> Result<TemperatureSensor> {

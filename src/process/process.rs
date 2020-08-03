@@ -6,12 +6,11 @@ use std::time::{Duration, Instant};
 
 use nix::sys::signal::{kill, Signal};
 use nix::unistd;
-use snafu::ensure;
 
 use crate::common::NetConnectionType;
 use crate::memory;
 use crate::process::{
-	psutil_error_to_process_error, MemType, MemoryInfo, NoSuchProcess, OpenFile, ProcessCpuTimes,
+	psutil_error_to_process_error, MemType, MemoryInfo, OpenFile, ProcessCpuTimes, ProcessError,
 	ProcessResult, Status,
 };
 use crate::utils::duration_percent;
@@ -78,7 +77,9 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn parent(&self) -> ProcessResult<Option<Process>> {
-		ensure!(self.is_running(), NoSuchProcess { pid: self.pid });
+		if !self.is_running() {
+			return Err(ProcessError::NoSuchProcess { pid: self.pid });
+		}
 
 		let ppid = self.ppid()?;
 		match ppid {
@@ -227,7 +228,9 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
-		ensure!(self.is_running(), NoSuchProcess { pid: self.pid });
+		if !self.is_running() {
+			return Err(ProcessError::NoSuchProcess { pid: self.pid });
+		}
 
 		#[cfg(target_family = "unix")]
 		{

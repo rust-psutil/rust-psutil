@@ -1,25 +1,22 @@
 use std::time::Duration;
 
-use snafu::{ensure, ResultExt};
-
-use crate::{read_file, MissingData, ParseFloat, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_UPTIME: &str = "/proc/uptime";
 
 fn parse_uptime(contents: &str) -> Result<Duration> {
-	let fields: Vec<&str> = contents.split_whitespace().collect();
+	let fields = match contents.split_whitespace().collect::<Vec<_>>() {
+		fields if fields.len() >= 2 => Ok(fields),
+		_ => Err(Error::MissingData {
+			path: PROC_UPTIME.into(),
+			contents: contents.to_string(),
+		}),
+	}?;
 
-	ensure!(
-		fields.len() >= 2,
-		MissingData {
-			path: PROC_UPTIME,
-			contents,
-		}
-	);
-
-	let parsed = fields[0].parse().context(ParseFloat {
-		path: PROC_UPTIME,
-		contents,
+	let parsed = fields[0].parse().map_err(|err| Error::ParseFloat {
+		path: PROC_UPTIME.into(),
+		contents: contents.to_string(),
+		source: err,
 	})?;
 	let uptime = Duration::from_secs_f64(parsed);
 

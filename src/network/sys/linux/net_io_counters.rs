@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use snafu::{ensure, ResultExt};
-
 use crate::network::NetIoCounters;
-use crate::{read_file, Error, MissingData, ParseInt, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_NET_DEV: &str = "/proc/net/dev";
 
@@ -12,20 +10,19 @@ impl FromStr for NetIoCounters {
 	type Err = Error;
 
 	fn from_str(line: &str) -> Result<Self> {
-		let fields: Vec<&str> = line.split_whitespace().collect();
-
-		ensure!(
-			fields.len() >= 17,
-			MissingData {
-				path: PROC_NET_DEV,
-				contents: line,
-			}
-		);
+		let fields = match line.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 17 => Ok(fields),
+			_ => Err(Error::MissingData {
+				path: PROC_NET_DEV.into(),
+				contents: line.to_string(),
+			}),
+		}?;
 
 		let parse = |s: &str| -> Result<u64> {
-			s.parse().context(ParseInt {
-				path: PROC_NET_DEV,
-				contents: line,
+			s.parse().map_err(|err| Error::ParseInt {
+				path: PROC_NET_DEV.into(),
+				contents: line.to_string(),
+				source: err,
 			})
 		};
 
@@ -49,13 +46,12 @@ pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>>
 		.map(|line| {
 			let fields: Vec<&str> = line.split_whitespace().collect();
 
-			ensure!(
-				fields.len() >= 17,
-				MissingData {
-					path: PROC_NET_DEV,
-					contents: line,
-				}
-			);
+			if fields.len() < 17 {
+				return Err(Error::MissingData {
+					path: PROC_NET_DEV.into(),
+					contents: line.to_string(),
+				});
+			}
 
 			let mut net_name = String::from(fields[0]);
 			// remove the trailing colon

@@ -1,25 +1,22 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use snafu::{ensure, OptionExt, ResultExt};
-
-use crate::{read_file, MissingData, ParseInt, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_STAT: &str = "/proc/stat";
 
 fn parse_boot_time(line: &str) -> Result<SystemTime> {
-	let fields: Vec<&str> = line.split_whitespace().collect();
+	let fields = match line.split_whitespace().collect::<Vec<_>>() {
+		fields if fields.len() >= 2 => Ok(fields),
+		_ => Err(Error::MissingData {
+			path: PROC_STAT.into(),
+			contents: line.to_string(),
+		}),
+	}?;
 
-	ensure!(
-		fields.len() >= 2,
-		MissingData {
-			path: PROC_STAT,
-			contents: line,
-		}
-	);
-
-	let parsed = fields[1].parse().context(ParseInt {
-		path: PROC_STAT,
-		contents: line,
+	let parsed = fields[1].parse().map_err(|err| Error::ParseInt {
+		path: PROC_STAT.into(),
+		contents: line.to_string(),
+		source: err,
 	})?;
 	let boot_time = UNIX_EPOCH + Duration::from_secs(parsed);
 
@@ -32,9 +29,9 @@ pub fn boot_time() -> Result<SystemTime> {
 	let line = contents
 		.lines()
 		.find(|line| line.starts_with("btime "))
-		.context(MissingData {
-			path: PROC_STAT,
-			contents: &contents,
+		.ok_or(Error::MissingData {
+			path: PROC_STAT.into(),
+			contents,
 		})?;
 
 	parse_boot_time(line)

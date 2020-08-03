@@ -1,9 +1,7 @@
 use std::str::FromStr;
 
-use snafu::{ensure, ResultExt};
-
 use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult};
-use crate::{read_file, Error, MissingData, ParseInt, Pid, Result, PAGE_SIZE};
+use crate::{read_file, Error, Pid, Result, PAGE_SIZE};
 
 const STATM: &str = "statm";
 
@@ -33,20 +31,19 @@ impl FromStr for ProcfsStatm {
 	type Err = Error;
 
 	fn from_str(contents: &str) -> Result<Self> {
-		let fields: Vec<&str> = contents.trim_end().split_whitespace().collect();
-
-		ensure!(
-			fields.len() >= 7,
-			MissingData {
-				path: STATM,
-				contents,
-			}
-		);
+		let fields = match contents.trim_end().split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 7 => Ok(fields),
+			_ => Err(Error::MissingData {
+				path: STATM.into(),
+				contents: contents.to_string(),
+			}),
+		}?;
 
 		let parse = |s: &str| -> Result<u64> {
-			s.parse().context(ParseInt {
-				path: STATM,
-				contents,
+			s.parse().map_err(|err| Error::ParseInt {
+				path: STATM.into(),
+				contents: contents.to_string(),
+				source: err,
 			})
 		};
 

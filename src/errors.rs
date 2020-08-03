@@ -4,35 +4,32 @@ use std::path::{Path, PathBuf};
 
 #[cfg(feature = "sensors")]
 use glob::glob as other_glob;
-use snafu::{ResultExt, Snafu};
 
-#[derive(Debug, Snafu)]
-#[snafu(visibility(pub(crate)))]
-pub enum ParseStatusError {
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum ParseStatusError {
 	/// Linux only.
-	#[snafu(display("Length is not 1. Contents: '{}'", contents))]
+	#[error("Length is not 1. Contents: '{}'", contents)]
 	IncorrectLength { contents: String },
 
 	/// Linux and macOS.
-	#[snafu(display("Incorrect char. Contents: '{}'", contents))]
+	#[error("Incorrect char. Contents: '{}'", contents)]
 	IncorrectChar { contents: String },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Snafu)]
-#[snafu(visibility(pub(crate)))]
-pub enum Error {
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum Error {
 	/// Linux only.
-	#[snafu(display("Failed to read file '{}': {}", path.display(), source))]
+	#[error("Failed to read file '{}': {}", path.display(), source)]
 	ReadFile { path: PathBuf, source: io::Error },
 
 	/// Linux only.
-	#[snafu(display("File '{}' is missing data. Contents: '{}'", path.display(), contents))]
+	#[error("File '{}' is missing data. Contents: '{}'", path.display(), contents)]
 	MissingData { path: PathBuf, contents: String },
 
 	/// Linux only.
-	#[snafu(display("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source))]
+	#[error("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source)]
 	ParseInt {
 		path: PathBuf,
 		contents: String,
@@ -40,7 +37,7 @@ pub enum Error {
 	},
 
 	/// Linux only.
-	#[snafu(display("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source))]
+	#[error("Parse error for file '{}'. Contents: '{}'. {}", path.display(), contents, source)]
 	ParseFloat {
 		path: PathBuf,
 		contents: String,
@@ -48,15 +45,15 @@ pub enum Error {
 	},
 
 	/// Linux and macOS.
-	#[snafu(display("Failed to parse status. {}", source))]
+	#[error("Failed to parse status. {}", source)]
 	ParseStatus { source: ParseStatusError },
 
 	// Unix only.
-	#[snafu(display("nix error: {}", source))]
+	#[error("nix error: {}", source)]
 	NixError { source: nix::Error },
 
 	/// macOS only.
-	#[snafu(display("OS error: {}", source))]
+	#[error("OS error: {}", source)]
 	OsError { source: io::Error },
 }
 
@@ -82,8 +79,9 @@ pub(crate) fn read_file<P>(path: P) -> Result<String>
 where
 	P: AsRef<Path>,
 {
-	fs::read_to_string(&path).context(ReadFile {
-		path: path.as_ref(),
+	fs::read_to_string(&path).map_err(|err| Error::ReadFile {
+		path: path.as_ref().into(),
+		source: err,
 	})
 }
 
@@ -92,12 +90,14 @@ where
 	P: AsRef<Path>,
 {
 	fs::read_dir(&path)
-		.context(ReadFile {
-			path: path.as_ref(),
+		.map_err(|err| Error::ReadFile {
+			path: path.as_ref().into(),
+			source: err,
 		})?
 		.map(|entry| {
-			entry.context(ReadFile {
-				path: path.as_ref(),
+			entry.map_err(|err| Error::ReadFile {
+				path: path.as_ref().into(),
+				source: err,
 			})
 		})
 		.collect()
@@ -107,8 +107,9 @@ pub(crate) fn read_link<P>(path: P) -> Result<PathBuf>
 where
 	P: AsRef<Path>,
 {
-	fs::read_link(&path).context(ReadFile {
-		path: path.as_ref(),
+	fs::read_link(&path).map_err(|err| Error::ReadFile {
+		path: path.as_ref().into(),
+		source: err,
 	})
 }
 
@@ -117,9 +118,10 @@ pub(crate) fn glob(path: &str) -> Vec<Result<PathBuf>> {
 	other_glob(path)
 		.unwrap() // only errors on invalid pattern
 		.map(|result| {
-			result
-				.map_err(|e| e.into_error())
-				.context(ReadFile { path })
+			result.map_err(|err| Error::ReadFile {
+				path: path.into(),
+				source: err.into_error(),
+			})
 		})
 		.collect()
 }
