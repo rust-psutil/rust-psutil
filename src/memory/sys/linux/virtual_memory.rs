@@ -11,7 +11,7 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
 	let get = |key: &str| -> Result<u64> {
 		meminfo.get(key).copied().ok_or(Error::MissingData {
 			path: PROC_MEMINFO.into(),
-			contents,
+			contents: contents.clone(),
 		})
 	};
 

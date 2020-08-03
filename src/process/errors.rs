@@ -6,7 +6,7 @@ pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
 // TODO: get this visibility junk sorted out
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum ProcessError {
+pub enum ProcessError {
 	#[error("Process {} does not exists", pid)]
 	NoSuchProcess { pid: Pid },
 

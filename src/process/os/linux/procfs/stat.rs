@@ -168,21 +168,23 @@ impl FromStr for ProcfsStat {
 	type Err = Error;
 
 	fn from_str(contents: &str) -> Result<Self> {
-		let missing_data = Error::MissingData {
-			path: STAT.into(),
-			contents: contents.to_string(),
-		};
-
 		// We parse the comm field and everything before it seperately since
 		// the comm field is delimited by parens and can contain spaces
-		let (pid_field, leftover) = contents
-			.find('(')
-			.map(|i| contents.split_at(i - 1))
-			.ok_or(missing_data)?;
+		let (pid_field, leftover) =
+			contents
+				.find('(')
+				.map(|i| contents.split_at(i - 1))
+				.ok_or(Error::MissingData {
+					path: STAT.into(),
+					contents: contents.to_string(),
+				})?;
 		let (comm_field, leftover) = leftover
 			.rfind(')')
 			.map(|i| leftover.split_at(i + 2))
-			.ok_or(missing_data)?;
+			.ok_or(Error::MissingData {
+				path: STAT.into(),
+				contents: contents.to_string(),
+			})?;
 
 		let mut fields: Vec<&str> = Vec::new();
 		fields.push(pid_field);
@@ -190,7 +192,10 @@ impl FromStr for ProcfsStat {
 		fields.extend(leftover.trim_end().split_whitespace());
 
 		if fields.len() < 41 {
-			return Err(missing_data);
+			return Err(Error::MissingData {
+				path: STAT.into(),
+				contents: contents.to_string(),
+			});
 		}
 
 		let parse_int = |err: std::num::ParseIntError| -> Error {

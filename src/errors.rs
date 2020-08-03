@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use glob::glob as other_glob;
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum ParseStatusError {
+pub enum ParseStatusError {
 	/// Linux only.
 	#[error("Length is not 1. Contents: '{}'", contents)]
 	IncorrectLength { contents: String },
@@ -19,7 +19,7 @@ pub(crate) enum ParseStatusError {
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum Error {
+pub enum Error {
 	/// Linux only.
 	#[error("Failed to read file '{}': {}", path.display(), source)]
 	ReadFile { path: PathBuf, source: io::Error },

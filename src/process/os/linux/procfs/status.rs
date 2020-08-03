@@ -56,16 +56,19 @@ impl FromStr for ProcfsStatus {
 			})
 		};
 
-		let missing_data = Error::MissingData {
-			path: STATUS.into(),
-			contents: contents.to_string(),
+		let get = |key: &str| -> Result<&str> {
+			map.get(key).copied().ok_or(Error::MissingData {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+			})
 		};
-
-		let get = |key: &str| -> Result<&str> { map.get(key).copied().ok_or(missing_data) };
 
 		let uid_fields = match get("Uid")?.split_whitespace().collect::<Vec<_>>() {
 			fields if fields.len() >= 4 => Ok(fields),
-			_ => Err(missing_data),
+			_ => Err(Error::MissingData {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+			}),
 		}?;
 
 		let uid = [
@@ -77,7 +80,10 @@ impl FromStr for ProcfsStatus {
 
 		let gid_fields = match get("Gid")?.split_whitespace().collect::<Vec<_>>() {
 			fields if fields.len() >= 4 => Ok(fields),
-			_ => Err(missing_data),
+			_ => Err(Error::MissingData {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+			}),
 		}?;
 
 		let gid = [

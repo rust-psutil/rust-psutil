@@ -31,7 +31,7 @@ pub fn boot_time() -> Result<SystemTime> {
 		.find(|line| line.starts_with("btime "))
 		.ok_or(Error::MissingData {
 			path: PROC_STAT.into(),
-			contents,
+			contents: contents.clone(),
 		})?;
 
 	parse_boot_time(line)

@@ -16,13 +16,13 @@ pub fn swap_memory() -> Result<SwapMemory> {
 	let meminfo_get = |key: &str| -> Result<u64> {
 		meminfo.get(key).copied().ok_or(Error::MissingData {
 			path: PROC_MEMINFO.into(),
-			contents: meminfo_contents,
+			contents: meminfo_contents.clone(),
 		})
 	};
 	let vmstat_get = |key: &str| -> Result<u64> {
 		vmstat.get(key).copied().ok_or(Error::MissingData {
 			path: PROC_VMSTAT.into(),
-			contents: vmstat_contents,
+			contents: vmstat_contents.clone(),
 		})
 	};
 
