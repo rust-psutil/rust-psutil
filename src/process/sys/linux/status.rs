@@ -37,13 +37,13 @@ impl FromStr for Status {
 	type Err = ParseStatusError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		if s.len() == 1 {
-			return Err(ParseStatusError::IncorrectLength {
+		if s.len() != 1 {
+			Err(ParseStatusError::IncorrectLength {
 				contents: s.to_string(),
-			});
+			})
+		} else {
+			Status::try_from(s.chars().next().unwrap())
 		}
-
-		Status::try_from(s.chars().next().unwrap())
 	}
 }
 
