@@ -26,15 +26,19 @@ impl FromStr for ProcfsStatus {
 	type Err = Error;
 
 	fn from_str(contents: &str) -> Result<Self> {
+		let missing_status_data = |contents: &str| -> Error {
+			Error::MissingData {
+				path: STATUS.into(),
+				contents: contents.to_string(),
+			}
+		};
+
 		let map = contents
 			.lines()
 			.map(|line| {
 				let fields = match line.splitn(2, ':').collect::<Vec<_>>() {
 					fields if fields.len() == 2 => Ok(fields),
-					_ => Err(Error::MissingData {
-						path: STATUS.into(),
-						contents: line.to_string(),
-					}),
+					_ => Err(missing_status_data(line)),
 				}?;
 
 				Ok((fields[0], fields[1].trim()))
@@ -57,18 +61,12 @@ impl FromStr for ProcfsStatus {
 		};
 
 		let get = |key: &str| -> Result<&str> {
-			map.get(key).copied().ok_or(Error::MissingData {
-				path: STATUS.into(),
-				contents: contents.to_string(),
-			})
+			map.get(key).copied().ok_or(missing_status_data(contents))
 		};
 
 		let uid_fields = match get("Uid")?.split_whitespace().collect::<Vec<_>>() {
 			fields if fields.len() >= 4 => Ok(fields),
-			_ => Err(Error::MissingData {
-				path: STATUS.into(),
-				contents: contents.to_string(),
-			}),
+			_ => Err(missing_status_data(contents)),
 		}?;
 
 		let uid = [
@@ -80,10 +78,7 @@ impl FromStr for ProcfsStatus {
 
 		let gid_fields = match get("Gid")?.split_whitespace().collect::<Vec<_>>() {
 			fields if fields.len() >= 4 => Ok(fields),
-			_ => Err(Error::MissingData {
-				path: STATUS.into(),
-				contents: contents.to_string(),
-			}),
+			_ => Err(missing_status_data(contents)),
 		}?;
 
 		let gid = [
