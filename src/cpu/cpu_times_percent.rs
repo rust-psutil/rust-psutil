@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
@@ -5,6 +8,8 @@ use crate::utils::duration_percent;
 use crate::{Percent, Result};
 
 /// Every attribute represents the percentage of time the CPU has spent in the given mode.
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CpuTimesPercent {
 	pub(crate) user: Percent,

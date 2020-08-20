@@ -1,11 +1,16 @@
 // https://github.com/heim-rs/heim/blob/master/heim-disk/src/filesystem.rs
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::str::FromStr;
 
 /// Known filesystems.
 ///
 /// All physical filesystems should have their own enum element
 /// and all virtual filesystems will go into the `Other` element.
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum FileSystem {
 	/// ext2 (https://en.wikipedia.org/wiki/Ext2)

@@ -1,10 +1,14 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/process/cpu_times.rs
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use std::time::Duration;
 
 #[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStat;
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct ProcessCpuTimes {
 	pub(crate) user: Duration,

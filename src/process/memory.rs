@@ -1,4 +1,6 @@
 // https://github.com/heim-rs/heim/blob/master/heim-process/src/sys/macos/process/memory.rs
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::Bytes;
 
@@ -7,10 +9,14 @@ use crate::process::os::linux::ProcfsStatm;
 #[cfg(target_os = "macos")]
 use crate::Count;
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum MemType {
 	// TODO
 }
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MemoryInfo {
 	pub(crate) rss: Bytes,

@@ -1,7 +1,12 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::ops::Sub;
 use std::time::Duration;
 
 /// Every attribute represents the seconds the CPU has spent in the given mode.
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CpuTimes {
 	pub(crate) user: Duration,

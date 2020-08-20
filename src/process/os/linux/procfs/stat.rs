@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -9,6 +12,8 @@ use crate::{read_file, Error, MissingData, ParseInt, Pid, Result, PAGE_SIZE, TIC
 const STAT: &str = "stat";
 
 /// New struct, not in Python psutil.
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct ProcfsStat {
 	/// PID of the process.
