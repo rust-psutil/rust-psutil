@@ -11,6 +11,7 @@ use std::str::FromStr;
 /// and all virtual filesystems will go into the `Other` element.
 #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[non_exhaustive]
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum FileSystem {
 	/// ext2 (https://en.wikipedia.org/wiki/Ext2)
@@ -74,9 +75,6 @@ pub enum FileSystem {
 	// TODO: Extend list
 	/// Some unspecified filesystem.
 	Other(String),
-
-	#[doc(hidden)]
-	__Nonexhaustive,
 }
 
 impl FileSystem {
@@ -116,7 +114,6 @@ impl FileSystem {
 			FileSystem::Xfs => "xfs",
 			FileSystem::Apfs => "apfs",
 			FileSystem::Other(string) => string.as_str(),
-			_ => unimplemented!(),
 		}
 	}
 }

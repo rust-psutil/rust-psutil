@@ -32,7 +32,6 @@ Currently, only Linux and macOS are supported, but support is planned for all ma
 ## Apps using rust-psutil
 
 - [procrec](https://github.com/gh0st42/procrec)
-- [ytop](https://github.com/cjbassi/ytop)
 
 ## Related projects
 
