@@ -1,8 +1,14 @@
+// #[cfg(feature = "serde")]
+// use serde::{Deserialize, Serialize};
+
 use std::collections::BTreeMap;
 
 use crate::process::{self, Process};
 use crate::{Pid, Result};
-
+// FIXME: Process cannot be serialized/deserialize, as a result,
+//        neither this can be.
+// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct ProcessCollector {
 	pub processes: BTreeMap<Pid, Process>,

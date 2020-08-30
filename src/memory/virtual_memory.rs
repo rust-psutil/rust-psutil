@@ -1,5 +1,10 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{Bytes, Percent};
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct VirtualMemory {
 	pub(crate) total: Bytes,

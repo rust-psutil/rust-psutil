@@ -1,3 +1,8 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TcpConnectionStatus {
 	Established,
 	SynSent,
@@ -18,6 +23,8 @@ pub enum TcpConnectionStatus {
 	Bound,
 }
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum NetConnectionType {
 	Inet,
 	Inet4,

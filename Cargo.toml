@@ -20,6 +20,7 @@ num_cpus = { version = "1.11.1", optional = true }
 platforms = { version = "0.2.1", optional = true }
 signal = { version = "0.7.0", optional = true }
 unescape = { version = "0.1.0", optional = true }
+renamed_serde = { version = "1.0", optional = true, package = "serde", features = ["derive"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 darwin-libproc = { version = "0.1.1", optional = true }
@@ -36,6 +37,7 @@ memory = ["mach"]
 network = ["derive_more"]
 process = ["darwin-libproc", "mach", "memory"]
 sensors = ["glob"]
+serde = ["renamed_serde", "platforms/serde"]
 
 [dev-dependencies]
 float-cmp = "0.6.0"
