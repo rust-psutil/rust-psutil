@@ -217,7 +217,7 @@ impl Process {
 				if p == *self {
 					false
 				} else {
-					mem::replace(self, p);
+					let _ = mem::replace(self, p);
 					true
 				}
 			}
