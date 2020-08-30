@@ -109,7 +109,6 @@ impl FileSystem {
 			FileSystem::Xfs => "xfs",
 			FileSystem::Apfs => "apfs",
 			FileSystem::Other(string) => string.as_str(),
-			_ => unimplemented!(),
 		}
 	}
 }
