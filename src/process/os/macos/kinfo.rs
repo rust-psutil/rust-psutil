@@ -181,7 +181,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 			// there was not enough space in `processes` to store the whole process list which can
 			// occur when a new process spawns between getting the size and storing. In this case
 			// we can simply try again.
-			if Some(libc::ENOMEM) = errno::errno() {
+			if libc::ENOMEM == errno::errno() {
 				continue;
 			} else {
 				return Err(io::Error::last_os_error());
