@@ -6,7 +6,7 @@ use std::mem;
 use std::ptr;
 
 use mach::{boolean, vm_types};
-use nix::libc;
+use nix::{errno, libc};
 
 use crate::process::{io_error_to_process_error, ProcessError, ProcessResult};
 use crate::Pid;
@@ -143,6 +143,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 	let mut processes: Vec<kinfo_proc> = Vec::new();
 
 	loop {
+		// Dry-run to get the size required for the process list
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
@@ -157,8 +158,13 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 			return Err(io::Error::last_os_error());
 		}
 
-		processes.reserve(size);
+		// Reserve enough room to store the whole process list
+		let num_processes = size / mem::size_of::<kinfo_proc>();
+		if num_processes > processes.capacity() {
+			processes.reserve_exact(num_processes - processes.capacity());
+		}
 
+		// Attempt to store the process list in `processes`
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
@@ -169,18 +175,26 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 				0,
 			)
 		};
-		match result {
-			libc::ENOMEM => continue,
-			code if code < 0 => return Err(io::Error::last_os_error()),
-			_ => {
-				let length = size / mem::size_of::<kinfo_proc>();
-				unsafe {
-					processes.set_len(length);
-				}
-				debug_assert!(!processes.is_empty());
 
-				return Ok(processes);
+		if result < 0 {
+			// Need to check to see if the error was due to `libc::ENOMEM`, this indicates that
+			// there was not enough space in `processes` to store the whole process list which can
+			// occur when a new process spawns between getting the size and storing. In this case
+			// we can simply try again.
+			if libc::ENOMEM == errno::errno() {
+				continue;
+			} else {
+				return Err(io::Error::last_os_error());
 			}
+		} else {
+			// Getting the list succeeded so let `processes` know how many processes it holds
+			let length = size / mem::size_of::<kinfo_proc>();
+			unsafe {
+				processes.set_len(length);
+			}
+			debug_assert!(!processes.is_empty());
+
+			return Ok(processes);
 		}
 	}
 }
