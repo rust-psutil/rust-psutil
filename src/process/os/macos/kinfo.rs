@@ -147,7 +147,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
-				3,
+				name.len() as libc::c_uint,
 				ptr::null_mut(),
 				&mut size,
 				ptr::null_mut(),
@@ -158,7 +158,8 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 			return Err(io::Error::last_os_error());
 		}
 
-		// Reserve enough room to store the whole process list
+		// Reserve enough room to store the whole process list.
+		// `size` is the number of bytes, not the number of processes.
 		let num_processes = size / mem::size_of::<kinfo_proc>();
 		if num_processes > processes.capacity() {
 			processes.reserve_exact(num_processes - processes.capacity());
@@ -168,7 +169,7 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 		let result = unsafe {
 			libc::sysctl(
 				name.as_mut_ptr(),
-				3,
+				name.len() as libc::c_uint,
 				processes.as_mut_ptr() as *mut libc::c_void,
 				&mut size,
 				ptr::null_mut(),
@@ -187,10 +188,11 @@ pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 				return Err(io::Error::last_os_error());
 			}
 		} else {
-			// Getting the list succeeded so let `processes` know how many processes it holds
-			let length = size / mem::size_of::<kinfo_proc>();
+			// Getting the list succeeded so let `processes` know how many processes it holds.
+			// Have to recompute `num_processes` since `size` may have changed.
+			let num_processes = size / mem::size_of::<kinfo_proc>();
 			unsafe {
-				processes.set_len(length);
+				processes.set_len(num_processes);
 			}
 			debug_assert!(!processes.is_empty());
 
@@ -212,7 +214,7 @@ pub fn kinfo_process(pid: Pid) -> ProcessResult<kinfo_proc> {
 	let result = unsafe {
 		libc::sysctl(
 			name.as_mut_ptr(),
-			4,
+			name.len() as libc::c_uint,
 			info.as_mut_ptr() as *mut libc::c_void,
 			&mut size,
 			ptr::null_mut(),
