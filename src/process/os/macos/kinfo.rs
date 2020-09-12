@@ -140,7 +140,7 @@ pub struct vmspace {
 pub fn kinfo_processes() -> io::Result<Vec<kinfo_proc>> {
 	let mut name: [i32; 3] = [libc::CTL_KERN, libc::KERN_PROC, libc::KERN_PROC_ALL];
 	let mut size: libc::size_t = 0;
-	let mut processes: Vec<kinfo_proc> = vec![];
+	let mut processes: Vec<kinfo_proc> = Vec::new();
 
 	loop {
 		let result = unsafe {
