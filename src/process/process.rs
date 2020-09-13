@@ -1,3 +1,6 @@
+// #[cfg(feature = "serde")]
+// use serde::{Deserialize, Serialize};
+
 use std::cmp;
 use std::hash::{Hash, Hasher};
 use std::mem;
@@ -22,11 +25,15 @@ use crate::{Count, Percent, Pid};
 #[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStat;
 
+// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Process {
 	pub(crate) pid: Pid,
 	pub(crate) create_time: Duration,
 	pub(crate) busy: Duration,
+	// FIXME: Instant does not serialize/deserialize, cannot add serde
+	// #[cfg_attr(feature = "serde", serde(skip))]
 	pub(crate) instant: Instant,
 
 	#[cfg(target_os = "linux")]

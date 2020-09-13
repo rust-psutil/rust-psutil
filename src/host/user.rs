@@ -1,7 +1,12 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::time::SystemTime;
 
 use crate::Pid;
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct User {}
 
 impl User {

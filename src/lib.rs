@@ -23,6 +23,9 @@
 //!     - enums instead of constants
 //! - most struct fields have been replaced with getter methods to better enable platform based extensions
 
+#[cfg(feature = "serde")]
+extern crate renamed_serde as serde;
+
 #[macro_use]
 mod utils;
 pub mod common;

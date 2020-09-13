@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::collections::HashMap;
 
 use derive_more::{Add, Sub, Sum};
@@ -5,6 +8,8 @@ use derive_more::{Add, Sub, Sum};
 use crate::network::net_io_counters_pernic;
 use crate::{Bytes, Count, Result};
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Add, Sum, Sub)]
 pub struct NetIoCounters {
 	pub(crate) bytes_sent: Bytes,

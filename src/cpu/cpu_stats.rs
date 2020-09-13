@@ -1,5 +1,10 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::Count;
 
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CpuStats {}
 
 impl CpuStats {
