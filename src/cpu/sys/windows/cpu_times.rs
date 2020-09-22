@@ -1,22 +1,21 @@
-use crate::cpu::CpuTimes;
-use crate::windows_util::{windows_filetime_default, windows_filetime_to_ns};
-use crate::{Error, Result, WindowsOsError};
 use std::ffi::c_void;
 use std::mem::{size_of, zeroed};
 use std::ptr;
 use std::time::Duration;
 
+use ntapi::ntexapi::{
+	NtQuerySystemInformation, SystemProcessorPerformanceInformation,
+	SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION,
+};
 use winapi::shared::minwindef::FILETIME;
 use winapi::shared::ntstatus::STATUS_SUCCESS;
 use winapi::um::processthreadsapi::GetSystemTimes;
 use winapi::um::sysinfoapi::{GetSystemInfo, SYSTEM_INFO};
 
-use ntapi::ntexapi::{
-	NtQuerySystemInformation, SystemProcessorPerformanceInformation,
-	SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION,
-};
-
+use crate::cpu::CpuTimes;
 use crate::windows_util::*;
+use crate::windows_util::{windows_filetime_default, windows_filetime_to_ns};
+use crate::{Error, Result, WindowsOsError};
 
 pub fn cpu_times() -> Result<CpuTimes> {
 	unsafe {

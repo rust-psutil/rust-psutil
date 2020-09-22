@@ -2,6 +2,8 @@
 
 #[cfg(target_os = "linux")]
 use psutil::process::os::linux::ProcessExt as _;
+#[cfg(target_os = "macos")]
+use psutil::process::os::macos::ProcessExt;
 #[cfg(target_os = "windows")]
 use psutil::process::os::windows::ProcessExt as _;
 use psutil::process::Process;

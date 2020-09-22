@@ -1,6 +1,3 @@
-use crate::host::Info;
-use platforms::target::{Arch, OS};
-
 use std::iter::once;
 use std::mem::zeroed;
 use std::ptr;
@@ -16,6 +13,9 @@ use winapi::um::winnt::{
 	PROCESSOR_ARCHITECTURE_ARM64, PROCESSOR_ARCHITECTURE_INTEL, REG_SZ,
 };
 use winapi::um::winreg::{RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY_LOCAL_MACHINE};
+
+use crate::host::Info;
+use platforms::target::{Arch, OS};
 
 unsafe fn get_string_value(key: HKEY, buffer: &mut Vec<u16>, n: &str) -> Option<String> {
 	let mut key_type: u32 = 0;

@@ -1,7 +1,7 @@
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 use std::fs;
 use std::io;
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -10,10 +10,10 @@ use std::string::FromUtf16Error;
 #[cfg(target_os = "windows")]
 use winapi::{shared::ntdef::NTSTATUS, um::errhandlingapi::GetLastError};
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 #[cfg(feature = "sensors")]
 use glob::glob as other_glob;
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 use snafu::ResultExt;
 use snafu::Snafu;
 
@@ -94,6 +94,11 @@ pub enum Error {
 	#[cfg(target_os = "windows")]
 	#[snafu(display("Failed to convert from UTF-16 : {}", source))]
 	FromUtf16ConvertError { source: FromUtf16Error },
+
+	/// Windows only
+	#[cfg(target_os = "windows")]
+	#[snafu(display("{}", message))]
+	OtherError { message: String },
 }
 
 #[cfg(target_family = "unix")]
@@ -148,7 +153,7 @@ impl WindowsOsError {
 	}
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub(crate) fn read_file<P>(path: P) -> Result<String>
 where
 	P: AsRef<Path>,
@@ -158,7 +163,7 @@ where
 	})
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub(crate) fn read_dir<P>(path: P) -> Result<Vec<fs::DirEntry>>
 where
 	P: AsRef<Path>,
@@ -175,7 +180,7 @@ where
 		.collect()
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub(crate) fn read_link<P>(path: P) -> Result<PathBuf>
 where
 	P: AsRef<Path>,
@@ -186,7 +191,7 @@ where
 }
 
 #[cfg(feature = "sensors")]
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub(crate) fn glob(path: &str) -> Vec<Result<PathBuf>> {
 	other_glob(path)
 		.unwrap() // only errors on invalid pattern

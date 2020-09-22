@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::Duration;
 
-use psutil::process::processes;
+use psutil::process::{processes, ProcessError};
 
 // TODO: update to actually match the output of `ps aux`
 
@@ -28,7 +28,12 @@ fn main() {
 						.unwrap_or_else(|| format!("[{}]", p.name().unwrap())),
 				);
 			}
-			Err(_) => {}
+			Err(e) => match e {
+				ProcessError::NoSuchProcess { .. } => (),
+				ProcessError::ZombieProcess { pid, .. } => println!("{:>6} Zombie process", pid),
+				ProcessError::AccessDenied { pid, .. } => println!("{:>6} Access denied", pid),
+				ProcessError::PsutilError { pid, source } => println!("{:>6} {}", pid, source),
+			},
 		};
 	}
 }

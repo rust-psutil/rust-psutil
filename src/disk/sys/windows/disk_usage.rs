@@ -1,6 +1,3 @@
-use crate::utils::u64_percent;
-use crate::windows_util::*;
-use crate::{Bytes, Error, Percent, Result, WindowsOsError};
 use std::iter::once;
 use std::mem::{transmute, zeroed};
 use std::os::windows::ffi::OsStrExt as _;
@@ -9,6 +6,10 @@ use std::ptr;
 
 use winapi::shared::ntdef::ULARGE_INTEGER;
 use winapi::um::fileapi::GetDiskFreeSpaceExW;
+
+use crate::utils::u64_percent;
+use crate::windows_util::*;
+use crate::{Bytes, Error, Percent, Result, WindowsOsError};
 
 #[derive(Clone, Debug, Default)]
 pub struct DiskUsage {

@@ -27,10 +27,6 @@ fn main() {
 	let partitions = disk::partitions_physical().unwrap();
 	let disk_usage = disk::disk_usage("/").unwrap();
 
-	let uptime = host::uptime().unwrap();
-	let boot_time = host::boot_time().unwrap();
-	let loadavg = host::loadavg().unwrap();
-
 	let virtual_memory = memory::virtual_memory().unwrap();
 	let swap_memory = memory::swap_memory().unwrap();
 
@@ -49,9 +45,17 @@ fn main() {
 	dbg!(partitions);
 	dbg!(disk_usage);
 
-	dbg!(uptime);
-	dbg!(boot_time);
-	dbg!(loadavg);
+	// TODO: support this on macos
+	#[cfg(not(target_os = "macos"))]
+	{
+		let uptime = host::uptime().unwrap();
+		let boot_time = host::boot_time().unwrap();
+		let loadavg = host::loadavg().unwrap();
+
+		dbg!(uptime);
+		dbg!(boot_time);
+		dbg!(loadavg);
+	}
 
 	dbg!(virtual_memory);
 	dbg!(swap_memory);

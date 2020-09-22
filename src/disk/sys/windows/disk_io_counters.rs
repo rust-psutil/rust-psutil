@@ -1,7 +1,3 @@
-use crate::disk::DiskIoCounters;
-use crate::disk::{partitions_physical, Partition};
-use crate::windows_util::*;
-use crate::{Error, Result, WindowsOsError};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::iter::once;
@@ -16,6 +12,11 @@ use winapi::um::winioctl::{DISK_PERFORMANCE, IOCTL_DISK_PERFORMANCE};
 use winapi::um::winnt::{
 	FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, STANDARD_RIGHTS_READ,
 };
+
+use crate::disk::DiskIoCounters;
+use crate::disk::{partitions_physical, Partition};
+use crate::windows_util::*;
+use crate::{Error, Result, WindowsOsError};
 
 unsafe fn get_io_counter_for_partition(partition: &Partition) -> Result<DiskIoCounters> {
 	let device = partition.device().trim_end_matches('\\');

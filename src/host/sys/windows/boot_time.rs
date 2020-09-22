@@ -1,9 +1,10 @@
-use crate::windows_util::{filetime_to_unix_time, windows_filetime_default};
-use crate::Result;
 use std::time::{Duration, SystemTime};
 
 use winapi::shared::minwindef::FILETIME;
 use winapi::um::sysinfoapi::{GetSystemTimeAsFileTime, GetTickCount64};
+
+use crate::windows_util::{filetime_to_unix_time, windows_filetime_default};
+use crate::Result;
 
 pub fn boot_time() -> Result<SystemTime> {
 	let mut ft: FILETIME = windows_filetime_default();

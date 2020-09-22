@@ -25,7 +25,10 @@ psutil = { version = "3.1.0", default-features = false, features = ["process"] }
 
 ## Platform Support
 
-Currently, only Linux, macOS and Windows are supported, but support is planned for all major platforms.
+The currently supported platforms include:
+- Linux
+- macOS
+- Windows
 
 [platform-support](./platform-support.md) details the implementation level of each platform.
 

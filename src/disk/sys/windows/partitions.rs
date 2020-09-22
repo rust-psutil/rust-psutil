@@ -1,5 +1,3 @@
-use crate::disk::{FileSystem, Partition};
-use crate::{Error, Result, WindowsOsError};
 use std::mem::{self, MaybeUninit};
 use std::path::PathBuf;
 use std::ptr;
@@ -16,6 +14,9 @@ use winapi::um::winnt::{
 	FILE_PERSISTENT_ACLS, FILE_READ_ONLY_VOLUME, FILE_SUPPORTS_EXTENDED_ATTRIBUTES,
 	FILE_VOLUME_IS_COMPRESSED,
 };
+
+use crate::disk::{FileSystem, Partition};
+use crate::{Error, Result, WindowsOsError};
 
 unsafe fn get_partition(root: &[u16]) -> Result<Option<Partition>> {
 	let mut fs_type_buffer: [MaybeUninit<u16>; MAX_PATH] = MaybeUninit::uninit().assume_init();
