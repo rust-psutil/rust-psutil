@@ -16,11 +16,11 @@ Add this to your `Cargo.toml`:
 psutil = "3.1.0"
 ```
 
-Or to opt into only a certain submodule:
+Or to only use certain submodules:
 
 ```toml
 [dependencies]
-psutil = { version = "3.1.0", default-features = false, features = ["process"] }
+psutil = { version = "3.1.0", default-features = false, features = ["cpu", "process"] }
 ```
 
 ## Platform Support
@@ -35,12 +35,13 @@ Currently, only Linux and macOS are supported, but support is planned for all ma
 
 ## Related projects
 
+- Rust
+  - [hiem](https://github.com/heim-rs/heim)
+  - [rust-battery](https://github.com/svartalf/rust-battery)
+  - [sys-info-rs](https://github.com/FillZpp/sys-info-rs)
+  - [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
+  - [systemstat](https://github.com/myfreeweb/systemstat)
 - [gopsutil](https://github.com/shirou/gopsutil)
-- [hiem](https://github.com/heim-rs/heim)
 - [psutil]
-- [rust-battery](https://github.com/svartalf/rust-battery)
-- [sys-info-rs](https://github.com/FillZpp/sys-info-rs)
-- [sysinfo](https://github.com/GuillaumeGomez/sysinfo)
-- [systemstat](https://github.com/myfreeweb/systemstat)
 
 [psutil]: https://github.com/giampaolo/psutil
