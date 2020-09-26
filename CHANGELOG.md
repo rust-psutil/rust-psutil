@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
+- significantly reduce compile times by switching from snafu to thiserror
 - [process][macos] fix macos process kinfo "Cannot allocate memory" errors
 
 ## [v3.1.0] - 2020-05-10
