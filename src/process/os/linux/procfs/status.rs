@@ -61,7 +61,9 @@ impl FromStr for ProcfsStatus {
 		};
 
 		let get = |key: &str| -> Result<&str> {
-			map.get(key).copied().ok_or(missing_status_data(contents))
+			map.get(key)
+				.copied()
+				.ok_or_else(|| missing_status_data(contents))
 		};
 
 		let uid_fields = match get("Uid")?.split_whitespace().collect::<Vec<_>>() {

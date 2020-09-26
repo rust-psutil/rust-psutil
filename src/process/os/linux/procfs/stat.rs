@@ -184,11 +184,11 @@ impl FromStr for ProcfsStat {
 		let (pid_field, leftover) = contents
 			.find('(')
 			.map(|i| contents.split_at(i - 1))
-			.ok_or(missing_stat_data(contents))?;
+			.ok_or_else(|| missing_stat_data(contents))?;
 		let (comm_field, leftover) = leftover
 			.rfind(')')
 			.map(|i| leftover.split_at(i + 2))
-			.ok_or(missing_stat_data(contents))?;
+			.ok_or_else(|| missing_stat_data(contents))?;
 
 		let mut fields: Vec<&str> = Vec::new();
 		fields.push(pid_field);
