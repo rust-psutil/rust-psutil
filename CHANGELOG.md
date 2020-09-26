@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.2.0] - 2020-09-26
+
 ### Added
 
 - Make all public types serde Serializable and Deserializable
@@ -132,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove `getpid()`, `getppid()`, `Process.from_pidfile()`, `write_pidfile()`, and `read_pidfile()`
 
-[Unreleased]: https://github.com/rust-psutil/rust-psutil/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/rust-psutil/rust-psutil/compare/v3.2.0...HEAD
+[v3.2.0]: https://github.com/rust-psutil/rust-psutil/compare/v3.1.0...v3.2.0
 [v3.1.0]: https://github.com/rust-psutil/rust-psutil/compare/v3.0.1...v3.1.0
 [v3.0.1]: https://github.com/rust-psutil/rust-psutil/compare/v3.0.0...v3.0.1
 [v3.0.0]: https://github.com/rust-psutil/rust-psutil/compare/v2.0.0...v3.0.0
