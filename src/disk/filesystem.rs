@@ -13,6 +13,7 @@ use std::str::FromStr;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[non_exhaustive]
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
+#[non_exhaustive]
 pub enum FileSystem {
 	/// ext2 (https://en.wikipedia.org/wiki/Ext2)
 	Ext2,

@@ -11,6 +11,7 @@ pub(crate) fn duration_percent(lhs: Duration, rhs: Duration) -> Percent {
 	(div_duration_f64(lhs, rhs) * 100.0) as f32
 }
 
+#[cfg(not(target_os = "macos"))]
 pub(crate) fn u64_percent(lhs: u64, rhs: u64) -> Percent {
 	((lhs as f64 / rhs as f64) * 100.0) as f32
 }

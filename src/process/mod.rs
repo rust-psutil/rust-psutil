@@ -9,6 +9,7 @@ mod process;
 mod status;
 mod sys;
 
+#[cfg(target_family = "unix")]
 pub use nix::sys::signal::Signal;
 
 pub use collector::*;

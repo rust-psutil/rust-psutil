@@ -7,7 +7,9 @@ use std::mem;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
+#[cfg(target_family = "unix")]
 use nix::sys::signal::{kill, Signal};
+#[cfg(target_family = "unix")]
 use nix::unistd;
 use snafu::ensure;
 
@@ -38,6 +40,12 @@ pub struct Process {
 	// TODO: ignore debug for this field when the feature becomes available.
 	// https://github.com/rust-lang/rust/issues/37009
 	pub(crate) procfs_stat: ProcfsStat,
+
+	// keep handle to prevent races
+	#[cfg(target_os = "windows")]
+	pub(crate) handle: crate::windows_util::SafeHandle,
+	#[cfg(target_os = "windows")]
+	pub(crate) access_rights: u32,
 }
 
 impl Process {
@@ -233,6 +241,7 @@ impl Process {
 	}
 
 	/// Preemptively checks if the process is still alive.
+	#[cfg(target_family = "unix")]
 	pub fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
 		ensure!(self.is_running(), NoSuchProcess { pid: self.pid });
 
@@ -254,7 +263,11 @@ impl Process {
 		{
 			self.send_signal(Signal::SIGSTOP)
 		}
-		#[cfg(not(any(target_family = "unix")))]
+		#[cfg(target_os = "windows")]
+		{
+			self.suspend_process()
+		}
+		#[cfg(not(any(target_family = "unix", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -266,7 +279,11 @@ impl Process {
 		{
 			self.send_signal(Signal::SIGCONT)
 		}
-		#[cfg(not(any(target_family = "unix")))]
+		#[cfg(target_os = "windows")]
+		{
+			self.resume_process()
+		}
+		#[cfg(not(any(target_family = "unix", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -278,7 +295,11 @@ impl Process {
 		{
 			self.send_signal(Signal::SIGTERM)
 		}
-		#[cfg(not(any(target_family = "unix")))]
+		#[cfg(target_os = "windows")]
+		{
+			self.terminate_process()
+		}
+		#[cfg(not(any(target_family = "unix", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -290,7 +311,11 @@ impl Process {
 		{
 			self.send_signal(Signal::SIGKILL)
 		}
-		#[cfg(not(any(target_family = "unix")))]
+		#[cfg(target_os = "windows")]
+		{
+			self.terminate_process()
+		}
+		#[cfg(not(any(target_family = "unix", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -320,7 +345,7 @@ impl Hash for Process {
 #[cfg(test)]
 mod unit_tests {
 	use super::*;
-	use crate::process::processes;
+	use crate::process::{pids, processes};
 
 	#[test]
 	fn test_process_exe() {
@@ -343,6 +368,7 @@ mod unit_tests {
 	}
 
 	/// This could fail if you run the tests as PID 1. Please don't do that.
+	#[cfg(not(target_os = "windows"))]
 	#[test]
 	fn test_process_inequality() {
 		assert_ne!(Process::current().unwrap(), Process::new(1).unwrap());
@@ -351,5 +377,10 @@ mod unit_tests {
 	#[test]
 	fn test_processes() {
 		processes().unwrap();
+	}
+
+	#[test]
+	fn test_pids() {
+		pids().unwrap();
 	}
 }

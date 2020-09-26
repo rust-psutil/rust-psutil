@@ -46,11 +46,11 @@ impl CpuTimes {
 		{
 			self.idle + self.iowait
 		}
-		#[cfg(target_os = "macos")]
+		#[cfg(any(target_os = "macos", target_os = "windows"))]
 		{
 			self.idle
 		}
-		#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+		#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -71,7 +71,11 @@ impl CpuTimes {
 		{
 			self.user + self.system + self.nice
 		}
-		#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+		#[cfg(target_os = "windows")]
+		{
+			self.user + self.system
+		}
+		#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 		{
 			todo!()
 		}
@@ -120,5 +124,17 @@ impl Sub for &CpuTimes {
 					.map(|second| first.checked_sub(second).unwrap_or_default())
 			}),
 		}
+	}
+}
+
+#[cfg(test)]
+mod unit_tests {
+	#[cfg(target_os = "windows")]
+	#[test]
+	fn windows_test_cpu_times() {
+		use crate::cpu::cpu_times;
+		let c = cpu_times().unwrap();
+
+		assert_eq!(c.busy(), c.user() + c.system());
 	}
 }

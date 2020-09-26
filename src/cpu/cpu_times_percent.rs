@@ -1,7 +1,7 @@
+use std::time::Duration;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use std::time::Duration;
 
 use crate::cpu::{cpu_times, cpu_times_percpu, CpuTimes};
 use crate::utils::duration_percent;
@@ -53,6 +53,10 @@ impl CpuTimesPercent {
 		{
 			self.idle
 		}
+		#[cfg(target_os = "windows")]
+		{
+			todo!()
+		}
 	}
 
 	/// New method, not in Python psutil.
@@ -69,6 +73,10 @@ impl CpuTimesPercent {
 		#[cfg(target_os = "macos")]
 		{
 			self.user + self.system + self.nice
+		}
+		#[cfg(target_os = "windows")]
+		{
+			self.user + self.system
 		}
 	}
 }

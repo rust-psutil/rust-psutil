@@ -12,6 +12,7 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
+          - windows-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v1
@@ -29,7 +30,13 @@ jobs:
           command: check
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v1
@@ -67,7 +74,13 @@ jobs:
           args: --all -- --check
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v1
