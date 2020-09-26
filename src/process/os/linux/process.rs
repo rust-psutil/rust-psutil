@@ -1,26 +1,22 @@
 use std::collections::HashMap;
 
-use snafu::ensure;
-
 use crate::process::os::linux::{
 	procfs_stat, procfs_statm, procfs_status, ProcfsStat, ProcfsStatm, ProcfsStatus,
 };
 use crate::process::{psutil_error_to_process_error, Process, ProcessResult};
-use crate::{read_file, MissingData, Result};
+use crate::{read_file, Error, Result};
 
 fn parse_environ(contents: &str) -> Result<HashMap<String, String>> {
 	contents
 		.split_terminator('\0')
 		.map(|mapping| {
-			let split: Vec<&str> = mapping.splitn(2, '=').collect();
-
-			ensure!(
-				split.len() == 2,
-				MissingData {
-					path: "environ",
-					contents
-				}
-			);
+			let split = match mapping.splitn(2, '=').collect::<Vec<_>>() {
+				split if split.len() == 2 => Ok(split),
+				_ => Err(Error::MissingData {
+					path: "environ".into(),
+					contents: contents.to_string(),
+				}),
+			}?;
 
 			Ok((split[0].to_owned(), split[1].to_owned()))
 		})

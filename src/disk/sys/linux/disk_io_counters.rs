@@ -4,10 +4,8 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
 
-use snafu::{ensure, ResultExt};
-
 use crate::disk::DiskIoCounters;
-use crate::{read_file, Error, MissingData, ParseInt, Result};
+use crate::{read_file, Error, Result};
 
 // Copied from the `psutil` sources:
 //
@@ -35,20 +33,19 @@ impl FromStr for DiskIoCounters {
 	// https://www.kernel.org/doc/Documentation/iostats.txt
 	// https://www.kernel.org/doc/Documentation/ABI/testing/procfs-diskstats
 	fn from_str(line: &str) -> Result<DiskIoCounters> {
-		let fields: Vec<&str> = line.split_whitespace().collect();
-
-		ensure!(
-			fields.len() >= 14,
-			MissingData {
-				path: PROC_DISKSTATS,
-				contents: line,
-			}
-		);
+		let fields = match line.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 14 => Ok(fields),
+			_ => Err(Error::MissingData {
+				path: PROC_DISKSTATS.into(),
+				contents: line.to_string(),
+			}),
+		}?;
 
 		let parse = |s: &str| -> Result<u64> {
-			s.parse().context(ParseInt {
-				path: PROC_DISKSTATS,
-				contents: line,
+			s.parse().map_err(|err| Error::ParseInt {
+				path: PROC_DISKSTATS.into(),
+				contents: line.to_string(),
+				source: err,
 			})
 		};
 
@@ -72,15 +69,13 @@ fn get_partitions(contents: &str) -> Result<Vec<&str>> {
 		.lines()
 		.skip(2)
 		.map(|line| {
-			let fields: Vec<&str> = line.split_whitespace().collect();
-
-			ensure!(
-				fields.len() >= 4,
-				MissingData {
-					path: PROC_PARTITIONS,
-					contents: line,
-				}
-			);
+			let fields = match line.split_whitespace().collect::<Vec<_>>() {
+				fields if fields.len() >= 4 => Ok(fields),
+				_ => Err(Error::MissingData {
+					path: PROC_PARTITIONS.into(),
+					contents: line.to_string(),
+				}),
+			}?;
 
 			Ok(fields[3])
 		})
@@ -94,15 +89,13 @@ pub(crate) fn disk_io_counters_per_partition() -> Result<HashMap<String, DiskIoC
 	let mut io_counters: HashMap<String, DiskIoCounters> = HashMap::new();
 
 	for line in contents.lines() {
-		let fields: Vec<&str> = line.split_whitespace().collect();
-
-		ensure!(
-			fields.len() >= 14,
-			MissingData {
-				path: PROC_DISKSTATS,
-				contents: line,
-			}
-		);
+		let fields = match line.split_whitespace().collect::<Vec<_>>() {
+			fields if fields.len() >= 14 => Ok(fields),
+			_ => Err(Error::MissingData {
+				path: PROC_DISKSTATS.into(),
+				contents: line.to_string(),
+			}),
+		}?;
 
 		let name = fields[2];
 		if partitions.contains(&name) {

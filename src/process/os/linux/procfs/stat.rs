@@ -4,10 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::time::Duration;
 
-use snafu::{ensure, OptionExt, ResultExt};
-
 use crate::process::{procfs_path, psutil_error_to_process_error, ProcessResult, Status};
-use crate::{read_file, Error, MissingData, ParseInt, Pid, Result, PAGE_SIZE, TICKS_PER_SECOND};
+use crate::{read_file, Error, Pid, Result, PAGE_SIZE, TICKS_PER_SECOND};
 
 const STAT: &str = "stat";
 
@@ -175,39 +173,45 @@ impl FromStr for ProcfsStat {
 	type Err = Error;
 
 	fn from_str(contents: &str) -> Result<Self> {
-		let missing_data = MissingData {
-			path: STAT,
-			contents,
+		let missing_stat_data = |contents: &str| -> Error {
+			Error::MissingData {
+				path: STAT.into(),
+				contents: contents.to_string(),
+			}
 		};
-
 		// We parse the comm field and everything before it seperately since
 		// the comm field is delimited by parens and can contain spaces
 		let (pid_field, leftover) = contents
 			.find('(')
 			.map(|i| contents.split_at(i - 1))
-			.context(missing_data)?;
+			.ok_or(missing_stat_data(contents))?;
 		let (comm_field, leftover) = leftover
 			.rfind(')')
 			.map(|i| leftover.split_at(i + 2))
-			.context(missing_data)?;
+			.ok_or(missing_stat_data(contents))?;
 
 		let mut fields: Vec<&str> = Vec::new();
 		fields.push(pid_field);
 		fields.push(&comm_field[2..comm_field.len() - 2]);
 		fields.extend(leftover.trim_end().split_whitespace());
 
-		ensure!(fields.len() >= 41, missing_data);
+		if fields.len() < 41 {
+			return Err(missing_stat_data(contents));
+		}
 
-		let parse_int = ParseInt {
-			path: STAT,
-			contents,
+		let parse_int = |err: std::num::ParseIntError| -> Error {
+			Error::ParseInt {
+				path: STAT.into(),
+				contents: contents.to_string(),
+				source: err,
+			}
 		};
 
-		let parse_u32 = |s: &str| -> Result<u32> { s.parse().context(parse_int) };
-		let parse_i32 = |s: &str| -> Result<i32> { s.parse().context(parse_int) };
-		let parse_u64 = |s: &str| -> Result<u64> { s.parse().context(parse_int) };
-		let parse_i64 = |s: &str| -> Result<i64> { s.parse().context(parse_int) };
-		let parse_u128 = |s: &str| -> Result<u128> { s.parse().context(parse_int) };
+		let parse_u32 = |s: &str| -> Result<u32> { s.parse().map_err(parse_int) };
+		let parse_i32 = |s: &str| -> Result<i32> { s.parse().map_err(parse_int) };
+		let parse_u64 = |s: &str| -> Result<u64> { s.parse().map_err(parse_int) };
+		let parse_i64 = |s: &str| -> Result<i64> { s.parse().map_err(parse_int) };
+		let parse_u128 = |s: &str| -> Result<u128> { s.parse().map_err(parse_int) };
 
 		let pid = parse_u32(fields[0])?;
 		let comm = fields[1].to_string();

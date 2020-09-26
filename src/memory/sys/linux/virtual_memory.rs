@@ -1,7 +1,5 @@
-use snafu::OptionExt;
-
 use crate::memory::{make_map, VirtualMemory};
-use crate::{read_file, MissingData, Result};
+use crate::{read_file, Error, Result};
 
 const PROC_MEMINFO: &str = "/proc/meminfo";
 
@@ -11,9 +9,9 @@ pub fn virtual_memory() -> Result<VirtualMemory> {
 	let meminfo = make_map(&contents, PROC_MEMINFO)?;
 
 	let get = |key: &str| -> Result<u64> {
-		meminfo.get(key).copied().context(MissingData {
-			path: PROC_MEMINFO,
-			contents: &contents,
+		meminfo.get(key).copied().ok_or(Error::MissingData {
+			path: PROC_MEMINFO.into(),
+			contents: contents.clone(),
 		})
 	};
 
