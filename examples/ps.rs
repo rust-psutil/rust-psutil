@@ -8,16 +8,17 @@ use psutil::process::processes;
 fn main() {
 	let processes = processes().unwrap();
 
-	let block_time = Duration::from_millis(1000);
-	thread::sleep(block_time);
+	thread::sleep(Duration::from_secs(1));
 
 	println!(
 		"{:>6} {:>4} {:>4} {:.100}",
 		"PID", "%CPU", "%MEM", "COMMAND"
 	);
+
 	for p in processes {
 		let mut p = p.unwrap();
 
+		// TODO the percent formatting is not working
 		println!(
 			"{:>6} {:>2.1} {:>2.1} {:.100}",
 			p.pid(),
