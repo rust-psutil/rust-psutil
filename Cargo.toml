@@ -1,7 +1,11 @@
 [package]
 name = "psutil"
 version = "3.2.0"
-authors = ["Caleb Bassi <calebjbassi@gmail.com>", "Rob Day <rkd@rkd.me.uk>", "Sam Clements <sam@borntyping.co.uk>"]
+authors = [
+	"Caleb Bassi <calebjbassi@gmail.com>",
+	"Rob Day <rkd@rkd.me.uk>",
+	"Sam Clements <sam@borntyping.co.uk>",
+]
 description = "Process and system monitoring library"
 repository = "https://github.com/rust-psutil/rust-psutil"
 readme = "README.md"
