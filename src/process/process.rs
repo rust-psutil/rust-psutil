@@ -3,7 +3,6 @@
 
 use std::cmp;
 use std::hash::{Hash, Hasher};
-use std::mem;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -88,11 +87,7 @@ impl Process {
 			return Err(ProcessError::NoSuchProcess { pid: self.pid });
 		}
 
-		let ppid = self.ppid()?;
-		match ppid {
-			Some(ppid) => Ok(Some(Process::new(ppid)?)),
-			None => Ok(None),
-		}
+		self.ppid()?.map(Process::new).transpose()
 	}
 
 	pub fn parents(&self) -> Option<Vec<Process>> {
@@ -178,17 +173,17 @@ impl Process {
 		virtual_memory: &memory::VirtualMemory,
 	) -> ProcessResult<Percent> {
 		let memory_info = self.memory_info()?;
-		let percent = ((memory_info.rss() as f64 / virtual_memory.total() as f64) * 100.0) as f32;
+		let percent = (memory_info.rss() as f64 / virtual_memory.total() as f64) * 100.0;
 
-		Ok(percent)
+		Ok(percent as f32)
 	}
 
 	pub fn memory_percent_with_type(&self, r#type: MemType) -> ProcessResult<Percent> {
 		self.sys_memory_percent_with_type(r#type)
 	}
 
-	pub fn chidren(&self) {
-		self.sys_chidren()
+	pub fn children(&self) {
+		self.sys_children()
 	}
 
 	pub fn open_files(&self) -> ProcessResult<Vec<OpenFile>> {
@@ -199,8 +194,8 @@ impl Process {
 		self.sys_connections()
 	}
 
-	pub fn connections_with_type(&self, r#type: NetConnectionType) {
-		self.sys_connections_with_type(r#type)
+	pub fn connections_with_type(&self, type_: NetConnectionType) {
+		self.sys_connections_with_type(type_)
 	}
 
 	pub fn is_running(&self) -> bool {
@@ -221,15 +216,11 @@ impl Process {
 	/// New method, not in Python psutil.
 	pub fn replace(&mut self) -> bool {
 		match Process::new(self.pid) {
-			Ok(p) => {
-				if p == *self {
-					false
-				} else {
-					let _ = mem::replace(self, p);
-					true
-				}
+			Ok(p) if p != *self => {
+				*self = p;
+				true
 			}
-			Err(_) => false,
+			_ => false,
 		}
 	}
 
@@ -247,6 +238,8 @@ impl Process {
 		}
 		#[cfg(not(any(target_family = "unix")))]
 		{
+			// e.g. windows only supports relatively few signals.
+			// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/signal?view=vs-2019
 			todo!()
 		}
 	}
@@ -277,14 +270,7 @@ impl Process {
 
 	/// Preemptively checks if the process is still alive.
 	pub fn terminate(&self) -> ProcessResult<()> {
-		#[cfg(target_family = "unix")]
-		{
-			self.send_signal(Signal::SIGTERM)
-		}
-		#[cfg(not(any(target_family = "unix")))]
-		{
-			todo!()
-		}
+		self.send_signal(Signal::SIGTERM)
 	}
 
 	/// Preemptively checks if the process is still alive.

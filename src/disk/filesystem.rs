@@ -80,10 +80,7 @@ pub enum FileSystem {
 impl FileSystem {
 	/// Checks if filesystem is used for a physical devices
 	pub fn is_physical(&self) -> bool {
-		match self {
-			FileSystem::Other(..) => false,
-			_ => true,
-		}
+		!matches!(self, FileSystem::Other(..))
 	}
 
 	/// Checks if filesystem is used for a virtual devices (such as `tmpfs` or `smb` mounts)
