@@ -21,7 +21,7 @@ pub fn uptime() -> Result<Duration> {
 		)
 	};
 	if ret < 0 {
-		return Err(Error::IRError { content: ret })
+		return Err(Error::IRError { content: ret });
 	}
 
 	Ok(Duration::from_secs(data.tv_sec as u64))
