@@ -55,6 +55,10 @@ pub enum Error {
 	/// macOS only.
 	#[error("OS error: {}", source)]
 	OsError { source: io::Error },
+
+	// Unix
+	#[error("Invalid return of {}", content)]
+	IRError { content: i32 },
 }
 
 impl From<nix::Error> for Error {
