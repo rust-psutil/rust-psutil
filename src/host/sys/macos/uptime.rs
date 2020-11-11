@@ -3,7 +3,7 @@ use std::{mem, ptr};
 
 use nix::libc::{c_void, sysctl, timeval};
 
-use crate::{Result, Error};
+use crate::{Error, Result};
 
 /// New function, not in Python psutil.
 pub fn uptime() -> Result<Duration> {
