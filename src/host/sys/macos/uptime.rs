@@ -1,13 +1,14 @@
-use nix::libc::{c_void, sysctl, timeval};
 use std::time::Duration;
 use std::{mem, ptr};
 
-use crate::{Error, Result};
+use nix::libc::{c_void, sysctl, timeval};
+
+use crate::Result;
 
 /// New function, not in Python psutil.
 pub fn uptime() -> Result<Duration> {
-	let mut data: timeval = unsafe { mem::zeroed() };
 	let mib = [1, 21];
+	let mut data: timeval = unsafe { mem::zeroed() };
 	unsafe {
 		sysctl(
 			&mib[0] as *const _ as *mut _,
@@ -18,5 +19,6 @@ pub fn uptime() -> Result<Duration> {
 			0,
 		);
 	}
+
 	Ok(Duration::from_secs(data.tv_sec as u64))
 }
