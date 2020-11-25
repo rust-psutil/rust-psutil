@@ -6,7 +6,7 @@ pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProcessError {
-	#[error("Process {} does not exists", pid)]
+	#[error("Process {} does not exist", pid)]
 	NoSuchProcess { pid: Pid },
 
 	#[error("Process {} is a zombie", pid)]
