@@ -5,7 +5,7 @@ use crate::{Bytes, Percent};
 
 #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct VirtualMemory {
 	pub(crate) total: Bytes,
 	pub(crate) available: Bytes,

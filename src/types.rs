@@ -16,7 +16,7 @@ pub type Mhz = FloatCount;
 
 #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Temperature {
 	celsius: Degrees,
 }
