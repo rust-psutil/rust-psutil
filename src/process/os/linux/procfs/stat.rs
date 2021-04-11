@@ -190,9 +190,7 @@ impl FromStr for ProcfsStat {
 			.map(|i| leftover.split_at(i + 2))
 			.ok_or_else(|| missing_stat_data(contents))?;
 
-		let mut fields: Vec<&str> = Vec::new();
-		fields.push(pid_field);
-		fields.push(&comm_field[2..comm_field.len() - 2]);
+		let mut fields: Vec<&str> = vec![pid_field, &comm_field[2..comm_field.len() - 2]];
 		fields.extend(leftover.trim_end().split_whitespace());
 
 		if fields.len() < 41 {

@@ -92,11 +92,11 @@ impl FromStr for ProcfsStatus {
 
 		let voluntary_ctxt_switches = map
 			.get("voluntary_ctxt_switches")
-			.map(|entry| -> Result<u64> { Ok(parse_u64(entry)?) })
+			.map(|entry| -> Result<u64> { parse_u64(entry) })
 			.transpose()?;
 		let nonvoluntary_ctxt_switches = map
 			.get("nonvoluntary_ctxt_switches")
-			.map(|entry| -> Result<u64> { Ok(parse_u64(entry)?) })
+			.map(|entry| -> Result<u64> { parse_u64(entry) })
 			.transpose()?;
 
 		Ok(ProcfsStatus {
