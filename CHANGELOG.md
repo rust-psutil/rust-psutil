@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix
+
+- [disk] add missing `pub mod os;` to `disk/mod.rs`
+
 ## [v3.2.0] - 2020-09-26
 
 ### Added
