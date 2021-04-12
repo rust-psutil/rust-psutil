@@ -7,27 +7,29 @@
 
 A process and system monitoring library for Rust, heavily inspired by the [psutil] module for Python.
 
+Note about versioning: rust-psutil prematurely hit version 1.0, so even though it has passed 1.0, it is still going through a lot of changes and the API may be relatively unstable.
+
 ## Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-psutil = "3.2.0"
+psutil = "3.2.1"
 ```
 
 Or to only use certain submodules:
 
 ```toml
 [dependencies]
-psutil = { version = "3.2.0", default-features = false, features = ["cpu", "process"] }
+psutil = { version = "3.2.1", default-features = false, features = ["cpu", "process"] }
 ```
 
 ## Platform Support
 
 Currently, only Linux and macOS are supported, but support is planned for all major platforms.
 
-[platform-support](./platform-support.md) details the implementation level of each platform.
+[platform-support.md](./platform-support.md) details the implementation level of each platform.
 
 ## Apps using rust-psutil
 
