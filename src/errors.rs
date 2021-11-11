@@ -46,33 +46,24 @@ pub enum Error {
 
 	/// Linux and macOS.
 	#[error("Failed to parse status. {}", source)]
-	ParseStatus { source: ParseStatusError },
+	ParseStatus {
+		#[from]
+		source: ParseStatusError,
+	},
 
 	// Unix only.
 	#[error("nix error: {}", source)]
-	NixError { source: nix::Error },
+	NixError {
+		#[from]
+		source: nix::Error,
+	},
 
 	/// macOS only.
 	#[error("OS error: {}", source)]
-	OsError { source: io::Error },
-}
-
-impl From<nix::Error> for Error {
-	fn from(error: nix::Error) -> Self {
-		Error::NixError { source: error }
-	}
-}
-
-impl From<io::Error> for Error {
-	fn from(error: io::Error) -> Self {
-		Error::OsError { source: error }
-	}
-}
-
-impl From<ParseStatusError> for Error {
-	fn from(error: ParseStatusError) -> Self {
-		Error::ParseStatus { source: error }
-	}
+	OsError {
+		#[from]
+		source: io::Error,
+	},
 }
 
 pub(crate) fn read_file<P>(path: P) -> Result<String>
