@@ -149,9 +149,7 @@ impl NetIoCountersCollector {
 			&self.prev_net_io_counters_pernic,
 			&self.corrected_net_io_counters_pernic,
 		) {
-			(Some(prev), Some(corrected)) => {
-				fix_io_counter_overflow(&prev, &io_counters, &corrected)
-			}
+			(Some(prev), Some(corrected)) => fix_io_counter_overflow(prev, &io_counters, corrected),
 			_ => io_counters.clone(),
 		};
 

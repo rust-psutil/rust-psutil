@@ -10,6 +10,7 @@ use crate::{read_file, Error, Pid, Result, PAGE_SIZE, TICKS_PER_SECOND};
 const STAT: &str = "stat";
 
 /// New struct, not in Python psutil.
+#[allow(dead_code)]
 #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]

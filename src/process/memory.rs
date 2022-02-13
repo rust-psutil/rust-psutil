@@ -15,6 +15,7 @@ pub enum MemType {
 	// TODO
 }
 
+#[allow(dead_code)]
 #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
