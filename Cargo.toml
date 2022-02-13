@@ -1,6 +1,6 @@
 [package]
 name = "psutil"
-version = "3.2.1"
+version = "3.2.2"
 authors = [
 	"Caleb Bassi <calebjbassi@gmail.com>",
 	"Rob Day <rkd@rkd.me.uk>",
