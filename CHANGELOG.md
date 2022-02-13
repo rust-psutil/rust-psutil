@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.2.2] - 2022-02-13
+
+### Fix
+
+- Bump dependency on crate `platforms` after 0.2.1 was yanked
+
+
 ## [v3.2.1] - 2021-04-11
 
 ### Fix
