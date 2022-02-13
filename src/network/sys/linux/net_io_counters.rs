@@ -57,7 +57,7 @@ pub(crate) fn net_io_counters_pernic() -> Result<HashMap<String, NetIoCounters>>
 			// remove the trailing colon
 			net_name.pop();
 
-			Ok((net_name, NetIoCounters::from_str(&line)?))
+			Ok((net_name, NetIoCounters::from_str(line)?))
 		})
 		.collect()
 }

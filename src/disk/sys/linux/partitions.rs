@@ -36,6 +36,6 @@ impl FromStr for Partition {
 pub fn partitions() -> Result<Vec<Partition>> {
 	read_file(PROC_MOUNTS)?
 		.lines()
-		.map(|line| Partition::from_str(line))
+		.map(Partition::from_str)
 		.collect()
 }

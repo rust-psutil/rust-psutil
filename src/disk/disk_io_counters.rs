@@ -158,7 +158,7 @@ impl DiskIoCountersCollector {
 			&self.corrected_disk_io_counters_per_partition,
 		) {
 			(Some(prev), Some(corrected)) => {
-				fix_io_counter_overflow(&prev, &io_counters, &corrected)
+				fix_io_counter_overflow(prev, &io_counters, corrected)
 			}
 			_ => io_counters.clone(),
 		};
