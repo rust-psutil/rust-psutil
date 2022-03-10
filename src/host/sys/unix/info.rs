@@ -10,10 +10,11 @@ use crate::host::Info;
 pub fn info() -> Info {
 	let utsname = sys::utsname::uname();
 
-	let operating_system = match utsname.sysname() {
-		"Darwin" => OS::MacOS,
+	let operating_system = match utsname.sysname().to_lowercase().as_str() {
+		"darwin" => OS::MacOS,
 		s => OS::from_str(s).unwrap_or(OS::Unknown),
 	};
+
 	let release = utsname.release().to_string();
 	let version = utsname.version().to_string();
 	let hostname = utsname.nodename().to_string();
