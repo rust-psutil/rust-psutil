@@ -192,7 +192,7 @@ impl FromStr for ProcfsStat {
 			.ok_or_else(|| missing_stat_data(contents))?;
 
 		let mut fields: Vec<&str> = vec![pid_field, &comm_field[2..comm_field.len() - 2]];
-		fields.extend(leftover.trim_end().split_whitespace());
+		fields.extend(leftover.split_whitespace());
 
 		if fields.len() < 41 {
 			return Err(missing_stat_data(contents));

@@ -34,15 +34,16 @@ impl DiskUsage {
 	}
 }
 
+// Disable the unnecessary_cast lint, as we need to do the u64 casts since on some platforms the
+// types are aliased to u32.
+// See https://github.com/rust-psutil/rust-psutil/issues/64 and
+// https://github.com/rust-psutil/rust-psutil/pull/39
+#[allow(clippy::unnecessary_cast)]
 pub fn disk_usage<P>(path: P) -> Result<DiskUsage>
 where
 	P: AsRef<Path>,
 {
 	let statvfs = sys::statvfs::statvfs(path.as_ref())?;
-
-	// need to do the u64 casts since on some platforms the types are aliased to u32
-	// https://github.com/rust-psutil/rust-psutil/issues/64
-	// https://github.com/rust-psutil/rust-psutil/pull/39
 
 	let total = statvfs.blocks() as u64 * statvfs.fragment_size() as u64;
 

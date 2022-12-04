@@ -141,11 +141,7 @@ pub struct DiskIoCountersCollector {
 
 impl DiskIoCountersCollector {
 	pub fn disk_io_counters(&mut self) -> Result<DiskIoCounters> {
-		let sum = self
-			.disk_io_counters_per_partition()?
-			.into_iter()
-			.map(|(_key, val)| val)
-			.sum();
+		let sum = self.disk_io_counters_per_partition()?.into_values().sum();
 
 		Ok(sum)
 	}
