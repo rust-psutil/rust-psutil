@@ -8,13 +8,21 @@ use platforms::target::{Arch, OS};
 use crate::host::Info;
 
 pub fn info() -> Info {
-	let utsname = sys::utsname::uname();
+	let utsname = sys::utsname::uname().unwrap();
 
-	let operating_system = OS::from_str(utsname.sysname()).unwrap_or(OS::Unknown);
-	let release = utsname.release().to_string();
-	let version = utsname.version().to_string();
-	let hostname = utsname.nodename().to_string();
-	let architecture = Arch::from_str(utsname.machine()).unwrap_or(Arch::Unknown);
+	let operating_system = utsname
+		.sysname()
+		.to_str()
+		.and_then(|s| OS::from_str(s).ok())
+		.unwrap_or(OS::Unknown);
+	let release = utsname.release().to_str().unwrap_or_default().to_string();
+	let version = utsname.version().to_str().unwrap_or_default().to_string();
+	let hostname = utsname.nodename().to_str().unwrap_or_default().to_string();
+	let architecture = utsname
+		.machine()
+		.to_str()
+		.and_then(|s| Arch::from_str(s).ok())
+		.unwrap_or(Arch::Unknown);
 
 	Info {
 		operating_system,
