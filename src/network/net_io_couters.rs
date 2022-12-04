@@ -133,9 +133,7 @@ pub struct NetIoCountersCollector {
 
 impl NetIoCountersCollector {
 	pub fn net_io_counters(&mut self) -> Result<NetIoCounters> {
-		let sum = self
-			.net_io_counters_pernic()?.into_values()
-			.sum();
+		let sum = self.net_io_counters_pernic()?.into_values().sum();
 
 		Ok(sum)
 	}
