@@ -117,7 +117,7 @@ fn thermal_zone() -> Vec<Result<TemperatureSensor>> {
 			let mut max = None;
 			let mut crit = None;
 
-			glob(&path.join("trip_point_*_type").to_string_lossy().to_string())
+			glob(&path.join("trip_point_*_type").to_string_lossy())
 				.into_iter()
 				.map(|result| -> Result<()> {
 					let path = result?;

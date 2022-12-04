@@ -7,6 +7,6 @@ fn main() {
 	let process = Process::new(args[1].parse().unwrap()).unwrap();
 
 	if let Err(error) = process.kill() {
-		println!("Failed to kill process: {}.", error);
+		println!("Failed to kill process: {error}.");
 	};
 }

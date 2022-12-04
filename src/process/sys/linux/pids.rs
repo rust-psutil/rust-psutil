@@ -17,5 +17,5 @@ pub fn pids() -> Result<Vec<Pid>> {
 }
 
 pub fn pid_exists(pid: Pid) -> bool {
-	Path::new(&format!("/proc/{}", pid)).exists()
+	Path::new(&format!("/proc/{pid}")).exists()
 }

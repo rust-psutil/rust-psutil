@@ -31,7 +31,7 @@ impl FromStr for ProcfsStatm {
 	type Err = Error;
 
 	fn from_str(contents: &str) -> Result<Self> {
-		let fields = match contents.trim_end().split_whitespace().collect::<Vec<_>>() {
+		let fields = match contents.split_whitespace().collect::<Vec<_>>() {
 			fields if fields.len() >= 7 => Ok(fields),
 			_ => Err(Error::MissingData {
 				path: STATM.into(),

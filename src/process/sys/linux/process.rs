@@ -12,7 +12,7 @@ use crate::{read_dir, read_file, read_link, Count, Percent, Pid, Result};
 
 /// Returns a path to a file in `/proc/[pid]/`.
 pub(crate) fn procfs_path(pid: Pid, name: &str) -> PathBuf {
-	PathBuf::from("/proc").join(pid.to_string()).join(&name)
+	PathBuf::from("/proc").join(pid.to_string()).join(name)
 }
 
 impl Process {
@@ -53,7 +53,7 @@ impl Process {
 	}
 
 	pub(crate) fn sys_cmdline_vec(&self) -> ProcessResult<Option<Vec<String>>> {
-		let cmdline = read_file(&self.procfs_path("cmdline"))
+		let cmdline = read_file(self.procfs_path("cmdline"))
 			.map_err(|e| psutil_error_to_process_error(e, self.pid))?;
 
 		if cmdline.is_empty() {
