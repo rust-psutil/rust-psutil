@@ -28,19 +28,19 @@ unescape = { version = "0.1.0", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 darwin-libproc = { version = "0.1.1", optional = true }
-mach = { version = "0.3.2", optional = true }
+mach2 = { version = "0.4.1", optional = true }
 
 [features]
 default = ["cpu", "disk", "host", "memory", "network", "process", "sensors"]
 serde = ["renamed_serde", "platforms/serde"]
 
 # Modules
-cpu = ["mach", "num_cpus"]
+cpu = ["mach2", "num_cpus"]
 disk = ["derive_more", "unescape"]
 host = ["platforms"]
-memory = ["mach"]
+memory = ["mach2"]
 network = ["derive_more"]
-process = ["darwin-libproc", "mach", "memory"]
+process = ["darwin-libproc", "mach2", "memory"]
 sensors = ["glob"]
 
 [dev-dependencies]
