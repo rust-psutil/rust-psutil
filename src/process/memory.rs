@@ -44,6 +44,11 @@ impl MemoryInfo {
 	pub fn vms(&self) -> Bytes {
 		self.vms
 	}
+
+	#[cfg(target_os = "linux")]
+	pub fn shared(&self) -> Bytes {
+		self.shared
+	}
 }
 
 #[cfg(target_os = "linux")]
