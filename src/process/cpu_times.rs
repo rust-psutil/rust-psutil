@@ -8,12 +8,12 @@ use std::time::Duration;
 use crate::process::os::linux::ProcfsStat;
 
 #[cfg(target_os = "macos")]
-pub(crate) static MACH_TIMEBASE_INFO: once_cell::sync::Lazy<mach::mach_time::mach_timebase_info> =
+pub(crate) static MACH_TIMEBASE_INFO: once_cell::sync::Lazy<mach2::mach_time::mach_timebase_info> =
 	once_cell::sync::Lazy::new(|| {
-		let mut timebase_info = mach::mach_time::mach_timebase_info { numer: 0, denom: 0 };
+		let mut timebase_info = mach2::mach_time::mach_timebase_info { numer: 0, denom: 0 };
 		let timebase_info_result =
-			unsafe { mach::mach_time::mach_timebase_info(&mut timebase_info) };
-		if timebase_info_result != mach::kern_return::KERN_SUCCESS {
+			unsafe { mach2::mach_time::mach_timebase_info(&mut timebase_info) };
+		if timebase_info_result != mach2::kern_return::KERN_SUCCESS {
 			panic!(
 				"mach_timebase_info failed: {}",
 				std::io::Error::last_os_error()

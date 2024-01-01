@@ -5,12 +5,12 @@
 
 use std::io;
 
-use mach::kern_return::{self, kern_return_t};
-use mach::mach_port;
-use mach::mach_types::{host_name_port_t, host_t};
-use mach::message::mach_msg_type_number_t;
-use mach::traps::mach_task_self;
-use mach::vm_types::{integer_t, natural_t};
+use mach2::kern_return::{self, kern_return_t};
+use mach2::mach_port;
+use mach2::mach_types::{host_name_port_t, host_t};
+use mach2::message::mach_msg_type_number_t;
+use mach2::traps::mach_task_self;
+use mach2::vm_types::{integer_t, natural_t};
 use nix::libc;
 
 const HOST_VM_INFO64: libc::c_int = 4;

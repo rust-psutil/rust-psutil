@@ -5,7 +5,7 @@ use std::io;
 use std::mem;
 use std::ptr;
 
-use mach::{boolean, vm_types};
+use mach2::{boolean, vm_types};
 use nix::{errno, libc};
 
 use crate::process::{io_error_to_process_error, ProcessError, ProcessResult};
