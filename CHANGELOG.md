@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.3.0] - 2024-01-01
+
+### Added
+
+- Expose shared memory value from MemoryInfo
+
+### Fix
+
+- Change 'mach' dependency to 'mach2' for RUSTSEC-2020-0168
+- Fix ProcessCpuTimes on macOS arm64 (Apple Silicon)
+
 ## [v3.2.2] - 2022-02-13
 
 ### Fix
