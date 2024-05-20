@@ -35,7 +35,7 @@ default = ["cpu", "disk", "host", "memory", "network", "process", "sensors"]
 serde = ["renamed_serde", "platforms/serde"]
 
 # Modules
-cpu = ["mach2", "num_cpus"]
+cpu = ["mach2", "num_cpus", "glob"]
 disk = ["derive_more", "unescape"]
 host = ["platforms"]
 memory = ["mach2"]
