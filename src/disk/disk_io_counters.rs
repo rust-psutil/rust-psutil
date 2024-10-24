@@ -58,7 +58,7 @@ fn nowrap(prev: u64, current: u64, corrected: u64) -> u64 {
 	if current >= prev {
 		corrected + (current - prev)
 	} else {
-		corrected + current + ((std::u32::MAX as u64) - prev)
+		corrected + current + ((u32::MAX as u64) - prev)
 	}
 }
 
