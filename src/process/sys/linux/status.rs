@@ -47,22 +47,25 @@ impl FromStr for Status {
 	}
 }
 
-impl ToString for Status {
-	fn to_string(&self) -> String {
-		match *self {
-			Status::Running => "R",
-			Status::Sleeping => "S",
-			Status::DiskSleep => "D",
-			Status::Zombie => "Z",
-			Status::Stopped => "T",
-			Status::TracingStop => "t",
-			Status::Dead => "X",
-			Status::WakeKill => "K",
-			Status::Waking => "W",
-			Status::Parked => "P",
-			Status::Idle => "I",
-			_ => "",
-		}
-		.to_string()
+impl std::fmt::Display for Status {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match *self {
+				Status::Running => "R",
+				Status::Sleeping => "S",
+				Status::DiskSleep => "D",
+				Status::Zombie => "Z",
+				Status::Stopped => "T",
+				Status::TracingStop => "t",
+				Status::Dead => "X",
+				Status::WakeKill => "K",
+				Status::Waking => "W",
+				Status::Parked => "P",
+				Status::Idle => "I",
+				_ => "",
+			}
+		)
 	}
 }
