@@ -18,12 +18,12 @@ impl DiskUsage {
 		self.total
 	}
 
-	/// Number of bytes used.
+	/// Number of bytes used in Disk.
 	pub fn used(&self) -> Bytes {
 		self.used
 	}
 
-	/// Number of bytes free.
+	/// Number of bytes free in Disk.
 	pub fn free(&self) -> Bytes {
 		self.free
 	}
