@@ -21,8 +21,7 @@ pub fn info() -> Info {
 	let architecture = utsname
 		.machine()
 		.to_str()
-		.and_then(|s| Arch::from_str(s).ok())
-		.unwrap_or(Arch::Unknown);
+		.and_then(|s| Arch::from_str(s).ok());
 
 	Info {
 		operating_system,
