@@ -13,11 +13,7 @@ pub struct CpuFreq {
 
 impl CpuFreq {
 	pub fn new(current: Mhz, min: Mhz, max: Mhz) -> Self {
-		CpuFreq {
-			current,
-			min,
-			max,
-		}
+		CpuFreq { current, min, max }
 	}
 	pub fn current(&self) -> Mhz {
 		self.current

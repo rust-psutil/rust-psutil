@@ -12,7 +12,7 @@ pub struct Info {
 	pub(crate) release: String,
 	pub(crate) version: String,
 	pub(crate) hostname: String,
-	pub(crate) architecture: Arch,
+	pub(crate) architecture: Option<Arch>,
 }
 
 impl Info {
@@ -32,7 +32,7 @@ impl Info {
 		&self.hostname
 	}
 
-	pub fn architecture(&self) -> Arch {
+	pub fn architecture(&self) -> Option<Arch> {
 		self.architecture
 	}
 }

@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v4.0.0] - 2024-12-21
+
+### Added
+
+- Added per-cpu frequency collection on Linux.
+
+### Changed
+
+- Upgraded dependencies.
+
 ## [v3.3.0] - 2024-01-01
 
 ### Added
