@@ -62,8 +62,9 @@ impl CpuTimesPercent {
 			// On Linux guest times are already accounted in "user" or "nice" times.
 			// https://github.com/giampaolo/psutil/blob/e65cc95de72828caed74c7916530dd74fca351e3/psutil/__init__.py#L1653
 			self.user
-				+ self.system + self.nice
-				+ self.irq + self.softirq
+				+ self.system
+				+ self.nice + self.irq
+				+ self.softirq
 				+ self.steal.unwrap_or_default()
 		}
 		#[cfg(target_os = "macos")]
