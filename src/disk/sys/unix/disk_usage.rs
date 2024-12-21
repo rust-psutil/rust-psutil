@@ -13,27 +13,30 @@ pub struct DiskUsage {
 }
 
 impl DiskUsage {
-	/// Total disk size in bytes.
+	/// Total size of the filesystem.
 	pub fn total(&self) -> Bytes {
 		self.total
 	}
 
-	/// Number of bytes used in Disk.
+	/// Used bytes of the filesystem.
 	pub fn used(&self) -> Bytes {
 		self.used
 	}
 
-	/// Number of bytes free in Disk.
+	/// Free bytes of the filesystem.
 	pub fn free(&self) -> Bytes {
 		self.free
 	}
 
-	/// Percentage of disk used.
+	/// Percentage of the filesystem used (used / total * 100).
 	pub fn percent(&self) -> Percent {
 		self.percent
 	}
 }
 
+/// This returns information about the filesystem containing the path.
+///
+/// It's a wrapper around [statvfs (3)](https://www.mankier.com/3/statvfs).
 // Disable the unnecessary_cast lint, as we need to do the u64 casts since on some platforms the
 // types are aliased to u32.
 // See https://github.com/rust-psutil/rust-psutil/issues/64 and
