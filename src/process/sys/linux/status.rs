@@ -17,7 +17,7 @@ impl TryFrom<char> for Status {
 		match value {
 			'R' => Ok(Status::Running),
 			'S' => Ok(Status::Sleeping),
-			'D' => Ok(Status::Waiting),
+			'D' => Ok(Status::DiskSleep),
 			'Z' => Ok(Status::Zombie),
 			'T' => Ok(Status::Stopped),
 			't' => Ok(Status::TracingStop),
