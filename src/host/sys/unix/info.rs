@@ -13,7 +13,7 @@ pub fn info() -> Info {
 	let operating_system = utsname
 		.sysname()
 		.to_str()
-		.and_then(|s| OS::from_str(s).ok())
+		.and_then(|s| OS::from_str(s.to_lowercase().as_str()).ok())
 		.unwrap_or(OS::Unknown);
 	let release = utsname.release().to_str().unwrap_or_default().to_string();
 	let version = utsname.version().to_str().unwrap_or_default().to_string();
