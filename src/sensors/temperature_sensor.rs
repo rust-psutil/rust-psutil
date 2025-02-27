@@ -48,17 +48,11 @@ impl TemperatureSensor {
 	}
 
 	/// Returns the `hwmon_id` for the sensor if available.
-	/// 
+	///
 	/// Extracts the sensor ID from `/sys/class/hwmon/hwmon0` to identify the sensor.
-	/// 
-	/// # Example
-	/// 
-	/// If the `hwmon_id` is set to `Some("hwmon0")`, the method will return:
-	/// 
-	/// ```rust
-	/// Some("hwmon0")
-	/// ```
-	pub fn hwmon_id(&self)->Option<&str>{
+	///
+	/// Returns Some("hwmon0")
+	pub fn hwmon_id(&self) -> Option<&str> {
 		self.hwmon_id.as_deref()
 	}
 }
