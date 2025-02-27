@@ -8,6 +8,7 @@ fn main() {
 	let mut acpi_sensors = HashMap::new();
 	let mut cpu_sensors = BTreeMap::new();
 	let mut disk_sensors = HashMap::new();
+	let mut other_sensors = HashMap::new();
 
 	// Iterate over all temperature sensors
 	temperatures.iter().for_each(|sensor| {
@@ -73,8 +74,15 @@ fn main() {
                         }
                     }
                 }
-                _ => {
-                    // Unknown sensor type
+                ref other => {
+                    other_sensors.entry(sensor_id.clone()).or_insert(Vec::new());
+                    let key = format!("Other {other}");
+                    let msg = format!("{}: {:>3}°C", key,temp_sensor.current().celsius());
+
+                    other_sensors
+                        .get_mut(&sensor_id)
+                        .unwrap()
+                        .push(HashMap::from([(key, msg)]));
                 }
             };
         }
@@ -120,6 +128,17 @@ fn main() {
 	if !disk_sensors.is_empty() {
 		println!();
 		disk_sensors.iter_mut().for_each(|(_sensor_id, values)| {
+			for value in values {
+				let (_key, msg) = value.iter().next().unwrap();
+				println!("{}", msg);
+			}
+		});
+	}
+
+	// Output Other sensor data if available
+	if !other_sensors.is_empty() {
+		println!();
+		other_sensors.iter_mut().for_each(|(_sensor_id, values)| {
 			for value in values {
 				let (_key, msg) = value.iter().next().unwrap();
 				println!("{}", msg);
