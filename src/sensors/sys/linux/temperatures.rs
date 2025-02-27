@@ -13,7 +13,6 @@ fn file_name(prefix: &OsStr, postfix: &[u8]) -> OsString {
 	let mut name = OsString::with_capacity(prefix.len() + postfix.len());
 	name.push(prefix);
 	name.push(OsStr::from_bytes(postfix));
-
 	name
 }
 
@@ -35,6 +34,10 @@ fn hwmon_sensor(input: PathBuf) -> Result<TemperatureSensor> {
 	// that it is not a root directory and it points to a file.
 	// Otherwise it is an implementation bug.
 	let root = input.parent().unwrap_or_else(|| unreachable!());
+	let hwmon_id: Option<String> = root
+		.file_name()
+		.and_then(|s| s.to_str().map(|s| s.to_string()));
+
 	let prefix = match input.file_name() {
 		Some(name) => {
 			let offset = name.len() - b"input".len();
@@ -71,6 +74,13 @@ fn hwmon_sensor(input: PathBuf) -> Result<TemperatureSensor> {
 		None
 	};
 
+	let min_path = root.join(file_name(prefix, b"min"));
+	let min = if min_path.exists() {
+		Some(read_temperature(min_path)?)
+	} else {
+		None
+	};
+
 	let current = read_temperature(input)?;
 
 	Ok(TemperatureSensor {
@@ -79,6 +89,8 @@ fn hwmon_sensor(input: PathBuf) -> Result<TemperatureSensor> {
 		current,
 		max,
 		crit,
+		min,
+		hwmon_id,
 	})
 }
 
@@ -150,6 +162,8 @@ fn thermal_zone() -> Vec<Result<TemperatureSensor>> {
 				current,
 				max,
 				crit,
+				min: None,
+				hwmon_id: None,
 			})
 		})
 		.collect()
