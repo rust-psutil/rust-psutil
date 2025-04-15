@@ -21,8 +21,8 @@ use crate::{Count, Percent, Pid};
 #[cfg(target_os = "linux")]
 use crate::process::os::linux::ProcfsStat;
 
-// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug)]
 pub struct Process {
 	pub(crate) pid: Pid,

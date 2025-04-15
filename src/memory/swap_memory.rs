@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Bytes, Percent};
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Debug, Clone)]
 pub struct SwapMemory {
 	pub(crate) total: Bytes,

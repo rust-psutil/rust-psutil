@@ -3,16 +3,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::Bytes;
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 pub enum Duplex {
 	Full,
 	Half,
 	Unknown,
 }
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 pub struct NetIfStats {}
 
 impl NetIfStats {

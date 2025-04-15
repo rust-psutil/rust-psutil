@@ -7,8 +7,8 @@ use crate::process::{self, Process};
 use crate::{Pid, Result};
 // FIXME: Process cannot be serialized/deserialize, as a result,
 //        neither this can be.
-// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Debug, Clone)]
 pub struct ProcessCollector {
 	pub processes: BTreeMap<Pid, Process>,

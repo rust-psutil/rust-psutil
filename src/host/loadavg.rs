@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::FloatCount;
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Debug)]
 pub struct LoadAvg {
 	/// Number of jobs in the run queue averaged over 1 minute.

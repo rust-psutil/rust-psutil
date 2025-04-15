@@ -11,8 +11,8 @@ const STAT: &str = "stat";
 
 /// New struct, not in Python psutil.
 #[allow(dead_code)]
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug)]
 pub struct ProcfsStat {
 	/// PID of the process.

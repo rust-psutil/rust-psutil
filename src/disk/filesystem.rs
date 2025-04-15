@@ -9,8 +9,8 @@ use std::str::FromStr;
 ///
 /// All physical filesystems should have their own enum element
 /// and all virtual filesystems will go into the `Other` element.
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[non_exhaustive]
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum FileSystem {

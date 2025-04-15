@@ -9,8 +9,8 @@ use derive_more::{Add, Sub, Sum};
 use crate::disk::disk_io_counters_per_partition;
 use crate::{Bytes, Count, Result};
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug, Add, Sum, Default, Sub)]
 pub struct DiskIoCounters {
 	pub(crate) read_count: Count,

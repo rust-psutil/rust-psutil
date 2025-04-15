@@ -9,15 +9,15 @@ use crate::process::os::linux::ProcfsStatm;
 #[cfg(target_os = "macos")]
 use crate::Count;
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 pub enum MemType {
 	// TODO
 }
 
 #[allow(dead_code)]
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Debug, Clone)]
 pub struct MemoryInfo {
 	pub(crate) rss: Bytes,

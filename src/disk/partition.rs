@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use crate::disk::{partitions, FileSystem};
 use crate::Result;
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug)]
 pub struct Partition {
 	pub(crate) device: String,

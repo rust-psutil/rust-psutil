@@ -5,8 +5,8 @@ use std::time::SystemTime;
 
 use crate::Pid;
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 pub struct User {}
 
 impl User {

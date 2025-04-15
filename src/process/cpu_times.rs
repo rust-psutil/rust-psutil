@@ -22,8 +22,8 @@ pub(crate) static MACH_TIMEBASE_INFO: once_cell::sync::Lazy<mach2::mach_time::ma
 		timebase_info
 	});
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug)]
 pub struct ProcessCpuTimes {
 	pub(crate) user: Duration,

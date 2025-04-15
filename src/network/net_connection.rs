@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::common::TcpConnectionStatus;
 use crate::{Fd, Pid};
 
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 pub struct NetConnection {}
 
 impl NetConnection {

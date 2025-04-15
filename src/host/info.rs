@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use platforms::target::{Arch, OS};
 
 /// Not found in Python psutil.
-#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(crate = "renamed_serde"))]
 #[derive(Clone, Debug)]
 pub struct Info {
 	pub(crate) operating_system: OS,
