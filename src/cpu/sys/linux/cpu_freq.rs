@@ -20,7 +20,7 @@ fn cpu_get_cpuinfo_freq() -> Result<Vec<FloatCount>> {
 		.filter(|line| line.starts_with("cpu MHz"))
 		.map(|line| {
 			line.split(':')
-				.last()
+				.next_back()
 				.unwrap_or("0.0")
 				.trim()
 				.parse::<FloatCount>()
